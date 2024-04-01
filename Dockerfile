@@ -1,7 +1,5 @@
 FROM node:20.12.0
 
-LABEL MAINTAINER Justin Levett-Yeats <jlevettyeats@semios.com>
-
 ENV TERM xterm
 ENV DEBIAN_FRONTEND noninteractive
 
