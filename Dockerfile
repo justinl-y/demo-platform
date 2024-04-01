@@ -43,7 +43,7 @@ COPY run.sh /run.sh
 # When deployed to EB, the test and source cmds will
 # succeed due to 02-make-build-secrets.config .ebextension.
 # The NPM_TOKEN should otherwise be defined for local and CI builds.
-RUN /bin/bash -c "test -f .build.npm-token.env && source .build.npm-token.env; npm i --production;"
+# RUN /bin/bash -c "test -f .build.npm-token.env && source .build.npm-token.env; npm i --production;"
 
 # give'r
 RUN chmod +x /run.sh

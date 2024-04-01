@@ -23,7 +23,7 @@ services:
     # 3 - route traffic via upstream.conf to exposed api port 8000 for termination
     build: proxy
     ports:
-      - '6661:8000'
+      - '6661:80'
     volumes:
       - "${EB_LOG_BASE_DIR}/nginx-proxy:/var/log/nginx"
     links:
