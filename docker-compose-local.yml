@@ -1,0 +1,21 @@
+version: '2'
+services:
+  api:
+    container_name: api
+    build:
+      context: .
+      args:
+        - NPM_TOKEN # get the local NPM_TOKEN and pass to the api container when building
+    ports:
+      - '6665:8000'
+      - '9229:9229'
+    volumes:
+      - .:/var/www/
+      - node-modules:/var/www/node_modules/
+    environment:
+      - LOCAL_DB
+      - NODE_ENV=local
+      - AWS_ACCESS_KEY_ID=${API_DEMO_LIVE_AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${API_DEMO_LIVE_SECRET_ACCESS_KEY}
+volumes:
+  node-modules:

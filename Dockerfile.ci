@@ -1,0 +1,46 @@
+FROM node:20.12.0
+
+LABEL MAINTAINER Justin Levett-Yeats <jlevettyeats@semios.com>
+
+ENV TERM xterm
+ENV DEBIAN_FRONTEND noninteractive
+
+# update index and install write/read data across TCP/UDP and python 3
+RUN apt-get update -qy && apt-get install -qy \
+  netcat-openbsd \
+  python3-pip 
+
+WORKDIR /var/www
+
+RUN python3 -m pip --no-cache-dir install --break-system-packages --upgrade awscli
+
+RUN npm i npm
+
+# Install global node modules
+RUN npm i -g pm2@5.3
+
+# set the loglevel for npm to remove wall of red w npm
+ENV NPM_CONFIG_LOGLEVEL=warn
+
+# create npm_token variable to hold the private npm repo auth token
+# token will be used at npm install
+ARG NPM_TOKEN
+
+RUN mkdir /var/log/api
+
+WORKDIR /var/www
+
+RUN rm -rf *
+
+COPY . .
+
+COPY run.sh /
+COPY wait-db-container.sh /
+RUN chmod +x /run.sh
+RUN chmod +x /wait-db-container.sh
+
+RUN npm i --production
+
+CMD ["run.sh"]
+
+EXPOSE 8000

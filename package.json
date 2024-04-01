@@ -1,0 +1,39 @@
+{
+  "author": "Justin Levett-Yeats",
+  "dependencies": {
+    "fastify": "^4.26.2"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-chai-friendly": "0.7.4",
+    "eslint-plugin-import": "^2.29.1",
+    "lint-staged": "^13.0.0",
+    "pre-commit": "^1.2.2",
+    "sort-package-json": "2.7.0"
+  },
+  "description": "",
+  "license": "ISC",
+  "lint-staged": {
+    "**/*.js": "eslint --config .eslintrc.json"
+  },
+  "main": "index.js",
+  "name": "api-demo",
+  "pre-commit": [
+    "precommit-msg",
+    "precommit-lint",
+    "precommit-sort"
+  ],
+  "scripts": {
+    "api-build": "docker compose --file docker-compose-local.yml build --no-cache",
+    "api-down": "docker compose --file docker-compose-local.yml down -v",
+    "api-up": "LOCAL_DB=${LOCAL_DB} npm run api-down && docker compose --file docker-compose-local.yml up",
+    "lint": "eslint .",
+    "precommit-lint": "lint-staged",
+    "precommit-msg": "echo 'Running pre-commit checks...' && exit 0",
+    "precommit-sort": "sort-package-json --quiet && exit 0",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "type": "module",
+  "version": "1.0.0"
+}

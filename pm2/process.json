@@ -1,0 +1,12 @@
+{
+  "apps" : [
+    {
+      "name": "api-demo",
+      "script": "index.js",
+      "error_file": "/var/log/api/error.log",
+      "out_file": "/var/log/api/access.log",
+      "exec_mode": "cluster",
+      "instances": "max"
+    }
+  ]
+}

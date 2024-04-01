@@ -1,0 +1,13 @@
+{
+  "apps" : [
+    {
+      "name": "api-demo",
+      "script": "index.js",
+      "error_file": "/var/log/api/error.log",
+      "out_file": "/var/log/api/access.log",
+      "exec_mode": "fork",
+      "watch": ["config", "container-test", "lib", "middleware", "routes", "sql", "*.js"],
+      "ignore_watch": ["node_modules", "container-test/node_modules"]
+    }
+  ]
+}
