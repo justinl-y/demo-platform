@@ -1,11 +1,9 @@
-import Fastify from 'fastify';
+const fastify = require('fastify')({
+  logger: true
+});
 
 const LOCAL_HOST = '0.0.0.0';
 const LOCAL_PORT = 8000;
-
-const fastify = Fastify({
-  logger: true
-});
 
 fastify.get('/', async (request, reply) => {
 
