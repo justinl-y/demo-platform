@@ -1,4 +1,5 @@
-FROM node:20.12.0
+# FROM node:20.12.0
+FROM node:16
 
 ENV TERM xterm
 ENV DEBIAN_FRONTEND noninteractive
