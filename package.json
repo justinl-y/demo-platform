@@ -5,6 +5,7 @@
   "license": "ISC",
   "author": "Justin Levett-Yeats",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "api-build": "docker compose --file docker-compose-local.yml build --no-cache",
     "api-down": "docker compose --file docker-compose-local.yml down -v",
