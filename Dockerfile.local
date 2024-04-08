@@ -33,9 +33,6 @@ RUN mkdir /var/log/api
 WORKDIR /var/www
 RUN rm -rf *
 
-# COPY package.json .
-# RUN npm i
-
 COPY . .
 
 # copy run.sh 

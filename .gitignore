@@ -2,7 +2,7 @@
 .DS_Store
 run
 .env
-/.idea
+.idea
 .vscode
 .npm
 .zshrc.save

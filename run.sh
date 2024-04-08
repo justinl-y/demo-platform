@@ -38,6 +38,5 @@ elif [ "$NODE_ENV" = "stage" ] || [ "$NODE_ENV" = "prod" ]; then
 fi
 
 # start PM2
-# pm2-runtime npm -- run build --no-autorestart 
 pm2-runtime start pm2/$PM2_FILE
 echo 'PM2 Started, version: v'$(pm2-runtime --version)

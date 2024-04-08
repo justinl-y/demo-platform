@@ -10,11 +10,11 @@
     "api-build": "docker compose --file docker-compose-local.yml build --no-cache",
     "api-down": "docker compose --file docker-compose-local.yml down -v",
     "api-up": "LOCAL_DB=${LOCAL_DB} npm run api-down && docker compose --file docker-compose-local.yml up",
+    "build": "rimraf dist && tsc -p tsconfig.json && swc -D src -d dist --strip-leading-paths",
     "lint": "eslint . --config .eslintrc.json",
     "precommit-lint": "lint-staged",
     "precommit-msg": "echo 'Running pre-commit checks...' && exit 0",
     "precommit-sort": "sort-package-json --quiet && exit 0",
-    "build": "rimraf dist && tsc -p tsconfig.json && swc src -d dist --strip-leading-paths",
     "start": "node dist/index.js"
   },
   "pre-commit": [
