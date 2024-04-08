@@ -27,11 +27,17 @@ PM2_SILENT=true pm2 update
 $PM2_FILE
 
 if [ "$NODE_ENV" = "local" ] || [ "$NODE_ENV" = "test" ]; then
+  # pm2 will perform in-memory ts transpilation (see docker file)
+
   PM2_FILE="process-local.json"
 elif [ "$NODE_ENV" = "stage" ] || [ "$NODE_ENV" = "prod" ]; then
+  # perform explicit ts transpile
+  npm run build
+
   PM2_FILE="process.json"
 fi
 
 # start PM2
-echo 'Starting PM2, version: v'$(pm2-runtime --version)
+# pm2-runtime npm -- run build --no-autorestart 
 pm2-runtime start pm2/$PM2_FILE
+echo 'PM2 Started, version: v'$(pm2-runtime --version)

@@ -1,4 +1,4 @@
-FROM node:20.12.0
+FROM node:20.12.1
 
 ENV TERM xterm
 ENV DEBIAN_FRONTEND noninteractive
@@ -31,13 +31,12 @@ WORKDIR /var/www
 RUN rm -rf *
 
 COPY . .
-
 COPY run.sh /
 COPY wait-db-container.sh /
+
 RUN chmod +x /run.sh
 RUN chmod +x /wait-db-container.sh
-
-RUN npm i --production
+RUN npm i
 
 CMD ["run.sh"]
 

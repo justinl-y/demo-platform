@@ -1,4 +1,4 @@
-import Fastify from 'fastify';
+const Fastify = require('fastify');
 
 const fastify = Fastify({
   logger: true
@@ -12,7 +12,7 @@ fastify.get('/', async (request, reply) => {
   // console.log(request);
 
   reply
-    .send({ hello: 'world' });
+    .send({ message: 'Root lives!!!' });
 
 });
 

@@ -4,17 +4,18 @@
   "description": "",
   "license": "ISC",
   "author": "Justin Levett-Yeats",
-  "main": "index.js",
-  "type": "module",
+  "type": "commonjs",
+  "main": "dist/index.js",
   "scripts": {
     "api-build": "docker compose --file docker-compose-local.yml build --no-cache",
     "api-down": "docker compose --file docker-compose-local.yml down -v",
     "api-up": "LOCAL_DB=${LOCAL_DB} npm run api-down && docker compose --file docker-compose-local.yml up",
-    "lint": "eslint .",
+    "lint": "eslint . --config .eslintrc.json",
     "precommit-lint": "lint-staged",
     "precommit-msg": "echo 'Running pre-commit checks...' && exit 0",
     "precommit-sort": "sort-package-json --quiet && exit 0",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "rimraf dist && tsc -p tsconfig.json && swc src -d dist --strip-leading-paths",
+    "start": "node dist/index.js"
   },
   "pre-commit": [
     "precommit-msg",
@@ -28,12 +29,19 @@
     "fastify": "^4.26.2"
   },
   "devDependencies": {
+    "@swc/cli": "^0.3.12",
+    "@swc/core": "^1.4.12",
+    "@tsconfig/node20": "^20.1.4",
+    "@types/node": "^20.12.5",
+    "@typescript-eslint/eslint-plugin": "^7.5.0",
+    "@typescript-eslint/parser": "^7.5.0",
     "eslint": "^8.57.0",
     "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-plugin-chai-friendly": "0.7.4",
     "eslint-plugin-import": "^2.29.1",
     "lint-staged": "^13.0.0",
     "pre-commit": "^1.2.2",
-    "sort-package-json": "2.7.0"
+    "rimraf": "^5.0.5",
+    "sort-package-json": "^2.10.0",
+    "typescript": "^5.4.4"
   }
 }
