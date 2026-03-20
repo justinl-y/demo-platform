@@ -1,21 +1,22 @@
+
 services:
   api:
-    container_name: api
     build:
       context: .
       args:
-        - NPM_TOKEN # get the local NPM_TOKEN and pass to the api container when building
+        - NPM_TOKEN
       dockerfile: Dockerfile.local
-    ports:
-      - '6665:8000'
-      - '9229:9229' # for debugging
-    volumes:
-      - .:/var/www/
-      - node-modules:/var/www/node_modules/
     environment:
-      - LOCAL_DB
-      - NODE_ENV=local
-      - AWS_ACCESS_KEY_ID=${API_DEMO_LIVE_AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${API_DEMO_LIVE_SECRET_ACCESS_KEY}
+      - API_ENV=stage # <--change this to local eventually
+      - AWS_ACCESS_KEY_ID=${API_DEMO_AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${API_DEMO_AWS_SECRET_ACCESS_KEY}
+      - DB_ENV
+      - NODE_ENV=production
+    ports:
+      - '6662:8000'
+    tty: true
+    volumes:
+      - .:/srv/api
+      - node-modules:/srv/api/node_modules/
 volumes:
   node-modules:

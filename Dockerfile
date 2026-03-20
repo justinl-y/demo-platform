@@ -1,47 +1,32 @@
-FROM node:20.12.1
+FROM node:24-alpine
 
-ENV TERM xterm
-ENV DEBIAN_FRONTEND noninteractive
+RUN apk update \
+  && apk add bash
 
-# update index and install write/read data across TCP/UDP and python 3
-RUN apt-get update -qy && apt-get install -qy \
-  netcat-openbsd \
-  python3-pip
+ENV API_HOME="/srv/api"
 
-WORKDIR /var/www
-
-RUN python3 -m pip --no-cache-dir install --break-system-packages --upgrade awscli
-
-# Install global node packages
-RUN npm i -g npm
-RUN npm i -g pm2@5.3
-
-# set the loglevel for npm to remove red wall.
-ENV NPM_CONFIG_LOGLEVEL=warn
-
-# create npm_token variable to hold the private npm repo auth token
-# token will be used at npm instsall
-# used only by Travis.
 ARG NPM_TOKEN
 
-RUN mkdir /var/log/api
+WORKDIR ${API_HOME}
 
-WORKDIR /var/www
-RUN rm -rf *
+RUN npm i pm2@6.0.14 -g
 
-COPY . .
+COPY package*.json ${API_HOME}/
+COPY tsconfig.json ${API_HOME}/
+COPY .swcrc ${API_HOME}/
+COPY src ${API_HOME}/src
 
-# copy run.sh 
-# if we attempt to run run.sh inside /var/www, it will error on permissions because Docker Compose uses maps volumes in real time.
-COPY run.sh /run.sh
+RUN /bin/bash -c "test -f .build.npm-token.env && source .build.npm-token.env; npm i;" 
+RUN npm run build
+RUN npm prune --omit=dev
 
-# EB env vars are only available at container run time.
-# When deployed to EB, the test and source cmds will
-# succeed due to 02-make-build-secrets.config .ebextension.
-# The NPM_TOKEN should otherwise be defined for local and CI builds. ; 
-RUN /bin/bash -c "test -f .build.npm-token.env && source .build.npm-token.env; npm i;"  
+COPY .ebextensions ${API_HOME}/.ebextensions
+COPY .platform ${API_HOME}/.platform
+COPY proxy ${API_HOME}/proxy
+COPY pm2 ${API_HOME}/pm2
+
+RUN rm -f .npmrc
 
 EXPOSE 8000
 
-RUN chmod +x /run.sh
-CMD ["/run.sh"]
+CMD ["pm2-runtime", "start", "pm2/process.json"]

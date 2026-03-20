@@ -12,10 +12,13 @@ WORKDIR /var/www
 
 RUN python3 -m pip --no-cache-dir install --break-system-packages --upgrade awscli
 
-RUN npm i npm
-
 # Install global node modules
-RUN npm i -g pm2@5.3
+RUN npm i -g npm@10.5.0
+RUN npm i -g pm2@5.4.3
+
+# install pm2 typescript local/test env transpiler support
+RUN npm i -g bun
+RUN pm2 install typescript
 
 # set the loglevel for npm to remove wall of red w npm
 ENV NPM_CONFIG_LOGLEVEL=warn
@@ -27,17 +30,18 @@ ARG NPM_TOKEN
 RUN mkdir /var/log/api
 
 WORKDIR /var/www
-
 RUN rm -rf *
 
 COPY . .
-COPY run.sh /
-COPY wait-db-container.sh /
 
+COPY run.sh /
 RUN chmod +x /run.sh
+
+COPY wait-db-container.sh /
 RUN chmod +x /wait-db-container.sh
+
 RUN npm i
 
-CMD ["run.sh"]
-
 EXPOSE 8000
+
+CMD ["run.sh"]

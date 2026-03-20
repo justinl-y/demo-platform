@@ -3,8 +3,10 @@
     {
       "name": "api-demo",
       "script": "src/index.ts",
-      "error_file": "/var/log/api/error.log",
-      "out_file": "/var/log/api/access.log",
+      "interpreter": "node",
+      "interpreter_args": "--import 'data:text/javascript,import { register } from \"node:module\"; import { pathToFileURL } from \"node:url\"; register(\"ts-node/esm\", pathToFileURL(\"./\"));'",
+      "error_file": "/dev/null",
+      "out_file": "/dev/null",
       "exec_mode": "fork",
       "watch": [
         "src"
@@ -12,7 +14,7 @@
       "ignore_watch": [
         "dist",
         "node_modules",
-        "container-test/node_modules"
+        "test/container-test/node_modules"
       ]
     }
   ]

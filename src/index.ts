@@ -1,51 +1,34 @@
-const Fastify = require('fastify');
+import buildInstance from './build-instance.js';
+import { apiEnv, server } from './config/index.js';
+import { getServerDetails } from './util/functions/safe-typing.js';
+import { localHost } from './util/constants.js';
 
-const fastify = Fastify({
-  logger: true
-});
+const instance = await buildInstance();
 
-const LOCAL_HOST = '0.0.0.0';
-const LOCAL_PORT = 8000;
+const PM2_VERSION = 'v6.0.14';
+const NODE_VERSION = process.version;
 
-fastify.get('/', async (request, reply) => {
-
-  // console.log(request);
-
-  reply
-    .send({ message: 'Root lives!!!' });
-
-});
-
-fastify.get('/health_check', async (request, reply) => {
-
-  const message = {
-    status: 'OK',
-    message: 'I\'m alive!'
-  };
-
-  reply
-    .code(200)
-    .send(message);
-
-});
-
-const start = async () => {
-
+const startServer = async () => {
   try {
+    console.log('-----------------------------------------------------------------------------\r\n');
+    console.log(`\r\nPM2 version is: ${PM2_VERSION}`);
+    console.log(`Node version is: ${NODE_VERSION}`);
+    console.log('\r\nServer starting ...');
 
-    await fastify.listen({ host: LOCAL_HOST, port: LOCAL_PORT });
+    await instance.listen(server);
 
-    console.log(`Server listening on: http://${LOCAL_HOST}:${LOCAL_PORT}`);
-    console.log(`Node.js Version: ${process.version}`);
+    console.log(`... API environment is ${apiEnv}`);
+    console.log(getServerDetails(instance.server.address()));
 
+    if (apiEnv !== 'PROD') console.log(`... API documentation available at ${localHost}/api-docs`);
+    console.log('Server ready, let the magic begin!');
+    console.log('\r\n-----------------------------------------------------------------------------\r\n');
   }
   catch (err) {
+    console.log(err);
 
-    fastify.log.error(err);
     process.exit(1);
-
   }
-
 };
 
-start();
+await startServer();

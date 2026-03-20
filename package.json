@@ -2,46 +2,74 @@
   "name": "api-demo",
   "version": "1.0.0",
   "description": "",
+  "private": true,
   "license": "ISC",
   "author": "Justin Levett-Yeats",
-  "type": "commonjs",
-  "main": "dist/index.js",
+  "engines": {
+    "npm": ">=11.6.0 <12.0.0",
+    "node": ">=24.8.0 <26.0.0"
+  },
+  "type": "module",
+  "main": "src/index.ts",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:justinl-y/api-demo.git"
+  },
   "scripts": {
-    "api-build": "docker compose --file docker-compose-local.yml build --no-cache",
-    "api-down": "docker compose --file docker-compose-local.yml down -v",
-    "api-up": "LOCAL_DB=${LOCAL_DB} npm run api-down && docker compose --file docker-compose-local.yml up",
     "build": "rimraf dist && tsc -p tsconfig.json && swc -D src -d dist --strip-leading-paths",
-    "lint": "eslint . --config .eslintrc.json",
+    "api-build": "docker compose -p api -f docker-compose-local.yml build --no-cache",
+    "api-up": "docker compose -p api -f docker-compose-local.yml up",
+    "api-down": "docker compose -p api -f docker-compose-local.yml down -v",
+    "ci-build-service": "docker compose -p ci -f docker-compose-ci.yml build --no-cache",
+    "ci-down": "docker compose -p ci -f docker-compose-ci.yml down -v",
+    "ci-build": "printf \"db api test\" | tr ' ' '\n' | xargs -n1 -P3 -I{} npm run ci-build-service {}",
+    "ci-up": "TEST_CASE=${TEST_CASE} docker compose -p ci -f docker-compose-ci.yml up",
+    "lint": "eslint --config eslint.config.mjs",
+    "lint-fix": "eslint --fix \"**/*.{ts}\"",
     "precommit-lint": "lint-staged",
-    "precommit-msg": "echo 'Running pre-commit checks...' && exit 0",
-    "precommit-sort": "sort-package-json --quiet && exit 0",
-    "start": "node dist/index.js"
+    "precommit-msg": "echo 'Running pre-commit checks...' && exit 0"
   },
   "pre-commit": [
     "precommit-msg",
-    "precommit-lint",
-    "precommit-sort"
+    "precommit-lint"
   ],
   "lint-staged": {
-    "**/*.js": "eslint --config .eslintrc.json"
+    "**/*.js": "eslint --config eslint.config.mjs",
+    "**/*.ts": "eslint --config eslint.config.mjs"
   },
   "dependencies": {
-    "fastify": "^4.26.2"
+    "@aws-sdk/client-secrets-manager": "^3.899.0",
+    "@fastify/accepts": "^5.0.3",
+    "@fastify/compress": "^8.1.0",
+    "@fastify/cors": "^11.1.0",
+    "@fastify/formbody": "^8.0.2",
+    "@fastify/helmet": "^13.0.2",
+    "@fastify/jwt": "^10.0.0",
+    "@fastify/swagger": "^9.5.2",
+    "@fastify/swagger-ui": "^5.2.3",
+    "@jordanarseno/node-postgres-named": "^3.0.1",
+    "@sentry/node": "^10.17.0",
+    "@sentry/profiling-node": "^10.17.0",
+    "ajv-formats": "^3.0.1",
+    "bcryptjs": "^3.0.2",
+    "fastify": "^5.8.2",
+    "fastify-plugin": "^5.1.0",
+    "lodash": "^4.17.21",
+    "pg": "^8.16.3",
+    "restify-errors": "^8.0.2"
   },
   "devDependencies": {
-    "@swc/cli": "^0.3.12",
-    "@swc/core": "^1.4.12",
-    "@tsconfig/node20": "^20.1.4",
-    "@types/node": "^20.12.5",
-    "@typescript-eslint/eslint-plugin": "^7.5.0",
-    "@typescript-eslint/parser": "^7.5.0",
-    "eslint": "^8.57.0",
-    "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-plugin-import": "^2.29.1",
+    "@swc/cli": "^0.7.8",
+    "@swc/core": "^1.13.5",
+    "@tsconfig/node24": "^24.0.1",
+    "@types/lodash": "^4.17.24",
+    "@types/node": "^24.6.1",
+    "eslint": "^9.36.0",
     "lint-staged": "^13.0.0",
+    "neostandard": "^0.12.2",
     "pre-commit": "^1.2.2",
-    "rimraf": "^5.0.5",
-    "sort-package-json": "^2.10.0",
-    "typescript": "^5.4.4"
+    "rimraf": "^6.0.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
   }
 }

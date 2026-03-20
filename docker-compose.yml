@@ -1,31 +1,32 @@
 services:
   api:
-    container_name: api
     build:
       context: .
       args:
         - NPM_TOKEN
+    environment:
+      - API_ENV=${API_ENV}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - NODE_ENV=production
     expose:
       - '8000'
+    tty: true 
     volumes:
-      - .:/var/www/
-      - node-modules:/var/www/node_modules/
-    environment:
-      - NODE_ENV=${NODE_ENV}
-      - DOTENV_FILE_S3_PATH=${DOTENV_FILE_S3_PATH}
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}          
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - .:/srv/api
+      - node-modules:/srv/api/node_modules/
   nginx-proxy:
     # for EB health reporting we need to:
     # 1 - to route traffic through a nginx proxy server...
     # 2 - format logs ...
     # 3 - route traffic via upstream.conf to exposed api port 8000 for termination
     build: proxy
+    links:
+      - api
     ports:
       - '6661:80'
     volumes:
       - "${EB_LOG_BASE_DIR}/nginx-proxy:/var/log/nginx"
-    links:
-      - api
 volumes:
   node-modules:
+
