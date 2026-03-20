@@ -13,3 +13,4 @@ npm-debug.log*
 index-debug.apib
 dist
 settings.json
+/scripts
