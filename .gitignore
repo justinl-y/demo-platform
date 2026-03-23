@@ -5,6 +5,7 @@ run
 .idea
 .vscode
 .npm
+.build.npm-token.env
 .zshrc.save
 *.log
 logs

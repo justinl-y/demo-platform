@@ -1,31 +1,37 @@
-FROM node:24-alpine
+# syntax=docker/dockerfile:1.7
+FROM node:24-alpine AS builder
 
-RUN apk update \
-  && apk add bash
+RUN apk add --no-cache bash
 
 ENV API_HOME="/srv/api"
 
-ARG NPM_TOKEN
-
 WORKDIR ${API_HOME}
-
-RUN npm i pm2@6.0.14 -g
 
 COPY package*.json ${API_HOME}/
 COPY tsconfig.json ${API_HOME}/
 COPY .swcrc ${API_HOME}/
+
+# Use deterministic installs and mount npm token as a BuildKit secret when present.
+RUN --mount=type=secret,id=npm_token /bin/bash -c "if test -f /run/secrets/npm_token; then NPM_TOKEN=$(cat /run/secrets/npm_token); if test -n \"${NPM_TOKEN}\"; then printf '//registry.npmjs.org/:_authToken=%s\n' \"${NPM_TOKEN}\" > .npmrc; fi; fi; npm ci;"
+
 COPY src ${API_HOME}/src
 
-RUN /bin/bash -c "test -f .build.npm-token.env && source .build.npm-token.env; npm i;" 
 RUN npm run build
 RUN npm prune --omit=dev
-
-COPY .ebextensions ${API_HOME}/.ebextensions
-COPY .platform ${API_HOME}/.platform
-COPY proxy ${API_HOME}/proxy
-COPY pm2 ${API_HOME}/pm2
-
 RUN rm -f .npmrc
+
+FROM node:24-alpine AS runtime
+
+ENV API_HOME="/srv/api"
+
+WORKDIR ${API_HOME}
+
+RUN npm i -g pm2@6.0.14
+
+COPY --from=builder ${API_HOME}/package*.json ${API_HOME}/
+COPY --from=builder ${API_HOME}/node_modules ${API_HOME}/node_modules
+COPY --from=builder ${API_HOME}/dist ${API_HOME}/dist
+COPY pm2 ${API_HOME}/pm2
 
 EXPOSE 8000
 

@@ -143,13 +143,13 @@ const errorsToHandle = (err: unknown, code: string | undefined, file: string | u
         if (matchedKey) {
           const [, key, value] = matchedKey;
 
-          error = new InternalServerError(`PG error triggered by file '${file}.sql: Insert operation unique key violation ${key} ${value}: '${message}'`);
+          error = new InternalServerError(`PG error triggered by file '${file}.sql': Insert operation unique key violation ${key} ${value}: '${message}'`);
           break;
         }
       }
 
       if (/violates unique constraint/.test(message)) {
-        error = new InternalServerError(`PG error triggered by file '${file}.sql: Unique constraint violation: '${message}'`);
+        error = new InternalServerError(`PG error triggered by file '${file}.sql': Unique constraint violation: '${message}'`);
         break;
       }
       // otherwise fall through to default
@@ -160,7 +160,7 @@ const errorsToHandle = (err: unknown, code: string | undefined, file: string | u
         if (missingKey) {
           const [, key, value] = missingKey;
 
-          error = new InternalServerError(`PG error triggered by file '${file}.sql: Update operation foreign key violation ${key} ${value}: '${message}'`);
+          error = new InternalServerError(`PG error triggered by file '${file}.sql': Update operation foreign key violation ${key} ${value}: '${message}'`);
           break;
         }
       }
