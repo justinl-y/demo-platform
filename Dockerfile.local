@@ -1,11 +1,7 @@
+# syntax=docker/dockerfile:1.7
 FROM node:24-alpine
 
-RUN apk update && \
-  apk add bash
-
 ENV API_HOME="/srv/api"
-
-ARG NPM_TOKEN
 
 WORKDIR ${API_HOME}
 
@@ -13,11 +9,10 @@ RUN npm i pm2@6.0.14 -g
 
 COPY package*.json ${API_HOME}/
 
-COPY . ${API_HOME}/
+# Keep local image builds fast by installing dependencies from lockfile only.
+RUN --mount=type=secret,id=npm_token /bin/sh -c "if test -f /run/secrets/npm_token; then NPM_TOKEN=$(cat /run/secrets/npm_token); if test -n \"${NPM_TOKEN}\"; then printf '//registry.npmjs.org/:_authToken=%s\\n' \"${NPM_TOKEN}\" > .npmrc; fi; fi; npm ci --include=dev; rm -f .npmrc"
 
-RUN /bin/bash -c "test -f .build.npm-token.env && source .build.npm-token.env; npm i --include=dev;"  
-
-RUN rm -f .npmrc
+COPY pm2 ${API_HOME}/pm2
 
 EXPOSE 8000
 

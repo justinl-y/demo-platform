@@ -16,16 +16,22 @@ services:
     ports:
       - '5430:5432'
     volumes:
-      - ./test/container-db/schema:/docker-entrypoint-initdb.d/
+      - ./test/container-db/schema:/docker-entrypoint-initdb.d/:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test -d test_template"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
   api:
     build:
       context: .
-      args:
-        - NPM_TOKEN
       dockerfile: test/Dockerfile.ci
+      secrets:
+        - npm_token
     command: /srv/run.sh
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     entrypoint: /srv/wait-db-container.sh db 5432
     environment:
       - API_ENV=test
@@ -38,24 +44,34 @@ services:
     volumes:
       - .:/srv/api
       - node-modules:/srv/api/node_modules/
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('net').createConnection({host:'127.0.0.1', port:8000}).on('connect',()=>process.exit(0)).on('error',()=>process.exit(1));\""]
+      interval: 2s
+      timeout: 3s
+      retries: 30
   test:
     build: ./test/container-test
     command: /run.sh
     depends_on:
-      - api
-      - db
+      api:
+        condition: service_healthy
+      db:
+        condition: service_healthy
     entrypoint: /wait-api-container.sh api 8000
     environment:
       - PGDATABASE=test
       - PGUSER=test
       - PGPASSWORD=test
       - TEST_CASE
-    links:
-      - db
-    tty: true 
+    tty: true
     volumes:
-     - ./test/container-test:/usr/app
-    volumes_from:
-      - api
+      - ./test/container-test:/usr/app
+      - test-node-modules:/usr/app/node_modules/
+
+secrets:
+  npm_token:
+    environment: NPM_TOKEN
+
 volumes:
   node-modules:
+  test-node-modules:

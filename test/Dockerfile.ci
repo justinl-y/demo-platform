@@ -1,9 +1,8 @@
+# syntax=docker/dockerfile:1.7
 FROM node:24-alpine
 
 RUN apk update \
   && apk add bash
-
-ARG NPM_TOKEN
 
 # with mounted volumes file permissions can only be changed on the host machine, not within Docker, 
 # thus executable scripts requiring explicit permissions via Docker must be in a separate, non-mounted folder
@@ -24,16 +23,8 @@ WORKDIR ${API_HOME}
 
 RUN npm i pm2@6.0.14 -g
 
-# TODO
-# COPY package*.json ${API_HOME}
-# COPY /src ${API_HOME}
 COPY . ${API_HOME}/
 
-# EB env vars are only available at container run time.
-# When deployed to EB, the test and source cmds will succeed due to 02-make-build-secrets.config .ebextension.
-# The NPM_TOKEN should otherwise be defined for local and CI builds. ; 
-RUN /bin/bash -c "test -f .build.npm-token.env && source .build.npm-token.env; npm i --include=dev;" 
-
-RUN rm -f .npmrc
+RUN --mount=type=secret,id=npm_token /bin/sh -c "if test -f /run/secrets/npm_token; then NPM_TOKEN=$(cat /run/secrets/npm_token); if test -n \"${NPM_TOKEN}\"; then printf '//registry.npmjs.org/:_authToken=%s\\n' \"${NPM_TOKEN}\" > .npmrc; fi; fi; npm ci --include=dev; rm -f .npmrc"
 
 EXPOSE 8000
