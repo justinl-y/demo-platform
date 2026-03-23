@@ -1,7 +1,12 @@
 import fs from 'fs/promises';
 import _ from 'lodash';
-import errors from 'restify-errors';
-import PgNamed from '@jordanarseno/node-postgres-named';
+import {
+  InternalServerError,
+  ImaTeapotError,
+} from 'http-errors-enhanced';
+import {
+  pgPatch,
+} from './postgres-named.js';
 import type {
   Pool,
   PoolClient,
@@ -87,9 +92,9 @@ const templateBlob = async (file: string, params: SqlParams): Promise<string> =>
 async function pgConnect(this: Pool): Promise<PatchedPgClient> {
   const client = await this.connect();
 
-  // patch the client with PgNamed for cleaner SQL interface.
-  // docs in repo @ PgNamed: https://github.com/jordanarseno/node-postgres-named
-  PgNamed.patch(client);
+  // Patch the client with pgPatch for a named-parameter SQL interface.
+  // See src/util/postgres-named.ts for implementation details.
+  pgPatch(client);
 
   return client as PatchedPgClient;
 };
@@ -99,37 +104,37 @@ const errorsToHandle = (err: unknown, code: string | undefined, file: string | u
 
   switch (code) {
     case 'ECONNREFUSED':
-      error = new errors.InternalServerError('Database connection was refused: Error in connection config or database unavailable');
+      error = new InternalServerError('Database connection was refused: Error in connection config or database unavailable');
       break;
     case 'ENOENT':
-      error = new errors.InternalServerError(`No such file or invalid path: ${file}'`);
+      error = new InternalServerError(`No such file or invalid path: '${file}'`);
       break;
     case 'ReferenceError':
-      error = new errors.InternalServerError(`Reference error in file '${file}.sql': A parameter is missing or invalid: '${message}'`);
+      error = new InternalServerError(`Reference error in file '${file}.sql': A parameter is missing or invalid: '${message}'`);
       break;
     case '42601':
-      error = new errors.InternalServerError(`SQL syntax error in file '${file}.sql: '${message}'`);
+      error = new InternalServerError(`SQL syntax error in file '${file}.sql': '${message}'`);
       break;
     case '42P01':
-      error = new errors.InternalServerError(`SQL syntax error in file '${file}.sql: Misnamed table: '${message}'`);
+      error = new InternalServerError(`SQL syntax error in file '${file}.sql': Misnamed table: '${message}'`);
       break;
     case '42703':
-      error = new errors.InternalServerError(`SQL syntax error in file '${file}.sql: Misnamed column: '${message}'`);
+      error = new InternalServerError(`SQL syntax error in file '${file}.sql': Misnamed column: '${message}'`);
       break;
     case '42704':
-      error = new errors.InternalServerError(`SQL syntax error in file '${file}.sql: Type error: '${message}'`);
+      error = new InternalServerError(`SQL syntax error in file '${file}.sql': Type error: '${message}'`);
       break;
     case '22000':
-      error = new errors.InternalServerError(`PG error triggered by file '${file}.sql: Invalid or out-of-range input data: '${message}'`);
+      error = new InternalServerError(`PG error triggered by file '${file}.sql': Invalid or out-of-range input data: '${message}'`);
       break;
     case '23514':
-      error = new errors.InternalServerError(`PG error triggered by file '${file}.sql: Check constraint violation: '${message}'`);
+      error = new InternalServerError(`PG error triggered by file '${file}.sql': Check constraint violation: '${message}'`);
       break;
     case '23P01':
-      error = new errors.InternalServerError(`PG error triggered by file '${file}.sql: Exclusion constraint violation: '${message}'`);
+      error = new InternalServerError(`PG error triggered by file '${file}.sql': Exclusion constraint violation: '${message}'`);
       break;
     case '23502':
-      error = new errors.InternalServerError(`PG error triggered by file '${file}.sql: Not-null constraint violation: '${message}'`);
+      error = new InternalServerError(`PG error triggered by file '${file}.sql': Not-null constraint violation: '${message}'`);
       break;
     case '23505':
       {
@@ -138,13 +143,13 @@ const errorsToHandle = (err: unknown, code: string | undefined, file: string | u
         if (matchedKey) {
           const [, key, value] = matchedKey;
 
-          error = new errors.InternalServerError(`PG error triggered by file '${file}.sql: Insert operation unique key violation ${key} ${value}: '${message}'`);
+          error = new InternalServerError(`PG error triggered by file '${file}.sql: Insert operation unique key violation ${key} ${value}: '${message}'`);
           break;
         }
       }
 
       if (/violates unique constraint/.test(message)) {
-        error = new errors.InternalServerError(`PG error triggered by file '${file}.sql: Unique constraint violation: '${message}'`);
+        error = new InternalServerError(`PG error triggered by file '${file}.sql: Unique constraint violation: '${message}'`);
         break;
       }
       // otherwise fall through to default
@@ -155,7 +160,7 @@ const errorsToHandle = (err: unknown, code: string | undefined, file: string | u
         if (missingKey) {
           const [, key, value] = missingKey;
 
-          error = new errors.InternalServerError(`PG error triggered by file '${file}.sql: Update operation foreign key violation ${key} ${value}: '${message}'`);
+          error = new InternalServerError(`PG error triggered by file '${file}.sql: Update operation foreign key violation ${key} ${value}: '${message}'`);
           break;
         }
       }
@@ -166,7 +171,7 @@ const errorsToHandle = (err: unknown, code: string | undefined, file: string | u
         if (referencedKey) {
           const [, key, value] = referencedKey;
 
-          error = new errors.InternalServerError(`PG error triggered by file '${file}.sql: Delete operation foreign key violation: ${key} ${value}: '${message}'`);
+          error = new InternalServerError(`PG error triggered by file '${file}.sql: Delete operation foreign key violation: ${key} ${value}: '${message}'`);
           break;
         }
       }
@@ -197,7 +202,7 @@ async function query(this: Pool, file: string, params: SqlParams, outputFormat: 
     const regexPattern = wordsToSearch.map((word) => `\\b${word}\\b`).join('|');
     const testRegex = new RegExp(regexPattern, 'i');
 
-    if (testRegex.test(templatedBlob)) throw new errors.InternalServerError('INSERT|UPDATE|DELETE queries should use db.transact');
+    if (testRegex.test(templatedBlob)) throw new InternalServerError('INSERT|UPDATE|DELETE queries should use db.transact');
 
     pgClient = await pgConnect.call(this);
 
@@ -360,7 +365,7 @@ async function transaction(this: Pool, rawInstructions: TransactionInstruction |
       if (dryRun) {
         console.log(todos);
 
-        throw new errors.ImATeapotError('Dry run enabled. Transaction rolled back.');
+        throw new ImaTeapotError('Dry run enabled. Transaction rolled back.');
       }
 
       throw error;
@@ -388,11 +393,11 @@ async function transaction(this: Pool, rawInstructions: TransactionInstruction |
 
       if (!results[fileName]) results[fileName] = [];
 
-      // keep in mind pgclient was augmented/patched with node-postgres-named!
-      let result;
-
+      // keep in mind pgClient was augmented/patched by the local pgPatch implementation!
       try {
-        result = await pgClient.query(query, params);
+        const result = await pgClient.query(query, params);
+
+        results[fileName].push(result.rows);
       }
       catch (err) {
         const errorDetails = getErrorDetails(err);
@@ -406,8 +411,6 @@ async function transaction(this: Pool, rawInstructions: TransactionInstruction |
 
         await pgRollbackTransaction(error);
       }
-
-      results[fileName].push(result.rows);
     }
 
     // next

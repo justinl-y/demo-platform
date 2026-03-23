@@ -18,5 +18,9 @@ const routes = {
 };
 
 export default (instance: FastifyInstance) => {
-  Object.entries(routes).forEach(([key, value]) => instance.route({ ...value, schema: schema[key] }));
+  (Object.keys(routes) as Array<keyof typeof routes>).forEach((key) => {
+    const value = routes[key];
+
+    instance.route({ ...value, schema: schema[key] });
+  });
 };

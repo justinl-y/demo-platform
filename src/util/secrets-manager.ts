@@ -24,12 +24,19 @@ const secretValues = {
   PG_SSL_CERT: '',
 };
 
-// Function to update secretValues based on the response from the Secrets Manager
-const updateSecretValues = (secretsManagerValues, values) => {
-  secretsManagerValues.forEach((secretValue) => {
-    const key = secretValue.Name.split('/').pop(); // Extract the key from the Name property
+type SecretValues = typeof secretValues;
 
-    if (key in values) values[key] = secretValue.SecretString; // Update the secretValues object. Optionally process.env[key] = secret;
+// Function to update secretValues based on the response from the Secrets Manager
+const updateSecretValues = (secretsManagerValues: SecretValueEntry[], values: SecretValues): void => {
+  secretsManagerValues.forEach((secretValue: SecretValueEntry) => {
+    const name = secretValue.Name;
+    const secret = secretValue.SecretString;
+
+    if (!name || !secret) return;
+
+    const key = name.split('/').pop(); // Extract the key from the Name property
+
+    if (key && key in values) values[key as keyof SecretValues] = secret; // Update the secretValues object. Optionally process.env[key] = secret;
   });
 };
 

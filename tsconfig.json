@@ -2,10 +2,9 @@
   "extends": "@tsconfig/node24/tsconfig.json",
   "compilerOptions": {
     "allowJs": true,
-    "noImplicitAny": false,
+    "noImplicitAny": true,
     "outDir": "./dist",
-    "rootDir": "./src",
-    "baseUrl": "src"
+    "rootDir": "./src"
   },
   "include": [
     "./src/**/*"
