@@ -1,8 +1,7 @@
 #!/bin/bash
 
 mkdir -p /var/log/eb-docker/containers/nginx-proxy/healthd
-chown -R 101:101 /var/log/eb-docker/containers/nginx-proxy/healthd
-chmod -R u+rwX,g+rwX,o-rwx /var/log/eb-docker/containers/nginx-proxy/healthd
+chmod -R 777 /var/log/eb-docker/containers/nginx-proxy/healthd
 
 if [ -d "/etc/healthd" ]
 then
