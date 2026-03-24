@@ -1,11 +1,11 @@
-const pg = require('pg');
+import pg from 'pg';
 
 const { Pool } = pg;
 
 const PG_ENV = {
   PG_HOST: 'db',
   PG_DATABASE: 'test',
-  PG_PORT: '5432',
+  PG_PORT: 5432,
   PG_USER: 'test',
   PG_PASSWORD: 'test',
 };
@@ -25,22 +25,28 @@ pool.on('error', (err, client) => {
   process.exit(-1);
 });
 
-const query = async (sql, params) => {
+const query = async <TRow = Record<string, unknown>>(
+  sql: string,
+  params?: readonly unknown[],
+): Promise<TRow[] | undefined> => {
   const client = await pool.connect();
 
   try {
-    const { rows } = await client.query(sql, params);
+    const result = params === undefined
+      ? await client.query(sql)
+      : await client.query(sql, [...params]);
 
-    return rows;
+    return result.rows as TRow[];
   }
   catch (err) {
     console.error(err);
+    return undefined;
   }
   finally {
     client.release();
   }
 };
 
-module.exports = {
+export {
   query,
 };

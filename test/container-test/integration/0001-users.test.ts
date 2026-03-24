@@ -5,7 +5,9 @@ import {
 } from 'vitest';
 
 // import db from '../lib/db';
-import { noAuthAPI } from '../lib/api';
+import { noAuthAPI } from '../lib/api.ts';
+
+type LooseObject = Record<string, any>;
 
 describe('0001 Users Group', () => {
   describe.skip('POST /users/login', async () => {
@@ -102,7 +104,7 @@ describe('0001 Users Group', () => {
         expect(responseData).toHaveProperty('permissions.level');
 
         expect(responseData.customers).toBeTypeOf('object');
-        responseData.customers.forEach((customer) => {
+        responseData.customers.forEach((customer: LooseObject) => {
           expect(customer).toBeTypeOf('object');
           expect(customer).toHaveProperty('id');
           expect(customer).toHaveProperty('created_at');
@@ -149,7 +151,7 @@ describe('0001 Users Group', () => {
 
         expect(responseData).toHaveProperty('groups');
         expect(responseData.groups).toBeTypeOf('object');
-        responseData.groups.forEach((group) => {
+        responseData.groups.forEach((group: LooseObject) => {
           expect(group).toBeTypeOf('object');
           expect(group).toHaveProperty('id');
           expect(group).toHaveProperty('customer_id');

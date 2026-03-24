@@ -14,14 +14,13 @@
     "rootDir": ".",
     "types": [
       "node",
+      "vitest/globals"
     ],
   },
   "include": [
-    "./src/**/*",
-    "./test/container-test/**/*"
+    "./**/*.ts"
   ],
   "exclude": [
-    "./node_modules/**/*",
-    "./test/container-test/node_modules/**/*"
+    "./node_modules/**/*"
   ]
 }

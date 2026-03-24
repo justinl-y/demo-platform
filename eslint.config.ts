@@ -7,6 +7,7 @@ export default [
     ignores: [
       '**/node_modules/**',
     ],
+    ts: true,
   }),
   plugins['@stylistic'].configs.customize({
     semi: true,

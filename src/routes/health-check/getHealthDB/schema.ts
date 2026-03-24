@@ -23,7 +23,7 @@ const response = {
   },
 };
 
-module.exports = {
+export default {
   ...route,
   response,
 };

@@ -3,7 +3,7 @@ import {
   test,
 } from 'vitest';
 
-import db from '../lib/db';
+import { query } from '../lib/db.ts';
 
 test('DB test', async () => {
   const sql = `INSERT INTO public.users
@@ -49,9 +49,9 @@ test('DB test', async () => {
     );
   `;
 
-  await db.query(sql);
+  await query(sql);
 
-  const result = await db.query('SELECT * FROM public.users WHERE email=$1', ['flibble@semios.com']);
+  const result = await query('SELECT * FROM public.users WHERE email=$1', ['flibble@semios.com']);
 
   expect(result).toBeTypeOf('object');
 });

@@ -7,14 +7,14 @@ import {
   routePropertiesCore,
 } from '../../util/functions/functions.ts';
 import schema from './schema.ts';
+import getHealthDB from './getHealthDB/getHealthDB.ts';
 import getHealthEB from './getHealthEB/getHealthEB.ts';
-// import getHealthDB from './getHealthDB/getHealthDB.ts';
 
 const { GET } = HTTP_METHODS;
 
 const routes = {
+  getHealthDB: routePropertiesCore(GET, '/health_db', getHealthDB),
   getHealthEB: routePropertiesCore(GET, '/health_eb', getHealthEB),
-  // getHealthDB: routePropertiesCore(GET, '/health_db', getHealthDB),
 };
 
 export default (instance: FastifyInstance) => {

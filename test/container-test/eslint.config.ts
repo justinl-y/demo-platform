@@ -8,7 +8,6 @@ export default [
       '**/node_modules/**',
     ],
     ts: true,
-    typeChecking: true,
   }),
   plugins['@stylistic'].configs.customize({
     semi: true,

@@ -28,13 +28,13 @@
     "ci-build": "printf \"db api test\" | tr ' ' '\n' | xargs -n1 -P3 -I{} npm run ci-build-service {}",
     "ci-build-clean": "printf \"db api test\" | tr ' ' '\n' | xargs -n1 -P3 -I{} npm run ci-build-service-clean {}",
     "ci-up": "TEST_CASE=${TEST_CASE} docker compose -p ci -f docker-compose-ci.yml up",
-    "lint": "eslint --config eslint.config.mjs",
+    "lint": "eslint --config eslint.config.ts",
     "lint-fix": "eslint --fix \"**/*.{ts}\"",
     "prepare": "command -v git >/dev/null 2>&1 && git config core.hooksPath .githooks || true"
   },
   "lint-staged": {
-    "**/*.js": "eslint --config eslint.config.mjs",
-    "**/*.ts": "eslint --config eslint.config.mjs"
+    "**/*.js": "eslint --config eslint.config.ts",
+    "**/*.ts": "eslint --config eslint.config.ts"
   },
   "dependencies": {
     "@aws-sdk/client-secrets-manager": "^3.1014.0",
@@ -61,6 +61,7 @@
     "@types/lodash": "^4.17.24",
     "@types/node": "^25.5.0",
     "eslint": "^9.36.0",
+    "jiti": "^2.6.1",
     "lint-staged": "^16.4.0",
     "neostandard": "^0.13.0",
     "typescript": "^6.0.2"
