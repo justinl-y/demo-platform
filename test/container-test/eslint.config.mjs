@@ -4,7 +4,9 @@ import neostandard, { plugins } from 'neostandard';
 // @stylistic customizable options here: https://github.com/eslint-stylistic/eslint-stylistic/blob/main/packages/eslint-plugin/configs/customize.ts
 export default [
   ...neostandard({
-    ignores: [],
+    ignores: [
+      '**/node_modules/**',
+    ],
   }),
   plugins['@stylistic'].configs.customize({
     semi: true,

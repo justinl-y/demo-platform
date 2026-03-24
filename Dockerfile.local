@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.7
-FROM node:24-alpine
+FROM node:25-alpine
 
 ENV API_HOME="/srv/api"
 
@@ -11,12 +11,12 @@ COPY package*.json ${API_HOME}/
 COPY tsconfig.json ${API_HOME}/
 
 # Keep local image builds fast by installing dependencies from lockfile only.
-RUN --mount=type=secret,id=npm_token /bin/sh -c "if test -f /run/secrets/npm_token; then NPM_TOKEN=$(cat /run/secrets/npm_token); if test -n \"${NPM_TOKEN}\"; then printf '//registry.npmjs.org/:_authToken=%s\\n' \"${NPM_TOKEN}\" > .npmrc; fi; fi; npm ci --include=dev; rm -f .npmrc"
+RUN --mount=type=secret,id=npm_token --mount=type=cache,target=/root/.npm /bin/sh -c "if test -f /run/secrets/npm_token; then NPM_TOKEN=$(cat /run/secrets/npm_token); if test -n \"${NPM_TOKEN}\"; then printf '//registry.npmjs.org/:_authToken=%s\\n' \"${NPM_TOKEN}\" > .npmrc; fi; fi; npm ci --include=dev; rm -f .npmrc"
 
 COPY src ${API_HOME}/src
 COPY pm2 ${API_HOME}/pm2
 
-# check for ts errors as using node 24 native ts support
+# check for ts errors as using node native ts support
 RUN npm run typecheck
 
 EXPOSE 8000

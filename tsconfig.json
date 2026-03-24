@@ -5,15 +5,19 @@
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "noImplicitAny": true,
-    "strict": true,
+    "isolatedModules": true,
+    "erasableSyntaxOnly": true,
+    "forceConsistentCasingInFileNames": true,
+    "verbatimModuleSyntax": true,
+    "rewriteRelativeImportExtensions": true,
+    "moduleDetection": "force",
     "outDir": "./dist",
-    "rootDir": "./src"
+    "rootDir": "./src",
   },
   "include": [
     "./src/**/*"
   ],
   "exclude": [
-    "dist",
-    "node_modules"
+    "./node_modules/**/*"
   ]
 }

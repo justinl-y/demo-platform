@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.7
-FROM node:24-alpine AS builder
+FROM node:25-alpine AS builder
 
 RUN apk add --no-cache bash
 
@@ -11,17 +11,16 @@ COPY package*.json ${API_HOME}/
 COPY tsconfig.json ${API_HOME}/
 
 # Use deterministic installs and mount npm token as a BuildKit secret when present.
-RUN --mount=type=secret,id=npm_token /bin/bash -c "if test -f /run/secrets/npm_token; then NPM_TOKEN=$(cat /run/secrets/npm_token); if test -n \"${NPM_TOKEN}\"; then printf '//registry.npmjs.org/:_authToken=%s\n' \"${NPM_TOKEN}\" > .npmrc; fi; fi; npm ci;"
+RUN --mount=type=secret,id=npm_token --mount=type=cache,target=/root/.npm /bin/bash -c "if test -f /run/secrets/npm_token; then NPM_TOKEN=$(cat /run/secrets/npm_token); if test -n \"${NPM_TOKEN}\"; then printf '//registry.npmjs.org/:_authToken=%s\n' \"${NPM_TOKEN}\" > .npmrc; fi; fi; npm ci; rm -f .npmrc"
 
 COPY src ${API_HOME}/src
 
-# check for ts errors as using node 24 native ts support
+# check for ts errors as using node native ts support
 RUN npm run typecheck
 
 RUN npm prune --omit=dev
-RUN rm -f .npmrc
 
-FROM node:24-alpine AS runtime
+FROM node:25-alpine AS runtime
 
 ENV API_HOME="/srv/api"
 

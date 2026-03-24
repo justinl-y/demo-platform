@@ -5,8 +5,7 @@ import neostandard, { plugins } from 'neostandard';
 export default [
   ...neostandard({
     ignores: [
-      'dist',
-      'node_modules',
+      '**/node_modules/**',
     ],
     ts: true,
     typeChecking: true,

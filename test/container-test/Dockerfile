@@ -1,9 +1,9 @@
-FROM node:24-alpine
+FROM node:25-alpine
 
-RUN apk update \
-  && apk add --no-cache bash \
-  && apk add --no-cache netcat-openbsd \
-  && apk add --no-cache postgresql16-contrib
+RUN apk add --no-cache \
+  bash \
+  netcat-openbsd \
+  postgresql18-contrib
 
 WORKDIR /usr
 
