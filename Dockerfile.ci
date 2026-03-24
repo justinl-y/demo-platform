@@ -4,7 +4,7 @@ FROM node:24-alpine
 RUN apk update \
   && apk add bash
 
-# with mounted volumes file permissions can only be changed on the host machine, not within Docker, 
+# with mounted volumes file permissions can only be changed on the host machine, not within Docker,
 # thus executable scripts requiring explicit permissions via Docker must be in a separate, non-mounted folder
 ENV SCRIPTS_HOME="/srv"
 
@@ -26,5 +26,8 @@ RUN npm i pm2@6.0.14 -g
 COPY . ${API_HOME}/
 
 RUN --mount=type=secret,id=npm_token /bin/sh -c "if test -f /run/secrets/npm_token; then NPM_TOKEN=$(cat /run/secrets/npm_token); if test -n \"${NPM_TOKEN}\"; then printf '//registry.npmjs.org/:_authToken=%s\\n' \"${NPM_TOKEN}\" > .npmrc; fi; fi; npm ci --include=dev; rm -f .npmrc"
+
+# check for ts errors as using node 24 native ts support
+RUN npm run typecheck
 
 EXPOSE 8000

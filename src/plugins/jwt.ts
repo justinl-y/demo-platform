@@ -8,7 +8,7 @@ import type {
 import {
   auth,
   user,
-} from '../config/index.js';
+} from '../config/index.ts';
 
 function jwtPlugin(fastify: FastifyInstance, options: FastifyPluginOptions): void {
   const jwtOptions = {

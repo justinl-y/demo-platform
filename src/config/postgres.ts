@@ -1,6 +1,6 @@
 import os from 'os';
-import { secretValues } from '../util/secrets-manager.js';
-import { apiEnv } from './api.js';
+import { secretValues } from '../util/secrets-manager.ts';
+import { apiEnv } from './api.ts';
 
 const numberCPUs = os.cpus().length;
 const POOL_SIZE_PER_CPU = 4;

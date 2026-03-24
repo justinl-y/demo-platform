@@ -2,7 +2,8 @@
   "apps" : [
     {
       "name": "api-demo",
-      "script": "dist/index.js",
+      "script": "src/index.ts",
+      "interpreter": "node",
       "error_file": "/var/log/api/error.log",
       "out_file": "/var/log/api/access.log",
       "exec_mode": "cluster",

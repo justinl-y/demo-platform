@@ -16,7 +16,9 @@
     "url": "git@github.com:justinl-y/api-demo.git"
   },
   "scripts": {
-    "build": "rimraf dist && tsc -p tsconfig.json && swc -D src -d dist --strip-leading-paths",
+    "build": "npm run typecheck",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "start:native": "node src/index.ts",
     "api-build": "docker compose -p api -f docker-compose-local.yml build --no-cache",
     "api-up": "docker compose -p api -f docker-compose-local.yml up",
     "api-down": "docker compose -p api -f docker-compose-local.yml down -v",
@@ -53,16 +55,12 @@
     "pg": "^8.20.0"
   },
   "devDependencies": {
-    "@swc/cli": "^0.8.0",
-    "@swc/core": "^1.15.21",
     "@tsconfig/node24": "^24.0.4",
     "@types/lodash": "^4.17.24",
     "@types/node": "^25.5.0",
     "eslint": "^9.36.0",
     "lint-staged": "^16.4.0",
     "neostandard": "^0.13.0",
-    "rimraf": "^6.1.3",
-    "ts-node": "^10.9.2",
     "typescript": "^6.0.2"
   }
 }

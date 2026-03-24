@@ -6,10 +6,10 @@ import {
 } from '@aws-sdk/client-secrets-manager';
 import {
   aws as awsConfig,
-} from '../config/aws.js';
+} from '../config/aws.ts';
 import {
   apiEnv,
-} from '../config/api.js';
+} from '../config/api.ts';
 
 const secretsManagerClient = new SecretsManagerClient(awsConfig);
 

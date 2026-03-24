@@ -1,7 +1,7 @@
-import buildInstance from './build-instance.js';
-import { apiEnv, server } from './config/index.js';
-import { getServerDetails } from './util/functions/safe-typing.js';
-import { localHost } from './util/constants.js';
+import buildInstance from './build-instance.ts';
+import { apiEnv, server } from './config/index.ts';
+import { getServerDetails } from './util/functions/safe-typing.ts';
+import { localHost } from './util/constants.ts';
 
 const instance = await buildInstance();
 

@@ -6,7 +6,7 @@ import {
 } from 'http-errors-enhanced';
 import {
   pgPatch,
-} from './postgres-named.js';
+} from './postgres-named.ts';
 import type {
   Pool,
   PoolClient,

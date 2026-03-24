@@ -1,6 +1,6 @@
-import consoleErrorHandler from './errors.js';
-import consoleInteractionHandler from './interactions.js';
-import responseBodyOnErrorHandler from './responseBodyOnError.js';
+import consoleErrorHandler from './errors.ts';
+import consoleInteractionHandler from './interactions.ts';
+import responseBodyOnErrorHandler from './responseBodyOnError.ts';
 
 export {
   consoleErrorHandler,

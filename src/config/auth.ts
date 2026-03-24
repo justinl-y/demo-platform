@@ -1,4 +1,4 @@
-import { secretValues } from '../util/secrets-manager.js';
+import { secretValues } from '../util/secrets-manager.ts';
 
 const auth = {
   secret: secretValues.AUTH_SECRET,

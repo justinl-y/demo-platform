@@ -1,14 +1,14 @@
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 
 import {
   HTTP_METHODS,
-} from '../../util/constants.js';
+} from '../../util/constants.ts';
 import {
   routePropertiesCore,
-} from '../../util/functions/functions.js';
-import schema from './schema.js';
-import getHealthEB from './getHealthEB/getHealthEB.js';
-// import getHealthDB from './getHealthDB/getHealthDB.js';
+} from '../../util/functions/functions.ts';
+import schema from './schema.ts';
+import getHealthEB from './getHealthEB/getHealthEB.ts';
+// import getHealthDB from './getHealthDB/getHealthDB.ts';
 
 const { GET } = HTTP_METHODS;
 

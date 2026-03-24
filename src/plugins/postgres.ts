@@ -10,11 +10,11 @@ import type {
 
 import {
   postgres,
-} from '../config/index.js';
+} from '../config/index.ts';
 import {
   query,
   transaction,
-} from '../util/database.js';
+} from '../util/database.ts';
 
 // const NUMERIC_PG_OID = 1700;
 

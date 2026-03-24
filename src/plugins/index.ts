@@ -1,5 +1,5 @@
-import jwtPlugin from './jwt.js';
-import postgresPlugin from './postgres.js';
+import jwtPlugin from './jwt.ts';
+import postgresPlugin from './postgres.ts';
 
 export default [
   jwtPlugin,

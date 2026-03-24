@@ -7,16 +7,16 @@ import {
   helmet,
   server,
   user,
-} from './api.js';
+} from './api.ts';
 import {
   auth,
-} from './auth.js';
+} from './auth.ts';
 import {
   aws,
-} from './aws.js';
+} from './aws.ts';
 import {
   postgres,
-} from './postgres.js';
+} from './postgres.ts';
 
 if (!apiEnv) {
   console.log('Exiting: No api environment variable set...');

@@ -7,18 +7,18 @@ import accepts from '@fastify/accepts';
 import compress from '@fastify/compress';
 import formBody from '@fastify/formbody';
 
-import * as config from './config/index.js';
-import plugins from './plugins/index.js';
-import routes from './routes/index.js';
+import * as config from './config/index.ts';
+import plugins from './plugins/index.ts';
+import routes from './routes/index.ts';
 import {
   consoleErrorHandler,
   consoleInteractionHandler,
   responseBodyOnErrorHandler,
-} from './hooks/index.js';
+} from './hooks/index.ts';
 
 import {
   batchGetSecretValue,
-} from './util/secrets-manager.js';
+} from './util/secrets-manager.ts';
 
 // for addition of reply.error property
 declare module 'fastify' {

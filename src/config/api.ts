@@ -2,7 +2,7 @@ import ajvFormats from 'ajv-formats';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { FastifyServerOptions } from 'fastify';
 
-import customAjvFormatsPlugin from '../plugins/customAjvFormats.js';
+import customAjvFormatsPlugin from '../plugins/customAjvFormats.ts';
 
 const apiEnv: 'TEST' | 'STAGE' | 'PROD' = (process.env.API_ENV || 'TEST').toUpperCase() as 'TEST' | 'STAGE' | 'PROD';
 

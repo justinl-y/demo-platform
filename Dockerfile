@@ -9,14 +9,15 @@ WORKDIR ${API_HOME}
 
 COPY package*.json ${API_HOME}/
 COPY tsconfig.json ${API_HOME}/
-COPY .swcrc ${API_HOME}/
 
 # Use deterministic installs and mount npm token as a BuildKit secret when present.
 RUN --mount=type=secret,id=npm_token /bin/bash -c "if test -f /run/secrets/npm_token; then NPM_TOKEN=$(cat /run/secrets/npm_token); if test -n \"${NPM_TOKEN}\"; then printf '//registry.npmjs.org/:_authToken=%s\n' \"${NPM_TOKEN}\" > .npmrc; fi; fi; npm ci;"
 
 COPY src ${API_HOME}/src
 
-RUN npm run build
+# check for ts errors as using node 24 native ts support
+RUN npm run typecheck
+
 RUN npm prune --omit=dev
 RUN rm -f .npmrc
 
@@ -30,7 +31,7 @@ RUN npm i -g pm2@6.0.14
 
 COPY --from=builder ${API_HOME}/package*.json ${API_HOME}/
 COPY --from=builder ${API_HOME}/node_modules ${API_HOME}/node_modules
-COPY --from=builder ${API_HOME}/dist ${API_HOME}/dist
+COPY --from=builder ${API_HOME}/src ${API_HOME}/src
 COPY pm2 ${API_HOME}/pm2
 
 EXPOSE 8000

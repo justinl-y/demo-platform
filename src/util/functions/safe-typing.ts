@@ -1,7 +1,7 @@
-import { AddressInfo } from 'node:net';
+import type { AddressInfo } from 'node:net';
 
-import { apiEnv } from '../../config/index.js';
-import { localHost } from '../constants.js';
+import { apiEnv } from '../../config/index.ts';
+import { localHost } from '../constants.ts';
 
 function getServerDetails(serverAddress: AddressInfo | string | null): string {
   // Use a type guard to safely check if it's an AddressInfo object

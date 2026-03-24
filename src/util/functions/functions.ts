@@ -1,4 +1,4 @@
-import { RouteHandlerMethod } from 'fastify';
+import type { RouteHandlerMethod } from 'fastify';
 
 type RouteProperties = {
   method: string;
