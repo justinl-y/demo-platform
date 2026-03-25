@@ -1,57 +1,80 @@
 # API-Demo Docs
 
-TODO intro text
+API-Demo is a concept project showcasing a RESTful web API for use as part of a web application. This project has the intent of demonstrating all aspects of modern web api development covering:
+
+API:
+
+- Docker containerization
+- RESTful API
+- Node.js v25
+- Fastify
+- OpenAPI JSON schema
+- OpenAPI docs
+- TypeScript
+- Postgres SQL
+
+Developer Experience:
+
+- API environments for development and testing with local and remote resources
+- Integration testing with Vitest
+- CI/CD pipelines
+
+Cloud:
+
+- AWS utilization:
+
+- User AWS SSO authentication
+- RDS Postgres
+- Secrets Manager
+- Elastic Beanstalk/EC2
 
 ## Dockerized Environments
 
-API-Web utilizes Docker containers for environment hosting and can be spun up as a local API container with connection to remote services (AWS, stage DB) or a test API with connection to a local DB (for integration test runs or local DB operation development/testing).
+API-Demo utilizes Docker containers for environment hosting and can be spun up as a local API container with connection to remote services (AWS, stage DB) or a test API with connection to a local DB (for integration test runs or local DB operation development/testing).
 
 ### Local Environment With Connection to Remote Services
 
-AWS Credentials are required. Message @justin for these. Credentials need to be added to local `.bash_profile` in the below format:
+AWS credentials are required, but should be short-lived and sourced from AWS SSO login (not persisted in shell profile files).
 
-```text
-export ALTRAC_API_W_AWS_ACCESS_KEY_ID=XXXX
-export ALTRAC_API_W_AWS_SECRET_ACCESS_KEY=XXXX
+One-time local setup:
+
+```bash
+aws configure sso --profile api-demo-stage
 ```
 
-Live DBs are protected with a whitelist IP security group. Run `https://whatismyipaddress.com` and send your IPv4 to @justin.
-
-To spin up an API container use the following npm commands:
+Normal startup flow:
 
 ```bash
 npm run api-down
 npm run api-build
-npm run api-up
+npm run api-up-sso
 ```
 
-Once server start has completed the API will be available on `localhost:8081`
+The `api-up-sso` command performs AWS SSO login, exports temporary credentials for the process, and starts Docker compose with those values. A user account on AWS Identity Center needs to be set for this to work correctly.
+
+Live DBs are protected with a whitelist IP security group. Run `https://whatismyipaddress.com` and send your IPv4 to @justin.
+
+Once server start has completed the API will be available on `localhost:6662`
 
 ### Test Environment
 
-Three containers are utilized for operations with the test environment: DB, API and TEST. The DB container hosts a local PG instance and test DB built with the Altrac DB schema (located at: `test/container-db/schema`).  The API container hosts the API built with local code.  The TEST container is run time available with the purpose of seeding the DB with seed data and executing end point integration test.
+Three containers are utilized for operations with the test environment: DB, API and TEST. The DB container uses the upstream PostGIS image and mounts the Demo DB schema from `test/container-db/schema` into `/docker-entrypoint-initdb.d`. The API container hosts the API built with local code. The TEST container is run time available with the purpose of seeding the DB with seed data and executing end point integration test.
 
-To create the TEST environment open three terminal windows and complete the following steps:
+To create the TEST environment open two terminal windows and complete the following steps:
 
 In terminal 1:
 
 ```bash
 npm run ci-down
 npm run ci-build
-npm run ci-up db
-```
-
-This will remove any existing docker volumes (any `package.json` changes will require this!), build the ci images and spin up the DB
-
-In termminal 2:
-
-```bash
 npm run ci-up api
 ```
 
-This will spin up the API. Once has completed the API will be available on `localhost:8082`.
+This will remove any existing docker volumes (any `package.json` changes will require this!), build the CI API/TEST images, and spin up the DB and API.
 
-In termminal 3:
+Once completed the API will be available on `localhost:6663`.
+
+In terminal 2:
 
 ```bash
 npm run ci-up test
@@ -67,7 +90,7 @@ TEST_CASE=1 npm run ci-up test
 
 ## Database Library - util/database.js
 
-API-W contains a bespoke database interaction library that significantly extends the capabilities of `node-postgres`. This library has two functions, db.query and db.transaction that are exposed as methods on a `db` object decorating the Fastify instance.
+API-Demo contains a bespoke database interaction library that significantly extends the capabilities of `node-postgres`. This library has two functions, db.query and db.transaction that are exposed as methods on a `db` object decorating the Fastify instance.
 
 `db.query` is for SQL data querying language (DQL)
 `db.transaction` for SQL data manipulation language (DML)
@@ -174,7 +197,7 @@ The `db.transaction(...)` function enables you to execute a series of consecutiv
 
 ----
 
-#### Example of `db.transactionAsync(...) `:
+#### Example of `db.transactionAsync(...)`
 
 ```sql
 --- routes/customers/removeCustomerUsers.sql
@@ -243,7 +266,7 @@ INSERT INTO some_table (some_x_col, some_y_col) VALUES ($x_0, $y_0), ($x_1, $y_1
 
 ### Instance methods and the scope of *this*
 
-When the API starts plugins are registered with the Fastify instance with the Postges plugin being one of these. This plugin injects Postgres configuration to `node-postgres` (pg), creates and binds a PG pool to `database.query` & `database.transaction` and finally decorates the Fastify instance with a db object exposing `database.query` & `database.transaction` as methods available with `this.db.query/transaction`. This has the advantage of not requiring a `database.js` import wherever DB interaction is needed. The tradeoff is the need for a greater understanding of the value of *this* in terms of local value and propagation.  See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/this for details but in short in order for the instance value of *this* to be propagated *named functions* (not arrow/anonymous) are a requirement, with instance *this*  supplied to child functions with the use of `call()/apply()`.
+When the API starts plugins are registered with the Fastify instance with the Postgres plugin being one of these. This plugin injects Postgres configuration to `node-postgres` (pg), creates and binds a PG pool to `database.query` & `database.transaction` and finally decorates the Fastify instance with a db object exposing `database.query` & `database.transaction` as methods available with `this.db.query/transaction`. This has the advantage of not requiring a `database.js` import wherever DB interaction is needed. The tradeoff is the need for a greater understanding of the value of *this* in terms of local value and propagation.  See <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/this> for details but in short in order for the instance value of *this* to be propagated *named functions* (not arrow/anonymous) are a requirement, with instance *this*  supplied to child functions with the use of `call()/apply()`.
 
 e.g.
 

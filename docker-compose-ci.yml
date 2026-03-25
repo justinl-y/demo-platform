@@ -1,6 +1,6 @@
 services:
   db:
-    build: ./test/container-db
+    image: postgis/postgis:18-3.6
     command: postgres
       -c logging_collector=on
       -c log_destination=stderr
