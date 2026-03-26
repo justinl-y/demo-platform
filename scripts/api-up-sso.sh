@@ -2,14 +2,30 @@
 set -euo pipefail
 
 PROFILE="${AWS_PROFILE:-api-demo-stage}"
+LOG_QUIET="${API_DEMO_SSO_QUIET:-0}"
+
+log() {
+  if [[ "${LOG_QUIET}" != "1" ]]; then
+    echo "$@"
+  fi
+}
 
 if ! command -v aws >/dev/null 2>&1; then
   echo "aws CLI is required but was not found in PATH" >&2
   exit 1
 fi
 
-echo "Starting AWS SSO login for profile '${PROFILE}'..."
-aws sso login --profile "${PROFILE}"
+# Checks whether the profile can provide valid credentials without re-auth.
+has_active_session() {
+  aws sts get-caller-identity --profile "${PROFILE}" >/dev/null 2>&1
+}
+
+if has_active_session; then
+  log "Active AWS SSO session found for profile '${PROFILE}'. Reusing it."
+else
+  log "No active AWS SSO session for profile '${PROFILE}'. Starting browser login..."
+  aws sso login --profile "${PROFILE}"
+fi
 
 # Fetch and extract credentials securely
 creds=$(aws configure export-credentials --profile "${PROFILE}" --format env) || {
