@@ -39,5 +39,7 @@ jobs:
           environment_name: ${{ vars.EB_ENVIRONMENT_NAME }}
           region: ${{ vars.AWS_REGION }}
           version_label: ${{ steps.version.outputs.label }}
+          version_description: "Git commit ${{ github.sha }}"
           deployment_package: deploy.zip
           wait_for_deployment: true
+          wait_for_environment_recovery: 180
