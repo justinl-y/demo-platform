@@ -1,5 +1,5 @@
 import ajvFormats from 'ajv-formats';
-import type { IncomingMessage, ServerResponse } from 'node:http';
+import type { IncomingMessage, ServerResponse } from 'http';
 import type { FastifyServerOptions } from 'fastify';
 
 import customAjvFormatsPlugin from '../plugins/customAjvFormats.ts';
@@ -14,7 +14,7 @@ const cors = {
   allowedHeaders: [
     'Authorization',
     'Content-Type',
-    'X-Altrac-Application',
+    'X-Demo-Application',
   ],
   credentials: true,
   exposedHeaders: [
@@ -30,9 +30,7 @@ const cors = {
     'HEAD',
     'OPTIONS',
   ],
-  origin: [
-    'http://localhost:3000',
-  ],
+  origin: [] as string[],
 };
 
 const externalPort = apiEnv === 'TEST' ? '6663' : '6662' as const;
@@ -81,9 +79,7 @@ const server = {
 const user = {
   allowedCountries: [
     'UNITED STATES',
-    'ARGENTINA',
     'CANADA',
-    'CHILE',
   ],
   password: {
     passLength: 8,
@@ -100,14 +96,19 @@ const user = {
 
 if (apiEnv === 'PROD') {
   cors.origin = [
-    'https://altrac.io',
-    'https://app.altrac.io',
-    'https://admin.altrac.io',
-    'https://altrac.com',
-    'https://app.altrac.com',
-    'https://admin.altrac.com',
+    'https://demo.discovered-check.ca',
   ];
-};
+}
+else if (apiEnv === 'STAGE') {
+  cors.origin = [
+    'https://demo-stage.discovered-check.ca',
+  ];
+}
+else {
+  cors.origin = [
+    'http://localhost:3000',
+  ];
+}
 
 export {
   apiEnv,

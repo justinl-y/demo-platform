@@ -22,6 +22,7 @@ const secretValues = {
   PG_ROLE: 'test',
   PG_PASSWORD: 'test',
   PG_SSL_CERT: '',
+  SENTRY_DSN: '',
 };
 
 type SecretValues = typeof secretValues;

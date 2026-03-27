@@ -5,16 +5,13 @@ import type {
   FastifyReply,
 } from 'fastify';
 
-const consoleInteractionHandler = async (req: FastifyRequest, rep: FastifyReply) => {
-  const {
-    method: reqMethod,
-    url: reqUrl,
-    user: reqUser,
-    body: reqBody,
-    routeOptions: {
-      url: route,
-    },
-  } = req;
+const buildInteractionMessage = (req: FastifyRequest, rep: FastifyReply): string | null => {
+  const reqMethod = req.method;
+  const reqMethodUpper = reqMethod.toUpperCase();
+  const reqUrl = req.url;
+  const reqUser = req.user;
+  const reqBody = req.body;
+  const route = req.routeOptions?.url;
   const {
     raw: {
       statusMessage: repStatusMessage,
@@ -25,42 +22,62 @@ const consoleInteractionHandler = async (req: FastifyRequest, rep: FastifyReply)
   } = rep;
 
   // ignore OPTIONS requests
-  if (reqMethod.toUpperCase() === 'OPTIONS') return;
+  if (reqMethodUpper === 'OPTIONS') return null;
 
   // ignore health_check requests
-  if (reqUrl === '/health_eb') return;
+  if (reqUrl === '/health_eb') return null;
 
   // req messages
-  const reqRoute = `${reqMethod.toUpperCase()} ${route}`;
-  const reqMessage = `Request: ${reqMethod.toUpperCase()} ${reqUrl}`;
+  const reqRoute = `${reqMethodUpper} ${route || reqUrl}`;
+  const reqMessage = `Request: ${reqMethodUpper} ${reqUrl}`;
   const reqBodyJson = _.isObject(reqBody) ? JSON.stringify(_.omit(reqBody, ['password'])) : '{}';
-
-  const reqReturn = (_.includes(['POST', 'PUT', 'PATCH', 'DELETE'], reqMethod.toUpperCase())) ? `${reqMessage} => ${reqBodyJson}` : `${reqMessage}`;
+  const reqReturn = _.includes(['POST', 'PUT', 'PATCH', 'DELETE'], reqMethodUpper)
+    ? `${reqMessage} => ${reqBodyJson}`
+    : reqMessage;
 
   // set user email
   let userEmail = 'Not Set - Probably unauthenticated route';
   if (_.has(reqUser, 'email')) ({ email: userEmail } = reqUser);
 
   // res messages
-  const resMessage = `Response: ${repStatusCode} ${repStatusMessage}`;
+  const resMessage = `Response: ${repStatusCode} ${repStatusMessage || ''}`.trim();
 
-  const resErrBodyMessage
-= `${resMessage}
-Response Body: ${repErrBody}`;
+  const resErrBodyJson = _.isObject(repErrBody) ? JSON.stringify(repErrBody) : repErrBody;
+  const resErrBodyMessage = `${resMessage}\nResponse Body: ${resErrBodyJson}`;
+  const resReturn = repErrBody ? resErrBodyMessage : resMessage;
 
-  const resReturn = (repErrBody) ? resErrBodyMessage : `${resMessage}`;
-
-  const message
-= `\r\n
+  const message = `\r\n
 Route: ${reqRoute}
 ${reqReturn}
 Request On: ${new Date().toISOString()}
 User: ${userEmail}
 ${resReturn}
-Response Time: ${elapsedTime.toFixed(0)}ms
+Response Time: ${(typeof elapsedTime === 'number' ? elapsedTime : 0).toFixed(0)}ms
 \r\n-----------------------------------------------------------------------------\r\n`;
 
+  return message;
+};
+
+const buildSentryInteractionMessage = (req: FastifyRequest, rep: FastifyReply): string | null => {
+  const message = buildInteractionMessage(req, rep);
+
+  if (!message) return null;
+
+  // Minimal redaction: only redact long numeric sequences that might be sensitive
+  return message.replace(/\b\d{10,16}\b/g, '[redacted-number]');
+};
+
+const consoleInteractionHandler = async (req: FastifyRequest, rep: FastifyReply) => {
+  const message = buildInteractionMessage(req, rep);
+
+  if (!message) return;
+
   console.log(message);
+};
+
+export {
+  buildInteractionMessage,
+  buildSentryInteractionMessage,
 };
 
 export default consoleInteractionHandler;
