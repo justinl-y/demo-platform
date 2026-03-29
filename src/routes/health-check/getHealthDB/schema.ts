@@ -2,6 +2,7 @@ const route = {
   tags: ['health'],
   summary: 'Database health check endpoint',
   description: 'Returns the current health status of the database server',
+  security: [],
 };
 
 const response = {

@@ -1,9 +1,9 @@
 import { secretValues } from '../util/secrets-manager.ts';
 
-const sentry = {
+const sentryConfig = {
   dsn: secretValues.SENTRY_DSN,
 };
 
 export {
-  sentry,
+  sentryConfig,
 };

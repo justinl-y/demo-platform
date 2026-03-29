@@ -2,6 +2,7 @@ const route = {
   tags: ['health'],
   summary: 'Elastic Beanstalk health check endpoint',
   description: 'Returns the current health status of Elastic Beanstalk API service',
+  security: [],
 };
 
 const response = {

@@ -24,8 +24,9 @@ const buildInteractionMessage = (req: FastifyRequest, rep: FastifyReply): string
   // ignore OPTIONS requests
   if (reqMethodUpper === 'OPTIONS') return null;
 
-  // ignore health_check requests
+  // ignore routes...
   if (reqUrl === '/health_eb') return null;
+  if (reqUrl.match(/api-docs/)) return null;
 
   // req messages
   const reqRoute = `${reqMethodUpper} ${route || reqUrl}`;

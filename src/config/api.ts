@@ -1,9 +1,3 @@
-import ajvFormats from 'ajv-formats';
-import type { IncomingMessage, ServerResponse } from 'http';
-import type { FastifyServerOptions } from 'fastify';
-
-import customAjvFormatsPlugin from '../plugins/customAjvFormats.ts';
-
 const apiEnv: 'TEST' | 'STAGE' | 'PROD' = (process.env.API_ENV || 'TEST').toUpperCase() as 'TEST' | 'STAGE' | 'PROD';
 
 const compress = {
@@ -34,38 +28,6 @@ const cors = {
 };
 
 const externalPort = apiEnv === 'TEST' ? '6663' : '6662' as const;
-
-type AjvPlugins = NonNullable<NonNullable<FastifyServerOptions['ajv']>['plugins']>;
-type AjvPlugin = Exclude<AjvPlugins[number], [unknown, unknown]>;
-
-const ajvFormatsPlugin = ajvFormats as unknown as AjvPlugin;
-
-const fastify: FastifyServerOptions = {
-  logger: false,
-  ajv: {
-    plugins: [
-      [ajvFormatsPlugin, { mode: 'full' }],
-      customAjvFormatsPlugin as AjvPlugin,
-    ],
-    customOptions: {
-      coerceTypes: false,
-      strict: false, // Allow additional properties (eg. `example` for documentation)
-    },
-  },
-  routerOptions: {
-    ignoreTrailingSlash: true,
-    ignoreDuplicateSlashes: true,
-    // caseSensitive: false,
-    onBadUrl: (path: string, req: IncomingMessage, res: ServerResponse) => {
-      res.statusCode = 400;
-      res.end(`Bad path: ${path}`);
-    },
-    defaultRoute: (req: IncomingMessage, res: ServerResponse) => {
-      res.statusCode = 404;
-      res.end();
-    },
-  },
-};
 
 const helmet = {
   global: true,
@@ -115,7 +77,6 @@ export {
   compress,
   cors,
   externalPort,
-  fastify,
   helmet,
   server,
   user,

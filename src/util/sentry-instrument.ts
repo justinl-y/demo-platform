@@ -1,7 +1,7 @@
 import * as Sentry from '@sentry/node';
 import { createRequire } from 'module';
 
-import { sentry } from '../config/sentry.ts';
+import { sentryConfig } from '../config/sentry.ts';
 import { apiEnv } from '../config/api.ts';
 
 const tracesSampleRate = {
@@ -37,7 +37,7 @@ const parseInteractionData = (interactionLog: string) => ({
 
 const require = createRequire(import.meta.url);
 
-if (apiEnv !== 'TEST' && sentry.dsn) {
+if (apiEnv !== 'TEST' && sentryConfig.dsn) {
   let profilingIntegration: unknown;
   let profilesSampleRate: number | undefined;
   let profilingStatusMessage = 'disabled: integration not initialized';
@@ -56,13 +56,14 @@ if (apiEnv !== 'TEST' && sentry.dsn) {
   }
 
   Sentry.init({
-    dsn: sentry.dsn,
+    dsn: sentryConfig.dsn,
     sendDefaultPii: true,
     tracesSampleRate: tracesSampleRate[apiEnv],
     environment: apiEnv,
     ignoreTransactions: [
       '/health_eb',
       '/favicon.ico',
+      /^\/api-docs(?:\/.*)?$/,
     ],
     beforeSend(event, hint) {
       const headers = event.request?.headers;
@@ -96,7 +97,6 @@ if (apiEnv !== 'TEST' && sentry.dsn) {
       const breadcrumbMessage = breadcrumb.message ?? '';
 
       if (breadcrumb.category === 'console') return null;
-
       if (breadcrumbMessage.includes('/health_eb')) return null;
 
       return breadcrumb;
