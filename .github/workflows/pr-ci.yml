@@ -30,21 +30,21 @@ jobs:
           docker compose version
 
       - name: Ensure clean compose state
-        run: docker compose -p ci -f docker-compose-ci.yml down -v || true
+        run: docker compose -p ci -f api-demo/docker-compose-ci.yml down -v || true
 
       - name: Build API and test images
-        run: docker compose -p ci -f docker-compose-ci.yml build api test
+        run: docker compose -p ci -f api-demo/docker-compose-ci.yml build api test
 
       - name: Start DB and API
-        run: docker compose -p ci -f docker-compose-ci.yml up -d db api
+        run: docker compose -p ci -f api-demo/docker-compose-ci.yml up -d db api
 
       - name: Run integration test container
-        run: docker compose -p ci -f docker-compose-ci.yml up --abort-on-container-exit --exit-code-from test test
+        run: docker compose -p ci -f api-demo/docker-compose-ci.yml up --abort-on-container-exit --exit-code-from test test
 
       - name: Dump compose logs on failure
         if: failure()
-        run: docker compose -p ci -f docker-compose-ci.yml logs --no-color
+        run: docker compose -p ci -f api-demo/docker-compose-ci.yml logs --no-color
 
       - name: Teardown compose stack
         if: always()
-        run: docker compose -p ci -f docker-compose-ci.yml down -v
+        run: docker compose -p ci -f api-demo/docker-compose-ci.yml down -v
