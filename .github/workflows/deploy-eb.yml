@@ -4,55 +4,45 @@ on:
   push:
     branches:
       - master
+    paths:
+      - 'api-demo/**'
+      - 'shared/**'
 
 permissions:
   contents: read
 
-# Prevent multiple simultaneous deploys
 concurrency:
   group: eb-deploy-master
   cancel-in-progress: true
 
 jobs:
-  # Step 1: Detect changes in api-demo or shared
-  filter:
-    runs-on: ubuntu-latest
-    outputs:
-      deploy_needed: ${{ steps.filter.outputs.deploy_needed }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Detect folder changes
-        id: filter
-        uses: dorny/paths-filter@v3
-        with:
-          filters: |
-            deploy_needed:
-              - 'api-demo/**'
-              - 'shared/**'
-
-  # Step 2: Deploy only if api-demo or shared changed
   deploy:
-    needs: filter
-    if: needs.filter.outputs.deploy_needed == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: ./api-demo
-    timeout-minutes: 45
+    timeout-minutes: 30
     steps:
+      # Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Generate deployment version label
       - name: Generate deployment version label
         id: version
-        run: |
-          echo "label=$(date +'%Y%m%d%H%M%S')-${GITHUB_REF##*/}-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+        run: echo "label=$(date +'%Y%m%d%H%M%S')-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
 
+      # Zip source bundle
       - name: Zip source bundle
         run: |
-          zip -r deploy.zip . -x ".git*" "test/*" "node_modules/*" ".github/*"
+          zip -r deploy.zip . \
+            --exclude ".git*" \
+            --exclude "test/*" \
+            --exclude "node_modules/*" \
+            --exclude ".github/*"
 
-      - name: Inspect ZIP contents (optional)
+      # Inspect ZIP contents (optional)
+      - name: Inspect ZIP contents
         run: |
           if unzip -l deploy.zip | grep -Eq '\.ebextensions/|\.platform/'; then
             echo "EB config detected"
@@ -60,9 +50,11 @@ jobs:
             echo "Warning: No EB config found; ensure your platform settings are correct"
           fi
 
+      # Verify ZIP exists
       - name: Verify ZIP location
         run: test -f deploy.zip
 
+      # Deploy to Elastic Beanstalk
       - name: Deploy to Elastic Beanstalk
         uses: einaregilsson/beanstalk-deploy@v22
         with:
