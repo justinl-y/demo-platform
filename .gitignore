@@ -1,0 +1,16 @@
+# Elastic Beanstalk Files
+.DS_Store
+run
+.env
+.idea
+.vscode
+.npm
+.build.npm-token.env
+.zshrc.save
+*.log
+logs
+node_modules
+npm-debug.log*
+index-debug.apib
+dist
+settings.json
