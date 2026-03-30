@@ -63,6 +63,7 @@ services:
       - PGUSER=test
       - PGPASSWORD=test
       - TEST_CASE
+    restart: "no"
     tty: true
     volumes:
       - ./test/container-test:/usr/app

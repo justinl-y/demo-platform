@@ -15,10 +15,15 @@ jobs:
   integration-tests:
     name: Docker CI Integration Tests
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./api-demo
     timeout-minutes: 15
     env:
       DOCKER_BUILDKIT: "1"
       COMPOSE_DOCKER_CLI_BUILD: "1"
+      COMPOSE_PROJECT_NAME: ci
+      COMPOSE_FILE: docker-compose-ci.yml
 
     steps:
       - name: Checkout
@@ -30,21 +35,21 @@ jobs:
           docker compose version
 
       - name: Ensure clean compose state
-        run: docker compose -p ci -f api-demo/docker-compose-ci.yml down -v || true
+        run: docker compose down -v || true
 
       - name: Build API and test images
-        run: docker compose -p ci -f api-demo/docker-compose-ci.yml build api test
+        run: docker compose build api test
 
       - name: Start DB and API
-        run: docker compose -p ci -f api-demo/docker-compose-ci.yml up -d db api
+        run: docker compose up -d --wait db api
 
       - name: Run integration test container
-        run: docker compose -p ci -f api-demo/docker-compose-ci.yml up --abort-on-container-exit --exit-code-from test test
+        run: docker compose up --abort-on-container-exit --exit-code-from test test
 
       - name: Dump compose logs on failure
         if: failure()
-        run: docker compose -p ci -f api-demo/docker-compose-ci.yml logs --no-color
+        run: docker compose logs --no-color
 
       - name: Teardown compose stack
         if: always()
-        run: docker compose -p ci -f api-demo/docker-compose-ci.yml down -v
+        run: docker compose down -v --remove-orphans
