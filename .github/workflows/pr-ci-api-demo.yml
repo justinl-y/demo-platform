@@ -1,10 +1,6 @@
 name: PR CI API-DEMO
 
 on:
-  push:
-    paths:
-      - 'api-demo/**'
-      - 'shared/**'
   pull_request:
     paths:
       - 'api-demo/**'
@@ -14,9 +10,8 @@ on:
 permissions:
   contents: read
 
-# Concurrency: ensure only one run per PR or commit
 concurrency:
-  group: pr-ci-${{ github.event.pull_request.number || github.sha }}
+  group: pr-ci-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
@@ -42,15 +37,6 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # Optional: cache Docker layers for faster builds
-      - name: Cache Docker layers
-        uses: actions/cache@v3
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-docker-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-docker-
-
       # Show Docker versions for debugging
       - name: Show Docker versions
         run: |
@@ -61,9 +47,14 @@ jobs:
       - name: Cleanup previous Docker Compose stack
         run: docker compose down -v --remove-orphans || true
 
-      # Build images (with caching)
+      # Build images (with native Buildx caching)
       - name: Build API and Test images
-        run: docker compose build --progress=plain --pull api test
+        run: |
+          docker compose build \
+            --progress=plain \
+            --pull \
+            --build-arg BUILDKIT_INLINE_CACHE=1 \
+            api test
 
       # Start DB and API services
       - name: Start DB and API
