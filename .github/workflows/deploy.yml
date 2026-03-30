@@ -12,11 +12,14 @@ jobs:
   deploy:
     name: Deploy to AWS Elastic Beanstalk
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./api-demo
     timeout-minutes: 30
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Generate deployment version label
         id: version
@@ -25,10 +28,13 @@ jobs:
       - name: Zip source bundle
         run: |
           zip -r deploy.zip . \
-            --exclude "*.git*" \
+            --exclude ".git*" \
             --exclude "test/*" \
             --exclude "node_modules/*" \
             --exclude ".github/*"
+
+      - name: Inspect ZIP contents
+        run: unzip -l deploy.zip | grep -E '\.ebextensions|\.platform' || exit 1
 
       - name: Deploy to Elastic Beanstalk
         uses: einaregilsson/beanstalk-deploy@v22
