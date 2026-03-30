@@ -1,0 +1,28 @@
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.local
+      secrets:
+        - npm_token
+    environment:
+      - API_ENV=stage # <--change this to local eventually
+      - AWS_ACCESS_KEY_ID=${API_DEMO_AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${API_DEMO_AWS_SECRET_ACCESS_KEY}
+      - AWS_SESSION_TOKEN=${API_DEMO_AWS_SESSION_TOKEN:-}
+      - DB_ENV
+      - NODE_ENV=production
+    ports:
+      - '6662:8000'
+    tty: true
+    volumes:
+      - .:/srv/api:delegated # <--delegated for better performance on macOS, but may cause issues with file syncing. Remove if you experience issues.
+      - node-modules:/srv/api/node_modules/
+
+secrets:
+  npm_token:
+    environment: NPM_TOKEN
+
+volumes:
+  node-modules:

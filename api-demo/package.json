@@ -1,0 +1,66 @@
+{
+  "name": "api-demo",
+  "version": "1.0.0",
+  "description": "",
+  "private": true,
+  "license": "ISC",
+  "author": "Justin Levett-Yeats",
+  "engines": {
+    "npm": ">=11.6.0 <12.0.0",
+    "node": ">=24.8.0 <26.0.0"
+  },
+  "type": "module",
+  "main": "src/index.ts",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:justinl-y/api-demo.git"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "api-build": "docker compose -p api -f docker-compose-local.yml build",
+    "api-up": "docker compose -p api -f docker-compose-local.yml up",
+    "api-up-sso": "bash scripts/api-up-sso.sh",
+    "api-down": "docker compose -p api -f docker-compose-local.yml down -v",
+    "ci-build-service": "docker compose -p ci -f docker-compose-ci.yml build",
+    "ci-build": "printf \"api test\" | tr ' ' '\n' | xargs -n1 -P2 -I{} npm run ci-build-service {}",
+    "ci-up": "TEST_CASE=${TEST_CASE} docker compose -p ci -f docker-compose-ci.yml up",
+    "ci-down": "docker compose -p ci -f docker-compose-ci.yml down -v",
+    "lint": "eslint --config eslint.config.ts",
+    "lint-fix": "eslint --fix \"**/*.{ts}\"",
+    "prepare": "command -v git >/dev/null 2>&1 && git config core.hooksPath .githooks || true"
+  },
+  "lint-staged": {
+    "**/*.js": "eslint --config eslint.config.ts",
+    "**/*.ts": "eslint --config eslint.config.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-secrets-manager": "^3.1014.0",
+    "@fastify/accepts": "^5.0.4",
+    "@fastify/compress": "^8.3.1",
+    "@fastify/cors": "^11.2.0",
+    "@fastify/formbody": "^8.0.2",
+    "@fastify/helmet": "^13.0.2",
+    "@fastify/jwt": "^10.0.0",
+    "@fastify/swagger": "^9.7.0",
+    "@fastify/swagger-ui": "^5.2.5",
+    "@sentry/node": "^10.46.0",
+    "@sentry/profiling-node": "^10.46.0",
+    "ajv-formats": "^3.0.1",
+    "bcryptjs": "^3.0.3",
+    "fastify": "^5.8.4",
+    "fastify-plugin": "^5.1.0",
+    "http-errors-enhanced": "^4.0.2",
+    "lodash": "^4.17.23",
+    "pg": "^8.20.0"
+  },
+  "devDependencies": {
+    "@tsconfig/node24": "^24.0.4",
+    "@types/lodash": "^4.17.24",
+    "@types/node": "^25.5.0",
+    "eslint": "^9.36.0",
+    "jiti": "^2.6.1",
+    "lint-staged": "^16.4.0",
+    "neostandard": "^0.13.0",
+    "typescript": "^6.0.2"
+  }
+}

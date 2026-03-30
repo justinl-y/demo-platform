@@ -1,0 +1,88 @@
+import request from 'supertest';
+import type supertest from 'supertest';
+
+import { BASE_REQUEST } from './constants.ts';
+
+const app = request(BASE_REQUEST);
+
+type ApiMethod = 'get' | 'put' | 'patch' | 'del' | 'post';
+
+type RequestBody = Record<string, unknown>;
+
+type RequestHeaders = Record<string, string>;
+
+type ApiRequest = (
+  resource: string,
+  data?: RequestBody,
+  headers?: RequestHeaders,
+) => Promise<supertest.Response>;
+
+type ApiClient = Record<ApiMethod, ApiRequest>;
+
+const userLogin = async () => {
+  const result = await app
+    .post('/users/login')
+    .send({
+      email: 'jars-super@semios.com',
+      password: 'jars@semios.com',
+    })
+    .set('Accept', 'application/json')
+  ;
+
+  return result.body.token;
+};
+
+const bearerToken = await userLogin();
+
+const methods: ApiMethod[] = ['get', 'put', 'patch', 'del', 'post'];
+const requestByMethod: Record<ApiMethod, (resource: string) => supertest.Test> = {
+  get: (resource) => app.get(resource),
+  put: (resource) => app.put(resource),
+  patch: (resource) => app.patch(resource),
+  del: (resource) => app.delete(resource),
+  post: (resource) => app.post(resource),
+};
+const authAPI = {} as ApiClient;
+const noAuthAPI = {} as ApiClient;
+
+// loop over all the http methods (get, post, put, delete and patch) and return functions for each.
+// also do error checking for 500s and immediately terminate test suite.
+methods.forEach((method) => {
+  // Return a pre-configured Supertest request with authorization headers
+  authAPI[method] = async (resource, data = {}, headers = {}) => {
+    const res = await requestByMethod[method](resource)
+      .set('Authorization', `Bearer ${bearerToken}`)
+      .send(data)
+      .set(headers)
+      .set('Accept', 'application/json');
+
+    if (res.status === 500) {
+      console.log('SERVER RESPONDED WITH a 500 Status. You should investigate this. Abandoning Tests.');
+      console.log(JSON.stringify(res.body));
+      process.exit(1);
+    }
+    else {
+      return res;
+    }
+  };
+  noAuthAPI[method] = async (resource, data = {}, headers = {}) => {
+    const res = await requestByMethod[method](resource)
+      .send(data)
+      .set(headers)
+      .set('Accept', 'application/json');
+
+    if (res.status === 500) {
+      console.log('SERVER RESPONDED WITH a 500 Status. You should investigate this. Abandoning Tests.');
+      console.log(JSON.stringify(res.body));
+      process.exit(1);
+    }
+    else {
+      return res;
+    }
+  };
+});
+
+export {
+  authAPI,
+  noAuthAPI,
+};

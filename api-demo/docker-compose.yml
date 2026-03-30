@@ -1,0 +1,31 @@
+services:
+  api:
+    build:
+      context: .
+      secrets:
+        - npm_token
+    restart: on-failure
+    environment:
+      - API_ENV=${API_ENV}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - NODE_ENV=production
+    expose:
+      - '8000'
+    tty: true
+  nginx-proxy:
+    # for EB health reporting we need to:
+    # 1 - to route traffic through a nginx proxy server...
+    # 2 - format logs ...
+    # 3 - route traffic via upstream.conf to exposed api port 8000 for termination
+    build: proxy
+    links:
+      - api
+    ports:
+      - '6661:80'
+    volumes:
+      - "${EB_LOG_BASE_DIR}/nginx-proxy:/var/log/nginx"
+
+secrets:
+  npm_token:
+    environment: NPM_TOKEN

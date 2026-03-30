@@ -1,0 +1,33 @@
+# syntax=docker/dockerfile:1.7
+FROM node:25-alpine
+
+RUN apk add --no-cache bash
+
+# with mounted volumes file permissions can only be changed on the host machine, not within Docker,
+# thus executable scripts requiring explicit permissions via Docker must be in a separate, non-mounted folder
+ENV SCRIPTS_HOME="/srv"
+
+WORKDIR ${SCRIPTS_HOME}
+
+COPY test/run.sh ${SCRIPTS_HOME}
+COPY test/wait-db-container.sh ${SCRIPTS_HOME}
+RUN chmod +x ${SCRIPTS_HOME}/run.sh ${SCRIPTS_HOME}/wait-db-container.sh
+
+# the mounted volume will be at /srv/api
+ENV API_HOME="/srv/api"
+
+WORKDIR ${API_HOME}
+
+RUN npm i pm2@6.0.14 -g
+
+COPY package*.json ${API_HOME}/
+COPY tsconfig.json ${API_HOME}/
+COPY src ${API_HOME}/src
+COPY pm2 ${API_HOME}/pm2
+
+RUN --mount=type=secret,id=npm_token --mount=type=cache,target=/root/.npm /bin/sh -c "if test -f /run/secrets/npm_token; then NPM_TOKEN=$(cat /run/secrets/npm_token); if test -n \"${NPM_TOKEN}\"; then printf '//registry.npmjs.org/:_authToken=%s\\n' \"${NPM_TOKEN}\" > .npmrc; fi; fi; npm ci --include=dev; rm -f .npmrc"
+
+# check for ts errors as using node native ts support
+RUN npm run typecheck
+
+EXPOSE 8000

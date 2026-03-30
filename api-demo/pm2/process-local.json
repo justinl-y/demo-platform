@@ -1,0 +1,20 @@
+{
+  "apps" : [
+    {
+      "name": "api-demo",
+      "script": "src/index.ts",
+      "interpreter": "node",
+      "error_file": "/dev/null",
+      "out_file": "/dev/null",
+      "exec_mode": "fork",
+      "watch": [
+        "src"
+      ],
+      "ignore_watch": [
+        "dist",
+        "node_modules",
+        "test/container-test/node_modules"
+      ]
+    }
+  ]
+}

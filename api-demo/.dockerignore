@@ -1,0 +1,16 @@
+.vscode
+.git
+.github
+.DS_Store
+dist
+node_modules
+test/container-test/node_modules
+test/container-test/.vitest
+coverage
+*.log
+*.tmp
+*.swp
+.env
+.env.*
+.build.npm-token.env
+.build.npm-token.env.*
