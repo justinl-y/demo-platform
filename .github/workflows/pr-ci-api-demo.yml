@@ -1,10 +1,6 @@
 name: PR CI API-DEMO
 
 on:
-  push:
-    paths:
-      - 'api-demo/**'
-      - 'shared/**'
   pull_request:
     paths:
       - 'api-demo/**'
@@ -14,9 +10,9 @@ on:
 permissions:
   contents: read
 
-# Concurrency: ensure only one run per PR or commit
+# Concurrency: ensure only one run per PR
 concurrency:
-  group: pr-ci-${{ github.event.pull_request.number || github.sha }}
+  group: pr-ci-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
