@@ -8,8 +8,8 @@ services:
         - npm_token
     environment:
       - API_ENV=stage # <--change this to local eventually
-      - AWS_ACCESS_KEY_ID=${API_DEMO_AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${API_DEMO_AWS_SECRET_ACCESS_KEY}
+      - AWS_ACCESS_KEY_ID=${API_DEMO_AWS_ACCESS_KEY_ID:-}
+      - AWS_SECRET_ACCESS_KEY=${API_DEMO_AWS_SECRET_ACCESS_KEY:-}
       - AWS_SESSION_TOKEN=${API_DEMO_AWS_SESSION_TOKEN:-}
       - DB_ENV
       - NODE_ENV=production

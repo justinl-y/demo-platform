@@ -35,8 +35,8 @@ services:
     entrypoint: /srv/wait-db-container.sh db 5432
     environment:
       - API_ENV=test
-      - AWS_ACCESS_KEY_ID=${API_DEMO_AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${API_DEMO_AWS_SECRET_ACCESS_KEY}
+      - AWS_ACCESS_KEY_ID=${API_DEMO_AWS_ACCESS_KEY_ID:-}
+      - AWS_SECRET_ACCESS_KEY=${API_DEMO_AWS_SECRET_ACCESS_KEY:-}
       - NODE_ENV=production
     ports:
       - '6663:8000'
