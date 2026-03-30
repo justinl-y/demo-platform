@@ -1,0 +1,78 @@
+name: Deploy to Elastic Beanstalk
+
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+# Prevent multiple simultaneous deploys
+concurrency:
+  group: eb-deploy-master
+  cancel-in-progress: true
+
+jobs:
+  # Step 1: Detect changes in api-demo or shared
+  filter:
+    runs-on: ubuntu-latest
+    outputs:
+      deploy_needed: ${{ steps.filter.outputs.deploy_needed }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Detect folder changes
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            deploy_needed:
+              - 'api-demo/**'
+              - 'shared/**'
+
+  # Step 2: Deploy only if api-demo or shared changed
+  deploy:
+    needs: filter
+    if: needs.filter.outputs.deploy_needed == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./api-demo
+    timeout-minutes: 45
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Generate deployment version label
+        id: version
+        run: |
+          echo "label=$(date +'%Y%m%d%H%M%S')-${GITHUB_REF##*/}-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Zip source bundle
+        run: |
+          zip -r deploy.zip . -x ".git*" "test/*" "node_modules/*" ".github/*"
+
+      - name: Inspect ZIP contents (optional)
+        run: |
+          if unzip -l deploy.zip | grep -Eq '\.ebextensions/|\.platform/'; then
+            echo "EB config detected"
+          else
+            echo "Warning: No EB config found; ensure your platform settings are correct"
+          fi
+
+      - name: Verify ZIP location
+        run: test -f deploy.zip
+
+      - name: Deploy to Elastic Beanstalk
+        uses: einaregilsson/beanstalk-deploy@v22
+        with:
+          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          application_name: ${{ vars.EB_APPLICATION_NAME }}
+          environment_name: ${{ vars.EB_ENVIRONMENT_NAME }}
+          region: ${{ vars.AWS_REGION }}
+          version_label: ${{ steps.version.outputs.label }}
+          version_description: "Git commit ${{ github.sha }}"
+          deployment_package: api-demo/deploy.zip
+          wait_for_deployment: true
+          wait_for_environment_recovery: 180

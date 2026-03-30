@@ -1,0 +1,84 @@
+name: PR CI API-DEMO
+
+on:
+  push:
+    paths:
+      - 'api-demo/**'
+      - 'shared/**'
+  pull_request:
+    paths:
+      - 'api-demo/**'
+      - 'shared/**'
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+# Concurrency: ensure only one run per PR or commit
+concurrency:
+  group: pr-ci-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  integration-tests:
+    name: Docker CI Integration Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./api-demo
+    timeout-minutes: 15
+    env:
+      DOCKER_BUILDKIT: "1"
+      COMPOSE_DOCKER_CLI_BUILD: "1"
+      COMPOSE_PROJECT_NAME: ci
+      COMPOSE_FILE: docker-compose-ci.yml
+
+    steps:
+      # Checkout the code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Set up Docker Buildx for caching
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Optional: cache Docker layers for faster builds
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-docker-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-docker-
+
+      # Show Docker versions for debugging
+      - name: Show Docker versions
+        run: |
+          docker --version
+          docker compose version
+
+      # Ensure clean compose state
+      - name: Cleanup previous Docker Compose stack
+        run: docker compose down -v --remove-orphans || true
+
+      # Build images (with caching)
+      - name: Build API and Test images
+        run: docker compose build --progress=plain --pull api test
+
+      # Start DB and API services
+      - name: Start DB and API
+        run: docker compose up -d --wait db api
+
+      # Run integration tests
+      - name: Run integration tests
+        run: docker compose up --abort-on-container-exit --exit-code-from test test
+
+      # Dump logs if tests fail
+      - name: Dump Docker Compose logs on failure
+        if: failure()
+        run: docker compose logs --no-color
+
+      # Teardown compose stack
+      - name: Teardown Docker Compose stack
+        if: always()
+        run: docker compose down -v --remove-orphans
