@@ -2,7 +2,7 @@ import fp from 'fastify-plugin';
 import {
   Pool,
   // types as PGTypes,
-} from 'pg';
+} from '../../node_modules/@types/pg/index.js';
 import type {
   FastifyInstance,
   FastifyPluginOptions,

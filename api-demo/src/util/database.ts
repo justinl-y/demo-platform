@@ -10,7 +10,7 @@ import {
 import type {
   Pool,
   PoolClient,
-} from 'pg';
+} from '../../node_modules/@types/pg/index.js';
 
 type SqlParams = Record<string, unknown>;
 type QueryRow = Record<string, unknown>;

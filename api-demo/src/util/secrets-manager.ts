@@ -46,13 +46,17 @@ const batchGetSecretValue = async () => {
     // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/client/secrets-manager/command/BatchGetSecretValueCommand/
 
     if (!apiEnv) {
-      console.warn('API_ENV is not set. Secrets fetch failed');
+      console.warn('Secrets fetch failed: API_ENV is not set');
       return;
     }
 
     let envKey: string;
 
-    if (apiEnv === 'TEST') return;  // During the tests we don't want to fetch secrets
+    if (apiEnv === 'TEST') {
+      console.log('Secrets fetch skipped: API_ENV is TEST');
+
+      return;  // During the tests we don't want to fetch secrets
+    }
     else envKey = apiEnv;
 
     const params: BatchGetSecretValueCommandInput = {
