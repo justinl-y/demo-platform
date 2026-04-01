@@ -1,6 +1,6 @@
-import type { AddressInfo } from 'node:net';
+import type { AddressInfo } from 'net';
 
-import { apiEnv } from '../../config/index.ts';
+import { apiEnv } from '#config/api';
 import { localHost } from '../constants.ts';
 
 function getServerDetails(serverAddress: AddressInfo | string | null): string {

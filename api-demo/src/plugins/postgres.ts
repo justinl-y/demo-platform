@@ -8,12 +8,12 @@ import type {
 } from 'fastify';
 
 import {
-  postgres,
-} from '../config/index.ts';
+  postgresConfig,
+} from '#config/postgres';
 import {
   query,
   transaction,
-} from '../util/database.ts';
+} from '#utils/database';
 
 // const NUMERIC_PG_OID = 1700;
 
@@ -33,7 +33,7 @@ function postgresPlugin(fastify: FastifyInstance, options: FastifyPluginOptions)
   // PGTypes.setTypeParser(NUMERIC_PG_OID, (val) => ((val === null) ? null : parseFloat(val)));
   // =============================================================================
 
-  const pool = new Pool(postgres);
+  const pool = new Pool(postgresConfig());
 
   // bind configured pg pool to query and transaction functions as partial application
   const boundMethods = {

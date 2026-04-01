@@ -15,6 +15,10 @@
     "types": [
       "node",
     ],
+    "paths": {
+      "#utils/*": ["./src/utils/*.ts"],
+      "#config/*": ["./src/config/*.ts"]
+    },
   },
   "include": [
     "./src/**/*",

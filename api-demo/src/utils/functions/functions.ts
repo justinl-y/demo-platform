@@ -6,11 +6,13 @@ type RouteProperties = {
   handler: RouteHandlerMethod;
 };
 
-const routePropertiesCore = (method: string, url: string, handler: RouteHandlerMethod): RouteProperties => ({
-  method,
-  url,
-  handler,
-});
+function routePropertiesCore(method: string, url: string, handler: RouteHandlerMethod): RouteProperties {
+  return {
+    method,
+    url,
+    handler,
+  };
+};
 
 export {
   routePropertiesCore,

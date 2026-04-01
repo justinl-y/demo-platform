@@ -1,8 +1,7 @@
 import * as Sentry from '@sentry/node';
-import { createRequire } from 'module';
 
-import { sentryConfig } from '../config/sentry.ts';
-import { apiEnv } from '../config/api.ts';
+import { sentryConfig } from '#config/sentry';
+import { apiEnv } from '#config/api';
 
 const tracesSampleRate = {
   PROD: 0.1,
@@ -25,17 +24,17 @@ type NodeProfilingIntegration = {
   nodeProfilingIntegration: () => unknown;
 };
 
-const parseInteractionData = (interactionLog: string) => ({
-  route: interactionLog.match(/Route:\s(.+)/)?.[1],
-  request: interactionLog.match(/Request:\s(.+)/)?.[1],
-  requestOn: interactionLog.match(/Request On:\s(.+)/)?.[1],
-  user: interactionLog.match(/User:\s(.+)/)?.[1],
-  response: interactionLog.match(/Response:\s(.+)/)?.[1],
-  responseBody: interactionLog.match(/Response Body:\s(.+)/)?.[1],
-  responseTime: interactionLog.match(/Response Time:\s(.+)/)?.[1],
-});
-
-const require = createRequire(import.meta.url);
+function parseInteractionData(interactionLog: string) {
+  return {
+    route: interactionLog.match(/Route:\s(.+)/)?.[1],
+    request: interactionLog.match(/Request:\s(.+)/)?.[1],
+    requestOn: interactionLog.match(/Request On:\s(.+)/)?.[1],
+    user: interactionLog.match(/User:\s(.+)/)?.[1],
+    response: interactionLog.match(/Response:\s(.+)/)?.[1],
+    responseBody: interactionLog.match(/Response Body:\s(.+)/)?.[1],
+    responseTime: interactionLog.match(/Response Time:\s(.+)/)?.[1],
+  };
+};
 
 if (apiEnv !== 'TEST' && sentryConfig.dsn) {
   let profilingIntegration: unknown;
@@ -43,7 +42,7 @@ if (apiEnv !== 'TEST' && sentryConfig.dsn) {
   let profilingStatusMessage = 'disabled: integration not initialized';
 
   try {
-    const { nodeProfilingIntegration } = require('@sentry/profiling-node') as NodeProfilingIntegration;
+    const { nodeProfilingIntegration } = await import('@sentry/profiling-node') as NodeProfilingIntegration;
 
     profilingIntegration = nodeProfilingIntegration();
     profilesSampleRate = profilesSampleRateByEnv[apiEnv];

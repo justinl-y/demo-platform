@@ -1,4 +1,4 @@
-import { externalPort } from '../config/index.ts';
+import { externalPort } from '#config/api';
 
 const localHost = `http://localhost:${externalPort}`;
 

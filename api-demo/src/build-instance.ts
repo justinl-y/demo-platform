@@ -7,7 +7,6 @@ import formBody from '@fastify/formbody';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 
-import * as config from './config/index.ts';
 import plugins from './plugins/index.ts';
 import routes from './routes/index.ts';
 import {
@@ -19,29 +18,34 @@ import {
 } from './hooks/index.ts';
 import {
   batchGetSecretValue,
-} from './util/secrets-manager.ts';
+} from '#utils/secrets-manager';
+import {
+  swaggerConfig,
+} from '#config/swagger';
+import {
+  fastifyConfig,
+} from '#config/fastify';
+import {
+  compressConfig,
+  corsConfig,
+  helmetConfig,
+} from '#config/api';
 import {
   baseInformation,
 } from './api-docs/base-information.ts';
-import {
-  swaggerConfig,
-} from './config/swagger.ts';
-import {
-  fastifyConfig,
-} from './config/fastify.ts';
 
 async function buildInstance() {
   await batchGetSecretValue();
 
-  await import('./util/sentry-instrument.ts');
+  await import('#utils/sentry-instrument');
 
   const instance = Fastify(fastifyConfig);
 
   // register @fastify plugins
-  instance.register(helmet, config.helmet);
-  instance.register(cors, config.cors);
+  instance.register(helmet, helmetConfig);
+  instance.register(cors, corsConfig);
   instance.register(accepts);
-  instance.register(compress, config.compress);
+  instance.register(compress, compressConfig);
   instance.register(formBody);
 
   // Register Swagger and Swagger UI only in non-prod environments

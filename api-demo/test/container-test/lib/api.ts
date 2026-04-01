@@ -23,8 +23,8 @@ const userLogin = async () => {
   const result = await app
     .post('/users/login')
     .send({
-      email: 'jars-super@semios.com',
-      password: 'jars@semios.com',
+      email: 'ser.super@email.com',
+      password: 'user.super@email.com',
     })
     .set('Accept', 'application/json')
   ;

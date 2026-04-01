@@ -6,16 +6,20 @@ import type {
 } from 'fastify';
 
 import {
-  auth,
-  user,
-} from '../config/index.ts';
+  authConfig,
+} from '#config/auth';
+import {
+  userConfig,
+} from '#config/api';
 
 function jwtPlugin(fastify: FastifyInstance, options: FastifyPluginOptions): void {
+  const jwtAuthConfig = authConfig();
+
   const jwtOptions = {
-    secret: auth.secret,
+    secret: jwtAuthConfig.secret,
     sign: {
-      aud: auth.audience,
-      expiresIn: user.password.expirationTime,
+      aud: jwtAuthConfig.audience,
+      expiresIn: userConfig.password.expirationTime,
     },
   };
 

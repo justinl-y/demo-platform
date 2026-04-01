@@ -6,7 +6,7 @@ import type {
 import * as Sentry from '@sentry/node';
 
 import { buildSentryInteractionMessage } from './consoleInteractionHandler.ts';
-import { apiEnv } from '../config/api.ts';
+import { apiEnv } from '#config/api';
 
 const MAX_BREADCRUMB_MESSAGE_LENGTH = 4096;
 const TRUNCATED_SUFFIX = '\n...[truncated]';
@@ -21,16 +21,16 @@ type FastifyErrorWithBody = FastifyError & {
   };
 };
 
-const buildFallbackInteractionMessage = (method: string, url: string, statusCode: number): string => {
+function buildFallbackInteractionMessage(method: string, url: string, statusCode: number): string {
   return `Route: ${method.toUpperCase()} ${url}\nResponse: ${statusCode}`;
 };
 
-const processSentryError = (
+function processSentryError(
   error: FastifyError,
   request: FastifyRequest,
   reply: FastifyReply,
   statusCode: number,
-): void => {
+): void {
   const fallbackInteractionMessage = buildFallbackInteractionMessage(request.method, request.url, statusCode);
   let interactionMessage: string;
 
@@ -59,7 +59,7 @@ const processSentryError = (
   Sentry.captureException(sentryError);
 };
 
-const globalErrorHandler = (error: FastifyError, request: FastifyRequest, reply: FastifyReply): void => {
+function globalErrorHandler(error: FastifyError, request: FastifyRequest, reply: FastifyReply): void {
   const fastifyError = error as FastifyErrorWithBody;
   const statusCode = fastifyError.statusCode || 500;
   const responseBody = {

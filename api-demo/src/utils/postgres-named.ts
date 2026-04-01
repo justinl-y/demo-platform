@@ -22,9 +22,11 @@ type QueryConfig = {
 
 const tokenPattern = /\$[a-zA-Z]([a-zA-Z0-9_]*)\b/g;
 
-const isNamedParameters = (value: unknown): value is NamedParameters => _.isPlainObject(value);
+function isNamedParameters(value: unknown): value is NamedParameters {
+  return _.isPlainObject(value);
+};
 
-const isQueryConfig = (value: unknown): value is QueryConfig => {
+function isQueryConfig(value: unknown): value is QueryConfig {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
 
   return 'text' in value && 'values' in value;

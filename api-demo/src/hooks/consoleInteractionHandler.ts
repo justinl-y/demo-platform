@@ -5,7 +5,7 @@ import type {
   FastifyReply,
 } from 'fastify';
 
-const buildInteractionMessage = (req: FastifyRequest, rep: FastifyReply): string | null => {
+function buildInteractionMessage(req: FastifyRequest, rep: FastifyReply): string | null {
   const reqMethod = req.method;
   const reqMethodUpper = reqMethod.toUpperCase();
   const reqUrl = req.url;
@@ -59,7 +59,7 @@ Response Time: ${(typeof elapsedTime === 'number' ? elapsedTime : 0).toFixed(0)}
   return message;
 };
 
-const buildSentryInteractionMessage = (req: FastifyRequest, rep: FastifyReply): string | null => {
+function buildSentryInteractionMessage(req: FastifyRequest, rep: FastifyReply): string | null {
   const message = buildInteractionMessage(req, rep);
 
   if (!message) return null;
@@ -68,7 +68,7 @@ const buildSentryInteractionMessage = (req: FastifyRequest, rep: FastifyReply): 
   return message.replace(/\b\d{10,16}\b/g, '[redacted-number]');
 };
 
-const consoleInteractionHandler = async (req: FastifyRequest, rep: FastifyReply) => {
+async function consoleInteractionHandler(req: FastifyRequest, rep: FastifyReply) {
   const message = buildInteractionMessage(req, rep);
 
   if (!message) return;

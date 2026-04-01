@@ -4,7 +4,7 @@ import type {
 } from 'fastify';
 import * as Sentry from '@sentry/node';
 
-import { apiEnv } from '../config/api.ts';
+import { apiEnv } from '#config/api';
 
 async function setSentryUserOnRequest(req: FastifyRequest, res: FastifyReply) {
   if (apiEnv !== 'TEST') {

@@ -5,11 +5,11 @@ import {
   type SecretValueEntry,
 } from '@aws-sdk/client-secrets-manager';
 import {
-  aws as awsConfig,
-} from '../config/aws.ts';
+  awsConfig,
+} from '#config/aws';
 import {
   apiEnv,
-} from '../config/api.ts';
+} from '#config/api';
 
 const secretsManagerClient = new SecretsManagerClient(awsConfig);
 
@@ -28,7 +28,7 @@ const secretValues = {
 type SecretValues = typeof secretValues;
 
 // Function to update secretValues based on the response from the Secrets Manager
-const updateSecretValues = (secretsManagerValues: SecretValueEntry[], values: SecretValues): void => {
+function updateSecretValues(secretsManagerValues: SecretValueEntry[], values: SecretValues): void {
   secretsManagerValues.forEach((secretValue: SecretValueEntry) => {
     const name = secretValue.Name;
     const secret = secretValue.SecretString;
@@ -41,7 +41,7 @@ const updateSecretValues = (secretsManagerValues: SecretValueEntry[], values: Se
   });
 };
 
-const batchGetSecretValue = async () => {
+async function batchGetSecretValue() {
   try {
     // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/client/secrets-manager/command/BatchGetSecretValueCommand/
 

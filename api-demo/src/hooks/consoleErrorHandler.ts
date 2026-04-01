@@ -4,7 +4,7 @@ import type {
   FastifyError,
 } from 'fastify';
 
-const consoleErrorHandler = async (req: FastifyRequest, res: FastifyReply, error: FastifyError): Promise<void> => {
+async function consoleErrorHandler(req: FastifyRequest, res: FastifyReply, error: FastifyError): Promise<void> {
   if (error) {
     // required for console error tracing
     console.log(error);
