@@ -5,13 +5,8 @@ import {
   type SecretValueEntry,
 } from '@aws-sdk/client-secrets-manager';
 import {
-  awsConfig,
-} from '#config/aws';
-import {
-  apiEnv,
-} from '#config/api';
-
-const secretsManagerClient = new SecretsManagerClient(awsConfig);
+  Config,
+} from '#config/index';
 
 // initialized with values for env test
 const secretValues = {
@@ -45,19 +40,21 @@ async function batchGetSecretValue() {
   try {
     // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/client/secrets-manager/command/BatchGetSecretValueCommand/
 
-    if (!apiEnv) {
+    if (!Config.apiEnv) {
       console.warn('Secrets fetch failed: API_ENV is not set');
       return;
     }
 
+    const secretsManagerClient = new SecretsManagerClient(Config.awsConfig);
+
     let envKey: string;
 
-    if (apiEnv === 'TEST') {
-      console.log('Secrets fetch skipped: API_ENV is TEST');
+    if (Config.apiEnv === 'TEST') {
+      console.log('... Secrets fetch skipped');
 
       return;  // During the tests we don't want to fetch secrets
     }
-    else envKey = apiEnv;
+    else envKey = Config.apiEnv;
 
     const params: BatchGetSecretValueCommandInput = {
       Filters: [
@@ -84,10 +81,10 @@ async function batchGetSecretValue() {
 
     updateSecretValues(secrets, secretValues);
 
-    console.log('Secrets fetched successfully');
+    console.log('... Secrets fetch successful');
   }
   catch (err) {
-    console.error('Secrets fetch failed:', err);
+    console.error('... Secrets fetch failed:', err);
   }
 };
 

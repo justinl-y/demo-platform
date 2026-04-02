@@ -1,9 +1,7 @@
 import buildInstance from './build-instance.ts';
-import { apiEnv, serverConfig } from '#config/api';
-import { getServerDetails } from '#utils/functions/safe-typing';
+import { Config } from '#config/index';
+import { getServerDetails } from '#utils/functions';
 import { localHost } from '#utils/constants';
-
-const instance = await buildInstance();
 
 const PM2_VERSION = 'v6.0.14';
 const NODE_VERSION = process.version;
@@ -14,13 +12,15 @@ async function startServer() {
     console.log(`\r\nPM2 version is: ${PM2_VERSION}`);
     console.log(`Node version is: ${NODE_VERSION}`);
     console.log('\r\nServer starting ...');
+    console.log(`... API environment is ${Config.apiEnv}`);
 
-    await instance.listen(serverConfig);
+    const instance = await buildInstance();
 
-    console.log(`... API environment is ${apiEnv}`);
+    await instance.listen(Config.serverConfig);
+
     console.log(getServerDetails(instance.server.address()));
 
-    if (apiEnv !== 'PROD') console.log(`... API documentation available at ${localHost}/api-docs`);
+    if (Config.apiEnv !== 'PROD') console.log(`... API documentation available at ${localHost}/api-docs`);
     console.log('Server ready, let the magic begin!');
     console.log('\r\n-----------------------------------------------------------------------------\r\n');
   }

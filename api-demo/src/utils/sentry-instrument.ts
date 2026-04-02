@@ -1,17 +1,6 @@
 import * as Sentry from '@sentry/node';
 
-import { sentryConfig } from '#config/sentry';
-import { apiEnv } from '#config/api';
-
-const tracesSampleRate = {
-  PROD: 0.1,
-  STAGE: 0.2,
-};
-
-const profilesSampleRateByEnv = {
-  PROD: 0.2,
-  STAGE: 0.25,
-};
+import { Config } from '#config/index';
 
 const INTERACTION_BREADCRUMB_CATEGORY = 'interaction.last';
 const INTERACTION_BREADCRUMB_MESSAGE = 'Interaction details';
@@ -36,7 +25,9 @@ function parseInteractionData(interactionLog: string) {
   };
 };
 
-if (apiEnv !== 'TEST' && sentryConfig.dsn) {
+const sentryDsn = Config.sentryConfig.getDsn();
+
+if (Config.apiEnv !== 'TEST' && sentryDsn) {
   let profilingIntegration: unknown;
   let profilesSampleRate: number | undefined;
   let profilingStatusMessage = 'disabled: integration not initialized';
@@ -45,8 +36,8 @@ if (apiEnv !== 'TEST' && sentryConfig.dsn) {
     const { nodeProfilingIntegration } = await import('@sentry/profiling-node') as NodeProfilingIntegration;
 
     profilingIntegration = nodeProfilingIntegration();
-    profilesSampleRate = profilesSampleRateByEnv[apiEnv];
-    profilingStatusMessage = `enabled: sampleRate=${profilesSampleRate}`;
+    profilesSampleRate = Config.sentryConfig.profilesSampleRate[Config.apiEnv];
+    profilingStatusMessage = `enabled`;
   }
   catch (err) {
     // Profiling is optional and may be unavailable for some Node/libc combinations.
@@ -55,10 +46,10 @@ if (apiEnv !== 'TEST' && sentryConfig.dsn) {
   }
 
   Sentry.init({
-    dsn: sentryConfig.dsn,
+    dsn: sentryDsn,
     sendDefaultPii: true,
-    tracesSampleRate: tracesSampleRate[apiEnv],
-    environment: apiEnv,
+    tracesSampleRate: Config.sentryConfig.tracesSampleRate[Config.apiEnv],
+    environment: Config.apiEnv,
     ignoreTransactions: [
       '/health_eb',
       '/favicon.ico',
@@ -110,8 +101,8 @@ if (apiEnv !== 'TEST' && sentryConfig.dsn) {
     normalizeDepth: 5,
   });
 
-  console.info(`Sentry profiling ${profilingStatusMessage} (env=${apiEnv})`);
+  console.info(`... Sentry profiling ${profilingStatusMessage}`);
 }
 else {
-  console.info('Sentry profiling disabled: API_ENV is TEST or SENTRY_DSN is missing');
+  console.info('... Sentry profiling disabled');
 }

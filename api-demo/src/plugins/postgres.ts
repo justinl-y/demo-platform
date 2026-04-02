@@ -8,8 +8,8 @@ import type {
 } from 'fastify';
 
 import {
-  postgresConfig,
-} from '#config/postgres';
+  Config,
+} from '#config/index';
 import {
   query,
   transaction,
@@ -33,7 +33,7 @@ function postgresPlugin(fastify: FastifyInstance, options: FastifyPluginOptions)
   // PGTypes.setTypeParser(NUMERIC_PG_OID, (val) => ((val === null) ? null : parseFloat(val)));
   // =============================================================================
 
-  const pool = new Pool(postgresConfig());
+  const pool = new Pool(Config.postgresConfig());
 
   // bind configured pg pool to query and transaction functions as partial application
   const boundMethods = {

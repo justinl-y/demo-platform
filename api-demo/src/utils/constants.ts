@@ -1,6 +1,6 @@
-import { externalPort } from '#config/api';
+import { Config } from '#config/index';
 
-const localHost = `http://localhost:${externalPort}`;
+const localHost = `http://localhost:${Config.externalPort}`;
 
 const HTTP_METHODS = {
   GET: 'get',

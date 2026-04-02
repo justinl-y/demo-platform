@@ -6,7 +6,7 @@ import type {
 import * as Sentry from '@sentry/node';
 
 import { buildSentryInteractionMessage } from './consoleInteractionHandler.ts';
-import { apiEnv } from '#config/api';
+import { Config } from '#config/index';
 
 const MAX_BREADCRUMB_MESSAGE_LENGTH = 4096;
 const TRUNCATED_SUFFIX = '\n...[truncated]';
@@ -70,7 +70,7 @@ function globalErrorHandler(error: FastifyError, request: FastifyRequest, reply:
 
   reply.error = responseBody;
 
-  if (apiEnv !== 'TEST') processSentryError(error, request, reply, statusCode);
+  if (Config.apiEnv !== 'TEST') processSentryError(error, request, reply, statusCode);
 
   reply.status(statusCode).send(responseBody);
 };

@@ -5,7 +5,7 @@ import {
 } from '#utils/constants';
 import {
   routePropertiesCore,
-} from '#utils/functions/functions';
+} from '#utils/functions';
 import schema from './schema.ts';
 import getHealthDB from './getHealthDB/getHealthDB.ts';
 import getHealthEB from './getHealthEB/getHealthEB.ts';

@@ -7,6 +7,7 @@ import formBody from '@fastify/formbody';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import responseValidation from '@fastify/response-validation';
+
 import type { FastifyPluginCallback } from 'fastify';
 
 import plugins from './plugins/index.ts';
@@ -21,20 +22,10 @@ import {
 import {
   batchGetSecretValue,
 } from '#utils/secrets-manager';
+
 import {
-  swaggerConfig,
-} from '#config/swagger';
-import {
-  fastifyConfig,
-} from '#config/fastify';
-import {
-  compressConfig,
-  corsConfig,
-  helmetConfig,
-} from '#config/api';
-import {
-  responseValidationConfig,
-} from '#config/response-validation';
+  Config,
+} from '#config/index';
 import {
   baseInformation,
 } from './api-docs/base-information.ts';
@@ -44,20 +35,20 @@ async function buildInstance() {
 
   await import('#utils/sentry-instrument');
 
-  const instance = Fastify(fastifyConfig);
+  const instance = Fastify(Config.fastifyConfig);
 
   // register @fastify plugins
-  instance.register(helmet, helmetConfig);
-  instance.register(cors, corsConfig);
+  instance.register(helmet, Config.helmetConfig);
+  instance.register(cors, Config.corsConfig);
   instance.register(accepts);
-  instance.register(compress, compressConfig);
+  instance.register(compress, Config.compressConfig);
   instance.register(formBody);
-  instance.register(responseValidation as FastifyPluginCallback, responseValidationConfig);
+  instance.register(responseValidation as FastifyPluginCallback, Config.responseValidationConfig);
 
   // Register Swagger and Swagger UI only in non-prod environments
   if (process.env.NODE_ENV !== 'PROD') {
     instance.register(swagger, baseInformation);
-    instance.register(swaggerUi, swaggerConfig);
+    instance.register(swaggerUi, Config.swaggerConfig);
   }
 
   // decorate instance with hooks

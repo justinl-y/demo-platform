@@ -37,7 +37,7 @@ function buildInteractionMessage(req: FastifyRequest, rep: FastifyReply): string
     : reqMessage;
 
   // set user email
-  let userEmail = 'Not Set - Probably unauthenticated route';
+  let userEmail = 'Not Set';
   if (_.has(reqUser, 'email')) ({ email: userEmail } = reqUser);
 
   // res messages

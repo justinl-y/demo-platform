@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.7
-FROM node:25-alpine AS builder
+FROM node:24-alpine AS builder
 
 RUN apk add --no-cache bash
 
@@ -20,7 +20,7 @@ RUN npm run typecheck
 
 RUN npm prune --omit=dev
 
-FROM node:25-alpine AS runtime
+FROM node:24-alpine AS runtime
 
 ENV API_HOME="/srv/api"
 
