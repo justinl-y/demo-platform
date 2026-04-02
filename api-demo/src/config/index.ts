@@ -1,37 +1,23 @@
-import {
-  apiEnv,
-  cors,
-  compress,
-  externalPort,
-  helmet,
-  server,
-  user,
-} from './api.ts';
-import {
-  auth,
-} from './auth.ts';
-import {
-  aws,
-} from './aws.ts';
-import {
-  postgres,
-} from './postgres.ts';
+import * as apiConfig from './api.ts';
+import * as authConfig from './auth.ts';
+import * as awsConfig from './aws.ts';
+import * as fastifyConfig from './fastify.ts';
+import * as postgresConfig from './postgres.ts';
+import * as responseValidationConfig from './response-validation.ts';
+import * as sentryConfig from './sentry.ts';
+import * as swaggerConfig from './swagger.ts';
 
-if (!apiEnv) {
-  console.log('Exiting: No api environment variable set...');
-
-  process.exit(1);
-}
+const Config = {
+  ...apiConfig,
+  ...authConfig,
+  ...awsConfig,
+  ...fastifyConfig,
+  ...postgresConfig,
+  ...responseValidationConfig,
+  ...sentryConfig,
+  ...swaggerConfig,
+};
 
 export {
-  apiEnv,
-  auth,
-  aws,
-  compress,
-  cors,
-  externalPort,
-  helmet,
-  postgres,
-  server,
-  user,
+  Config,
 };

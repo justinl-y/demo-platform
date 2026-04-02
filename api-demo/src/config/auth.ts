@@ -1,10 +1,12 @@
-import { secretValues } from '../util/secrets-manager.ts';
+import { secretValues } from '#utils/secrets-manager';
 
-const auth = {
-  secret: secretValues.AUTH_SECRET,
-  audience: secretValues.AUTH_AUDIENCE,
-};
+function authConfig() {
+  return {
+    secret: secretValues.AUTH_SECRET,
+    audience: secretValues.AUTH_AUDIENCE,
+  };
+}
 
 export {
-  auth,
+  authConfig,
 };

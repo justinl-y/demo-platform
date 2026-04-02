@@ -10,7 +10,6 @@
     "verbatimModuleSyntax": true,
     "rewriteRelativeImportExtensions": true,
     "moduleDetection": "force",
-    "outDir": "./dist",
     "rootDir": ".",
     "types": [
       "node",

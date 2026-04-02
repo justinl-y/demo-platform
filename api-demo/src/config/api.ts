@@ -1,10 +1,10 @@
 const apiEnv: 'TEST' | 'STAGE' | 'PROD' = (process.env.API_ENV || 'TEST').toUpperCase() as 'TEST' | 'STAGE' | 'PROD';
 
-const compress = {
+const compressConfig = {
   global: true,
 } as const;
 
-const cors = {
+const corsConfig = {
   allowedHeaders: [
     'Authorization',
     'Content-Type',
@@ -29,16 +29,16 @@ const cors = {
 
 const externalPort = apiEnv === 'TEST' ? '6663' : '6662' as const;
 
-const helmet = {
+const helmetConfig = {
   global: true,
 } as const;
 
-const server = {
+const serverConfig = {
   port: 8000,
   host: '0.0.0.0',
 } as const;
 
-const user = {
+const userConfig = {
   allowedCountries: [
     'UNITED STATES',
     'CANADA',
@@ -57,27 +57,27 @@ const user = {
 } as const;
 
 if (apiEnv === 'PROD') {
-  cors.origin = [
+  corsConfig.origin = [
     'https://demo.discovered-check.ca',
   ];
 }
 else if (apiEnv === 'STAGE') {
-  cors.origin = [
+  corsConfig.origin = [
     'https://demo-stage.discovered-check.ca',
   ];
 }
 else {
-  cors.origin = [
+  corsConfig.origin = [
     'http://localhost:3000',
   ];
 }
 
 export {
   apiEnv,
-  compress,
-  cors,
+  compressConfig,
+  corsConfig,
   externalPort,
-  helmet,
-  server,
-  user,
+  helmetConfig,
+  serverConfig,
+  userConfig,
 };

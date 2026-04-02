@@ -5,10 +5,10 @@ const {
   AWS_SECRET_ACCESS_KEY,
 } = process.env;
 
-const aws = {
+const awsConfig = {
   region: 'us-west-2',
 } as const;
 
 export {
-  aws,
+  awsConfig,
 };

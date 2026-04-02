@@ -15,6 +15,10 @@
     "type": "git",
     "url": "git@github.com:justinl-y/api-demo.git"
   },
+  "imports": {
+    "#utils/*": "./src/utils/*.ts",
+    "#config/*": "./src/config/*.ts"
+  },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "api-build": "docker compose -p api -f docker-compose-local.yml build",
@@ -41,6 +45,7 @@
     "@fastify/formbody": "^8.0.2",
     "@fastify/helmet": "^13.0.2",
     "@fastify/jwt": "^10.0.0",
+    "@fastify/response-validation": "^3.0.3",
     "@fastify/swagger": "^9.7.0",
     "@fastify/swagger-ui": "^5.2.5",
     "@sentry/node": "^10.46.0",
@@ -58,7 +63,6 @@
     "@types/lodash": "^4.17.24",
     "@types/node": "^25.5.0",
     "eslint": "^9.36.0",
-    "jiti": "^2.6.1",
     "lint-staged": "^16.4.0",
     "neostandard": "^0.13.0",
     "typescript": "^6.0.2"

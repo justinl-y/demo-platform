@@ -2,10 +2,10 @@ import type { FastifyInstance } from 'fastify';
 
 import {
   HTTP_METHODS,
-} from '../../util/constants.ts';
+} from '#utils/constants';
 import {
   routePropertiesCore,
-} from '../../util/functions/functions.ts';
+} from '#utils/functions';
 import schema from './schema.ts';
 import getHealthDB from './getHealthDB/getHealthDB.ts';
 import getHealthEB from './getHealthEB/getHealthEB.ts';

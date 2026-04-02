@@ -1,18 +1,6 @@
 import * as Sentry from '@sentry/node';
-import { createRequire } from 'module';
 
-import { sentryConfig } from '../config/sentry.ts';
-import { apiEnv } from '../config/api.ts';
-
-const tracesSampleRate = {
-  PROD: 0.1,
-  STAGE: 0.2,
-};
-
-const profilesSampleRateByEnv = {
-  PROD: 0.2,
-  STAGE: 0.25,
-};
+import { Config } from '#config/index';
 
 const INTERACTION_BREADCRUMB_CATEGORY = 'interaction.last';
 const INTERACTION_BREADCRUMB_MESSAGE = 'Interaction details';
@@ -25,29 +13,31 @@ type NodeProfilingIntegration = {
   nodeProfilingIntegration: () => unknown;
 };
 
-const parseInteractionData = (interactionLog: string) => ({
-  route: interactionLog.match(/Route:\s(.+)/)?.[1],
-  request: interactionLog.match(/Request:\s(.+)/)?.[1],
-  requestOn: interactionLog.match(/Request On:\s(.+)/)?.[1],
-  user: interactionLog.match(/User:\s(.+)/)?.[1],
-  response: interactionLog.match(/Response:\s(.+)/)?.[1],
-  responseBody: interactionLog.match(/Response Body:\s(.+)/)?.[1],
-  responseTime: interactionLog.match(/Response Time:\s(.+)/)?.[1],
-});
+function parseInteractionData(interactionLog: string) {
+  return {
+    route: interactionLog.match(/Route:\s(.+)/)?.[1],
+    request: interactionLog.match(/Request:\s(.+)/)?.[1],
+    requestOn: interactionLog.match(/Request On:\s(.+)/)?.[1],
+    user: interactionLog.match(/User:\s(.+)/)?.[1],
+    response: interactionLog.match(/Response:\s(.+)/)?.[1],
+    responseBody: interactionLog.match(/Response Body:\s(.+)/)?.[1],
+    responseTime: interactionLog.match(/Response Time:\s(.+)/)?.[1],
+  };
+};
 
-const require = createRequire(import.meta.url);
+const sentryDsn = Config.sentryConfig.getDsn();
 
-if (apiEnv !== 'TEST' && sentryConfig.dsn) {
+if (Config.apiEnv !== 'TEST' && sentryDsn) {
   let profilingIntegration: unknown;
   let profilesSampleRate: number | undefined;
   let profilingStatusMessage = 'disabled: integration not initialized';
 
   try {
-    const { nodeProfilingIntegration } = require('@sentry/profiling-node') as NodeProfilingIntegration;
+    const { nodeProfilingIntegration } = await import('@sentry/profiling-node') as NodeProfilingIntegration;
 
     profilingIntegration = nodeProfilingIntegration();
-    profilesSampleRate = profilesSampleRateByEnv[apiEnv];
-    profilingStatusMessage = `enabled: sampleRate=${profilesSampleRate}`;
+    profilesSampleRate = Config.sentryConfig.profilesSampleRate[Config.apiEnv];
+    profilingStatusMessage = `enabled`;
   }
   catch (err) {
     // Profiling is optional and may be unavailable for some Node/libc combinations.
@@ -56,10 +46,10 @@ if (apiEnv !== 'TEST' && sentryConfig.dsn) {
   }
 
   Sentry.init({
-    dsn: sentryConfig.dsn,
+    dsn: sentryDsn,
     sendDefaultPii: true,
-    tracesSampleRate: tracesSampleRate[apiEnv],
-    environment: apiEnv,
+    tracesSampleRate: Config.sentryConfig.tracesSampleRate[Config.apiEnv],
+    environment: Config.apiEnv,
     ignoreTransactions: [
       '/health_eb',
       '/favicon.ico',
@@ -111,8 +101,8 @@ if (apiEnv !== 'TEST' && sentryConfig.dsn) {
     normalizeDepth: 5,
   });
 
-  console.info(`Sentry profiling ${profilingStatusMessage} (env=${apiEnv})`);
+  console.info(`... Sentry profiling ${profilingStatusMessage}`);
 }
 else {
-  console.info('Sentry profiling disabled: API_ENV is TEST or SENTRY_DSN is missing');
+  console.info('... Sentry profiling disabled');
 }

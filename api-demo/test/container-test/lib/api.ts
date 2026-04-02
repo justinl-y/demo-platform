@@ -1,5 +1,5 @@
 import request from 'supertest';
-import type supertest from 'supertest';
+import type Supertest from 'supertest';
 
 import { BASE_REQUEST } from './constants.ts';
 
@@ -15,7 +15,7 @@ type ApiRequest = (
   resource: string,
   data?: RequestBody,
   headers?: RequestHeaders,
-) => Promise<supertest.Response>;
+) => Promise<Supertest.Response>;
 
 type ApiClient = Record<ApiMethod, ApiRequest>;
 
@@ -23,8 +23,8 @@ const userLogin = async () => {
   const result = await app
     .post('/users/login')
     .send({
-      email: 'jars-super@semios.com',
-      password: 'jars@semios.com',
+      email: 'user.super@email.com',
+      password: 'user.super@email.com',
     })
     .set('Accept', 'application/json')
   ;
@@ -35,7 +35,7 @@ const userLogin = async () => {
 const bearerToken = await userLogin();
 
 const methods: ApiMethod[] = ['get', 'put', 'patch', 'del', 'post'];
-const requestByMethod: Record<ApiMethod, (resource: string) => supertest.Test> = {
+const requestByMethod: Record<ApiMethod, (resource: string) => Supertest.Test> = {
   get: (resource) => app.get(resource),
   put: (resource) => app.put(resource),
   patch: (resource) => app.patch(resource),

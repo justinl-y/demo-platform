@@ -5,13 +5,8 @@ import {
   type SecretValueEntry,
 } from '@aws-sdk/client-secrets-manager';
 import {
-  aws as awsConfig,
-} from '../config/aws.ts';
-import {
-  apiEnv,
-} from '../config/api.ts';
-
-const secretsManagerClient = new SecretsManagerClient(awsConfig);
+  Config,
+} from '#config/index';
 
 // initialized with values for env test
 const secretValues = {
@@ -28,7 +23,7 @@ const secretValues = {
 type SecretValues = typeof secretValues;
 
 // Function to update secretValues based on the response from the Secrets Manager
-const updateSecretValues = (secretsManagerValues: SecretValueEntry[], values: SecretValues): void => {
+function updateSecretValues(secretsManagerValues: SecretValueEntry[], values: SecretValues): void {
   secretsManagerValues.forEach((secretValue: SecretValueEntry) => {
     const name = secretValue.Name;
     const secret = secretValue.SecretString;
@@ -41,23 +36,25 @@ const updateSecretValues = (secretsManagerValues: SecretValueEntry[], values: Se
   });
 };
 
-const batchGetSecretValue = async () => {
+async function batchGetSecretValue() {
   try {
     // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/client/secrets-manager/command/BatchGetSecretValueCommand/
 
-    if (!apiEnv) {
+    if (!Config.apiEnv) {
       console.warn('Secrets fetch failed: API_ENV is not set');
       return;
     }
 
+    const secretsManagerClient = new SecretsManagerClient(Config.awsConfig);
+
     let envKey: string;
 
-    if (apiEnv === 'TEST') {
-      console.log('Secrets fetch skipped: API_ENV is TEST');
+    if (Config.apiEnv === 'TEST') {
+      console.log('... Secrets fetch skipped');
 
       return;  // During the tests we don't want to fetch secrets
     }
-    else envKey = apiEnv;
+    else envKey = Config.apiEnv;
 
     const params: BatchGetSecretValueCommandInput = {
       Filters: [
@@ -84,10 +81,10 @@ const batchGetSecretValue = async () => {
 
     updateSecretValues(secrets, secretValues);
 
-    console.log('Secrets fetched successfully');
+    console.log('... Secrets fetch successful');
   }
   catch (err) {
-    console.error('Secrets fetch failed:', err);
+    console.error('... Secrets fetch failed:', err);
   }
 };
 

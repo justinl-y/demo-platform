@@ -4,13 +4,15 @@ import {
   InternalServerError,
   ImaTeapotError,
 } from 'http-errors-enhanced';
+
 import {
   pgPatch,
 } from './postgres-named.ts';
+
 import type {
   Pool,
   PoolClient,
-} from '../../node_modules/@types/pg/index.js';
+} from 'pg';
 
 type SqlParams = Record<string, unknown>;
 type QueryRow = Record<string, unknown>;
@@ -47,7 +49,7 @@ type KnownError = {
   };
 };
 
-const getErrorDetails = (err: unknown): Required<Pick<KnownError, 'message' | 'name'>> & KnownError => {
+function getErrorDetails(err: unknown): Required<Pick<KnownError, 'message' | 'name'>> & KnownError {
   if (err instanceof Error) {
     return {
       ...err as KnownError,
@@ -72,7 +74,7 @@ const getErrorDetails = (err: unknown): Required<Pick<KnownError, 'message' | 'n
   };
 };
 
-const getBlob = async (file: string): Promise<string> => {
+async function getBlob(file: string): Promise<string> {
   const [filePath] = file.split('.');
   const qualifiedFile = `${filePath}.sql`;
 
@@ -81,7 +83,7 @@ const getBlob = async (file: string): Promise<string> => {
   return blob;
 };
 
-const templateBlob = async (file: string, params: SqlParams): Promise<string> => {
+async function templateBlob(file: string, params: SqlParams): Promise<string> {
   const blob = await getBlob(file);
 
   const templatedBlob = _.template(blob)(params);
@@ -99,7 +101,7 @@ async function pgConnect(this: Pool): Promise<PatchedPgClient> {
   return client as PatchedPgClient;
 };
 
-const errorsToHandle = (err: unknown, code: string | undefined, file: string | undefined, message: string): never => {
+function errorsToHandle(err: unknown, code: string | undefined, file: string | undefined, message: string): never {
   let error;
 
   switch (code) {
@@ -260,7 +262,7 @@ async function query(this: Pool, file: string, params: SqlParams, outputFormat: 
    again, the two keys can be simplified by the caller to string and object, respectively.
 */
 
-const forgeVALUES = (numParams: number) => {
+function forgeVALUES(numParams: number) {
   const func = (...names: string[]): string => {
     const results: string[] = [];
 
@@ -276,7 +278,7 @@ const forgeVALUES = (numParams: number) => {
   return func;
 };
 
-const flattenInstruction = async (files: string[], paramsGroup: SqlParams[]): Promise<FlattenedInstruction[]> => {
+async function flattenInstruction(files: string[], paramsGroup: SqlParams[]): Promise<FlattenedInstruction[]> {
   // both files and paramGroup are arrays, guaranteed by the caller!
   const results: FlattenedInstruction[] = [];
 

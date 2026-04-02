@@ -1,15 +1,50 @@
+import path from 'path';
+
 import type {
   FastifyRequest,
   FastifyReply,
+  FastifyInstance,
 } from 'fastify';
 
-function getHealthDB(req: FastifyRequest, rep: FastifyReply) {
+type PgVersionRow = {
+  version: string;
+};
+
+const CWD = (rel: string) => path.resolve(import.meta.dirname, rel);
+
+async function getHealthDB(this: FastifyInstance, req: FastifyRequest, rep: FastifyReply) {
   const healthDB = {
-    status: 'OK',
+    status: '',
     timestamp: new Date().toISOString(),
   };
 
-  rep.send(healthDB);
+  try {
+    const file = CWD('get-pg-version');
+
+    const result = await this.db.query<PgVersionRow>(file, {}, 'one');
+
+    const {
+      version,
+    } = result ?? {};
+
+    if (!version) throw new Error('No version');
+
+    healthDB.status = 'OK';
+
+    rep
+      .status(200)
+      .send(healthDB);
+  }
+  catch (err) {
+    console.log(err);
+
+    healthDB.status = 'BAD';
+
+    rep
+      .status(500)
+      .send(healthDB)
+    ;
+  }
 
   return rep;
 }
