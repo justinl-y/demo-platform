@@ -6,8 +6,11 @@ import {
 import request from 'supertest';
 
 import { BASE_REQUEST } from '../lib/constants.ts';
+import { getFileNumber } from '../lib/functions.ts';
 
-describe('0002 API docs routes', () => {
+const fileNumber = getFileNumber(import.meta.url);
+
+describe(`${fileNumber} - API Docs`, () => {
   test('GET /api-docs returns Swagger UI HTML', async () => {
     const res = await request(BASE_REQUEST)
       .get('/api-docs')

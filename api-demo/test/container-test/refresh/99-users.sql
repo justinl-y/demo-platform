@@ -1,7 +1,8 @@
 INSERT INTO public.users
   (email, password_hash, full_name, known_as)
 VALUES
-  ('alice.smith@example.com', public.bcrypt('password1'), 'Alice Smith', 'Ali')
+  ('user.super@email.com', public.bcrypt('user.super@email.com'), 'Super User', 'Super')
+  , ('alice.smith@example.com', public.bcrypt('password1'), 'Alice Smith', 'Ali')
   , ('bob.johnson@example.com', public.bcrypt('password2'), 'Bob Johnson', 'Bobby')
   , ('carol.williams@example.com', public.bcrypt('password3'), 'Carol Williams', NULL)
   , ('david.brown@example.com', public.bcrypt('password4'), 'David Brown', 'Dave')

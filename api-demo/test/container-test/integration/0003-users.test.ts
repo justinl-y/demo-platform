@@ -1,5 +1,3 @@
-import path from 'path';
-
 import {
   describe,
   expect,
@@ -10,9 +8,9 @@ import {
 import { noAuthAPI } from '../lib/api.ts';
 import { getFileNumber } from '../lib/functions.ts';
 
-const fileNumber = getFileNumber(path.basename(__filename));
+const fileNumber = getFileNumber(import.meta.url);
 
-describe(`${fileNumber} Users`, () => {
+describe(`${fileNumber} - Users`, () => {
   describe.skip('POST /users/login', async () => {});
   describe.skip('PUT /users/passwordRecovery', async () => {});
   describe.skip('PUT /users/passwordReset', async () => {});

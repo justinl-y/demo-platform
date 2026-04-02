@@ -1,5 +1,5 @@
-import path from 'path';
 import {
+  beforeAll,
   describe,
   expect,
   test,
@@ -8,15 +8,22 @@ import {
 import { noAuthAPI } from '../lib/api.ts';
 import { getFileNumber } from '../lib/functions.ts';
 
-const fileNumber = getFileNumber(path.basename(__filename));
+import type Supertest from 'supertest';
 
-describe(`${fileNumber} DB test`, async () => {
+const fileNumber = getFileNumber(import.meta.url);
+
+describe(`${fileNumber} - API`, async () => {
   describe('GET /health_db', async () => {
     const getResponse = () => noAuthAPI.get('/health_db');
 
-    describe('Request Success', async () => {
-      const res = await getResponse();
-      const { body: responseData } = res;
+    describe('Request Success', () => {
+      let res: Supertest.Response;
+      let responseData: Supertest.Response['body'];
+
+      beforeAll(async () => {
+        res = await getResponse();
+        ({ body: responseData } = res);
+      });
 
       test('Success response returns 200', () => {
         expect(res.statusCode).toBe(200);

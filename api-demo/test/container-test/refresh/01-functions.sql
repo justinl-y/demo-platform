@@ -17,12 +17,12 @@ CREATE OR REPLACE FUNCTION public.add_user (
   , _known_as VARCHAR DEFAULT NULL
   , _is_active BOOLEAN DEFAULT true
 )
-RETURNS BIGINT AS
+RETURNS UUID AS
 $$
 DECLARE
   v_unencrypted_password VARCHAR := COALESCE(_password, _email);
   v_encrypted_password VARCHAR := bcrypt(v_unencrypted_password);
-  v_user_id BIGINT;
+  v_user_id UUID;
 BEGIN
   INSERT INTO public.users
     (

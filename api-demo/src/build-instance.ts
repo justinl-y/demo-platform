@@ -6,6 +6,8 @@ import compress from '@fastify/compress';
 import formBody from '@fastify/formbody';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
+import responseValidation from '@fastify/response-validation';
+import type { FastifyPluginCallback } from 'fastify';
 
 import plugins from './plugins/index.ts';
 import routes from './routes/index.ts';
@@ -31,6 +33,9 @@ import {
   helmetConfig,
 } from '#config/api';
 import {
+  responseValidationConfig,
+} from '#config/response-validation';
+import {
   baseInformation,
 } from './api-docs/base-information.ts';
 
@@ -47,6 +52,7 @@ async function buildInstance() {
   instance.register(accepts);
   instance.register(compress, compressConfig);
   instance.register(formBody);
+  instance.register(responseValidation as FastifyPluginCallback, responseValidationConfig);
 
   // Register Swagger and Swagger UI only in non-prod environments
   if (process.env.NODE_ENV !== 'PROD') {

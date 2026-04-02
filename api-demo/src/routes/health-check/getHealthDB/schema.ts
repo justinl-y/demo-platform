@@ -21,6 +21,7 @@ const response = {
       },
     },
     required: ['status', 'timestamp'],
+    additionalProperties: false,
   },
 };
 
