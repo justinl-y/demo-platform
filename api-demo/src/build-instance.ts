@@ -46,7 +46,7 @@ async function buildInstance() {
   instance.register(responseValidation as FastifyPluginCallback, Config.responseValidationConfig);
 
   // Register Swagger and Swagger UI only in non-prod environments
-  if (process.env.NODE_ENV !== 'PROD') {
+  if (Config.apiEnv !== 'PROD') {
     instance.register(swagger, baseInformation);
     instance.register(swaggerUi, Config.swaggerConfig);
   }

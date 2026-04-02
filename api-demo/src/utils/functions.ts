@@ -15,10 +15,10 @@ function getServerDetails(serverAddress: AddressInfo | string | null): string {
     return `... Server is listening on ${ipAddress}:${port} ${Config.apiEnv !== 'PROD' ? `(${localHost})` : ''}`;
   }
   else if (typeof serverAddress === 'string') {
-    return `...Server is listening on ${serverAddress}`;
+    return `... Server is listening on ${serverAddress}`;
   }
 
-  return 'Server address information is unavailable.';
+  return '... Server address information is unavailable';
 }
 
 type RouteProperties = {

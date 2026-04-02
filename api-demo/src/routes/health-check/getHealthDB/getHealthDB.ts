@@ -27,7 +27,9 @@ async function getHealthDB(this: FastifyInstance, req: FastifyRequest, rep: Fast
       version,
     } = result ?? {};
 
-    if (version) healthDB.status = 'OK';
+    if (!version) throw new Error('No version');
+
+    healthDB.status = 'OK';
 
     rep
       .status(200)
