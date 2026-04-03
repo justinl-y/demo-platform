@@ -1,12 +1,12 @@
 const route = {
-  tags: ['health'],
-  summary: 'Database health check endpoint',
-  description: 'Returns the current health status of the database server',
+  tags: ['users'],
+  // summary: 'Database health check endpoint',
+  // description: 'Returns the current health status of the database server',
   security: [],
 };
 
 const response = {
-  200: {
+  /* 200: {
     type: 'object',
     properties: {
       status: {
@@ -22,10 +22,12 @@ const response = {
     },
     required: ['status', 'timestamp'],
     additionalProperties: false,
-  },
+  }, */
 };
 
 export default {
-  ...route,
-  response,
+  schema: {
+    ...route,
+    response,
+  },
 };

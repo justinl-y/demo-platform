@@ -1,9 +1,9 @@
-import getHealthDBSchema from './getHealthDB/schema.ts';
-import getHealthEBSchema from './getHealthEB/schema.ts';
+import getHealthDBSchema from './get-health-db/schema.ts';
+import getHealthEBSchema from './get-health-eb/schema.ts';
 
-const reqSchema = {
+const schema = {
   getHealthEB: getHealthEBSchema,
   getHealthDB: getHealthDBSchema,
 };
 
-export default reqSchema;
+export default schema;

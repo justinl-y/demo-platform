@@ -7,18 +7,18 @@ import {
   routePropertiesCore,
 } from '#utils/functions';
 import schema from './schema.ts';
-import getHealthDB from './get-health-db/index.ts';
-import getHealthEB from './get-health-eb/index.ts';
+import postLogin from './post-login/index.ts';
 
-const { GET } = HTTP_METHODS;
+const { POST } = HTTP_METHODS;
 
 const routes = {
-  getHealthDB: routePropertiesCore(GET, '/health_db', getHealthDB),
-  getHealthEB: routePropertiesCore(GET, '/health_eb', getHealthEB),
+  postLogin: routePropertiesCore(POST, '/login', postLogin),
 };
 
+export type UsersRouteKey = keyof typeof routes;
+
 export default (instance: FastifyInstance) => {
-  (Object.keys(routes) as Array<keyof typeof routes>).forEach((key) => {
+  (Object.keys(routes) as Array<UsersRouteKey>).forEach((key) => {
     const value = routes[key];
 
     instance.route({ ...value, ...schema[key] });

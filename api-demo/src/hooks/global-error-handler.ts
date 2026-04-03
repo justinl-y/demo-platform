@@ -5,7 +5,7 @@ import type {
 } from 'fastify';
 import * as Sentry from '@sentry/node';
 
-import { buildSentryInteractionMessage } from './consoleInteractionHandler.ts';
+import { buildSentryInteractionMessage } from './console-interaction-handler.ts';
 import { Config } from '#config/index';
 
 const MAX_BREADCRUMB_MESSAGE_LENGTH = 4096;
@@ -13,12 +13,6 @@ const TRUNCATED_SUFFIX = '\n...[truncated]';
 
 type SentryAugmentedError = FastifyError & {
   interactionConsoleLog?: string;
-};
-
-type FastifyErrorWithBody = FastifyError & {
-  body?: {
-    code?: string;
-  };
 };
 
 function buildFallbackInteractionMessage(method: string, url: string, statusCode: number): string {
@@ -54,25 +48,30 @@ function processSentryError(
     : interactionMessage;
 
   const sentryError = error as SentryAugmentedError;
+
   sentryError.interactionConsoleLog = breadcrumbMessage;
 
   Sentry.captureException(sentryError);
 };
 
-function globalErrorHandler(error: FastifyError, request: FastifyRequest, reply: FastifyReply): void {
-  const fastifyError = error as FastifyErrorWithBody;
+function globalErrorHandler(error: FastifyError, request: FastifyRequest, reply: FastifyReply): unknown {
+  const fastifyError = error;
   const statusCode = fastifyError.statusCode || 500;
   const responseBody = {
-    code: fastifyError.code || fastifyError.body?.code,
     statusCode,
     message: fastifyError.message || 'An unexpected error occurred',
   };
 
   reply.error = responseBody;
 
+  reply
+    .status(statusCode)
+    .send(responseBody)
+  ;
+
   if (Config.apiEnv !== 'TEST') processSentryError(error, request, reply, statusCode);
 
-  reply.status(statusCode).send(responseBody);
+  return reply;
 };
 
 export default globalErrorHandler;

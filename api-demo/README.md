@@ -274,8 +274,8 @@ e.g.
 // routes/users/postLogin.js
 const authenticate = require(CWD('util/authenticate'));
 
-async function postLogin(req, res) {
-  const { email, password, level = 0 } = req.body;
+async function postLogin(request, reply) {
+  const { email, password, level = 0 } = request.body;
 
   try {
     ...

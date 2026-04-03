@@ -2,7 +2,11 @@ import { Config } from '#config/index';
 import { localHost } from './constants.ts';
 
 import type { AddressInfo } from 'net';
-import type { RouteHandlerMethod } from 'fastify';
+import type {
+  onRequestHookHandler,
+  preHandlerHookHandler,
+  RouteHandlerMethod,
+} from 'fastify';
 
 function getServerDetails(serverAddress: AddressInfo | string | null): string {
   // Use a type guard to safely check if it's an AddressInfo object
@@ -35,7 +39,29 @@ function routePropertiesCore(method: string, url: string, handler: RouteHandlerM
   };
 };
 
+type OnRequestProperties = {
+  onRequest: onRequestHookHandler[];
+};
+
+function routePropertiesOnRequest(onRequest: onRequestHookHandler[]): OnRequestProperties {
+  return {
+    onRequest,
+  };
+};
+
+type PreHandlerProperties = {
+  preHandler: preHandlerHookHandler[];
+};
+
+function routePropertiesPrehandler(preHandler: preHandlerHookHandler[]): PreHandlerProperties {
+  return {
+    preHandler,
+  };
+}
+
 export {
   routePropertiesCore,
+  routePropertiesOnRequest,
+  routePropertiesPrehandler,
   getServerDetails,
 };

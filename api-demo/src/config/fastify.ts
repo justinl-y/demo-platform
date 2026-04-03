@@ -1,5 +1,5 @@
 import ajvFormats from 'ajv-formats';
-import customAjvFormatsPlugin from '../plugins/customAjvFormats.ts';
+import customAjvFormatsPlugin from '../plugins/custom-ajv-formats.ts';
 
 import type { IncomingMessage, ServerResponse } from 'http';
 import type { FastifyServerOptions } from 'fastify';
@@ -25,16 +25,16 @@ const fastifyConfig: FastifyServerOptions = {
     ignoreTrailingSlash: true,
     ignoreDuplicateSlashes: true,
     // caseSensitive: false,
-    onBadUrl: (path: string, req: IncomingMessage, res: ServerResponse) => {
+    onBadUrl: (path: string, request: IncomingMessage, reply: ServerResponse) => {
       const encodedPath = encodeURIComponent(path);
 
-      res.statusCode = 400;
-      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-      res.end(`Bad path: ${encodedPath}`);
+      reply.statusCode = 400;
+      reply.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      reply.end(`Bad path: ${encodedPath}`);
     },
-    defaultRoute: (req: IncomingMessage, res: ServerResponse) => {
-      res.statusCode = 404;
-      res.end();
+    defaultRoute: (request: IncomingMessage, reply: ServerResponse) => {
+      reply.statusCode = 404;
+      reply.end();
     },
   },
 };

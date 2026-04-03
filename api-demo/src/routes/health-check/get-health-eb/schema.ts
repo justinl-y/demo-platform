@@ -25,6 +25,8 @@ const response = {
 };
 
 export default {
-  ...route,
-  response,
+  schema: {
+    ...route,
+    response,
+  },
 };

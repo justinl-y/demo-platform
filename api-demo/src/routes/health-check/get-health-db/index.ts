@@ -12,7 +12,7 @@ type PgVersionRow = {
 
 const CWD = (rel: string) => path.resolve(import.meta.dirname, rel);
 
-async function getHealthDB(this: FastifyInstance, req: FastifyRequest, rep: FastifyReply) {
+async function getHealthDB(this: FastifyInstance, request: FastifyRequest, reply: FastifyReply) {
   const healthDB = {
     status: '',
     timestamp: new Date().toISOString(),
@@ -31,7 +31,7 @@ async function getHealthDB(this: FastifyInstance, req: FastifyRequest, rep: Fast
 
     healthDB.status = 'OK';
 
-    rep
+    reply
       .status(200)
       .send(healthDB);
   }
@@ -40,13 +40,13 @@ async function getHealthDB(this: FastifyInstance, req: FastifyRequest, rep: Fast
 
     healthDB.status = 'BAD';
 
-    rep
+    reply
       .status(500)
       .send(healthDB)
     ;
   }
 
-  return rep;
+  return reply;
 }
 
 export default getHealthDB;

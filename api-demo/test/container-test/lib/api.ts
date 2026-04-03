@@ -1,7 +1,8 @@
 import request from 'supertest';
-import type Supertest from 'supertest';
 
 import { BASE_REQUEST } from './constants.ts';
+
+import type Supertest from 'supertest';
 
 const app = request(BASE_REQUEST);
 
@@ -19,7 +20,7 @@ type ApiRequest = (
 
 type ApiClient = Record<ApiMethod, ApiRequest>;
 
-const userLogin = async () => {
+async function userLogin() {
   const result = await app
     .post('/users/login')
     .send({
@@ -50,34 +51,34 @@ const noAuthAPI = {} as ApiClient;
 methods.forEach((method) => {
   // Return a pre-configured Supertest request with authorization headers
   authAPI[method] = async (resource, data = {}, headers = {}) => {
-    const res = await requestByMethod[method](resource)
+    const rep = await requestByMethod[method](resource)
       .set('Authorization', `Bearer ${bearerToken}`)
       .send(data)
       .set(headers)
       .set('Accept', 'application/json');
 
-    if (res.status === 500) {
+    if (rep.status === 500) {
       console.log('SERVER RESPONDED WITH a 500 Status. You should investigate this. Abandoning Tests.');
-      console.log(JSON.stringify(res.body));
+      console.log(JSON.stringify(rep.body));
       process.exit(1);
     }
     else {
-      return res;
+      return rep;
     }
   };
   noAuthAPI[method] = async (resource, data = {}, headers = {}) => {
-    const res = await requestByMethod[method](resource)
+    const rep = await requestByMethod[method](resource)
       .send(data)
       .set(headers)
       .set('Accept', 'application/json');
 
-    if (res.status === 500) {
+    if (rep.status === 500) {
       console.log('SERVER RESPONDED WITH a 500 Status. You should investigate this. Abandoning Tests.');
-      console.log(JSON.stringify(res.body));
+      console.log(JSON.stringify(rep.body));
       process.exit(1);
     }
     else {
-      return res;
+      return rep;
     }
   };
 });

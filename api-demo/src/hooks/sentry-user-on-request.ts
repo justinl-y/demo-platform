@@ -1,14 +1,15 @@
-import type {
-  FastifyRequest,
-  FastifyReply,
-} from 'fastify';
 import * as Sentry from '@sentry/node';
 
 import { Config } from '#config/index';
 
-async function setSentryUserOnRequest(req: FastifyRequest, res: FastifyReply) {
+import type {
+  FastifyRequest,
+  FastifyReply,
+} from 'fastify';
+
+async function setSentryUserOnRequest(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   if (Config.apiEnv !== 'TEST') {
-    const user = req.user;
+    const user = request.user;
 
     if (user) {
       Sentry.setUser({

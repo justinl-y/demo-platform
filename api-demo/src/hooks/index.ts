@@ -1,13 +1,15 @@
-import consoleErrorHandler from './consoleErrorHandler.ts';
-import consoleInteractionHandler from './consoleInteractionHandler.ts';
-import globalErrorHandler from './globalErrorHandler.ts';
-import responseBodyOnErrorHandler from './responseBodyOnError.ts';
-import setSentryUserOnRequest from './sentryUserOnRequest.ts';
+import authenticateOnRequest from './authenticate-on-request.ts';
+import consoleErrorHandler from './console-error-handler.ts';
+import consoleInteractionHandler from './console-interaction-handler.ts';
+import globalErrorHandler from './global-error-handler.ts';
+import replyBodyOnErrorHandler from './reply-body-on-error.ts';
+import setSentryUserOnRequest from './sentry-user-on-request.ts';
 
 export {
+  authenticateOnRequest,
   consoleErrorHandler,
   consoleInteractionHandler,
   globalErrorHandler,
-  responseBodyOnErrorHandler,
+  replyBodyOnErrorHandler,
   setSentryUserOnRequest,
 };

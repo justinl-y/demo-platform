@@ -17,16 +17,16 @@ describe(`${fileNumber} - API`, async () => {
     const getResponse = () => noAuthAPI.get('/health_db');
 
     describe('Request Success', () => {
-      let res: Supertest.Response;
+      let rep: Supertest.Response;
       let responseData: Supertest.Response['body'];
 
       beforeAll(async () => {
-        res = await getResponse();
-        ({ body: responseData } = res);
+        rep = await getResponse();
+        ({ body: responseData } = rep);
       });
 
       test('Success response returns 200', () => {
-        expect(res.statusCode).toBe(200);
+        expect(rep.statusCode).toBe(200);
       });
 
       test('Response schema matches the expected structure', () => {

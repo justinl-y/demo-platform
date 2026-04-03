@@ -1,14 +1,15 @@
 import type { FastifyServerOptions } from 'fastify';
 import ajvFormats from 'ajv-formats';
 
-import customAjvFormatsPlugin from '../plugins/customAjvFormats.ts';
+import customAjvFormatsPlugin from '../plugins/custom-ajv-formats.ts';
 
 type AjvPlugins = NonNullable<NonNullable<FastifyServerOptions['ajv']>['plugins']>;
 type AjvPlugin = Exclude<AjvPlugins[number], [unknown, unknown]>;
 
 const ajvFormatsPlugin = ajvFormats as unknown as AjvPlugin;
-const responseValidationConfig = {
+const replyValidationConfig = {
   ajv: {
+    strict: false,
     plugins: [
       [ajvFormatsPlugin, { mode: 'full' }],
       customAjvFormatsPlugin as AjvPlugin,
@@ -17,5 +18,5 @@ const responseValidationConfig = {
 };
 
 export {
-  responseValidationConfig,
+  replyValidationConfig,
 };
