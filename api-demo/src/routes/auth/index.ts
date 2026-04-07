@@ -1,5 +1,3 @@
-import type { FastifyInstance } from 'fastify';
-
 import {
   HTTP_METHODS,
 } from '#utils/constants';
@@ -9,6 +7,8 @@ import {
 import schema from './schema.ts';
 import postLogin from './post-login/index.ts';
 import postRefresh from './post-refresh/index.ts';
+
+import type { FastifyInstance } from 'fastify';
 
 const { POST } = HTTP_METHODS;
 

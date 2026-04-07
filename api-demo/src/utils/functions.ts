@@ -32,11 +32,11 @@ type RouteProperties = {
   handler: RouteHandlerMethod;
 };
 
-function routePropertiesCore(method: string, url: string, handler: RouteHandlerMethod): RouteProperties {
+function routePropertiesCore(method: string, url: string, handler: (...args: any[]) => any): RouteProperties {
   return {
     method,
     url,
-    handler,
+    handler: handler as RouteHandlerMethod,
   };
 };
 

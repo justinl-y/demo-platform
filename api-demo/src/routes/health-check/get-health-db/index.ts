@@ -6,9 +6,9 @@ import type {
   FastifyInstance,
 } from 'fastify';
 
-type PgVersionRow = {
-  version: string;
-};
+import type {
+  IHealthCheckGetHealthDbGetPgVersionResult,
+} from './types/get-pg-version.typed.queries.ts';
 
 const CWD = (rel: string) => path.resolve(import.meta.dirname, rel);
 
@@ -21,7 +21,7 @@ async function getHealthDB(this: FastifyInstance, request: FastifyRequest, reply
   try {
     const file = CWD('get-pg-version');
 
-    const result = await this.db.query<PgVersionRow>(file, {}, 'one');
+    const result = await this.db.query<IHealthCheckGetHealthDbGetPgVersionResult>(file, {}, 'one');
 
     const {
       version,

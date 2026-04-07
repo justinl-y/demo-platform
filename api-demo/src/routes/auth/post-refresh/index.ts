@@ -21,24 +21,37 @@ import type {
   VerifyPayloadTypeCustom,
 } from '../../../types/jwt-payload.ts';
 
-type Request = {
-  body: {
-    token_refresh: string;
-  };
-};
+import type {
+  IAuthPostRefreshGetUserWithRefreshTokenResult,
+} from './types/get-user-with-refresh-token.typed.queries.ts';
 
 const relPath = import.meta.dirname;
 const error = new UnauthorizedError('Authentication failed');
 
-async function postRefresh(this: FastifyInstance, request: FastifyRequest, reply: FastifyReply) {
+type Request = {
+  Body: {
+    token_refresh: string;
+  };
+};
+
+async function postRefresh(this: FastifyInstance, request: FastifyRequest<Request>, reply: FastifyReply) {
   const {
     body: {
       token_refresh: tokenRefresh,
     },
-  } = request as Request;
+  } = request;
 
-  // check for valid token and token type - if not throw
-  const decodedToken: VerifyPayloadTypeCustom = this.jwt.verify(tokenRefresh);
+  let decodedToken: VerifyPayloadTypeCustom;
+
+  try {
+    // check for valid token and token type - if not throw
+    decodedToken = this.jwt.verify(tokenRefresh);
+  }
+  catch (err) {
+    console.log(err);
+
+    throw error;
+  }
 
   const {
     id: userId,
@@ -48,13 +61,8 @@ async function postRefresh(this: FastifyInstance, request: FastifyRequest, reply
 
   if (tokenType !== 'refresh') throw new UnauthorizedError('Incorrect authorization token type');
 
-  type UserRow = {
-    id: string;
-    token_refresh_hash: string;
-  };
-
   // get hashed access token if existing - if not throw
-  const user = await this.db.query<UserRow>(cwd('get-user-with-refresh-token', relPath), { userId }, 'one');
+  const user = await this.db.query<IAuthPostRefreshGetUserWithRefreshTokenResult>(cwd('get-user-with-refresh-token', relPath), { userId }, 'one');
   if (!user) throw error;
 
   const {
@@ -62,8 +70,8 @@ async function postRefresh(this: FastifyInstance, request: FastifyRequest, reply
   } = user;
 
   // compare tokenRefreshHash to incoming token - if not the same throw
-  const validAccessTokem = await bcryptCompare(tokenRefresh, tokenRefreshHash);
-  if (!validAccessTokem) throw error;
+  const validAccessToken = await bcryptCompare(tokenRefresh, tokenRefreshHash);
+  if (!validAccessToken) throw error;
 
   // create a new access token
   const tokenAccess = generateJwt.call(this, userId, userEmail, 'access');

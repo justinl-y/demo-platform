@@ -1,0 +1,12 @@
+{
+  "srcDir": "./src",
+  "failOnError": true,
+  "camelCaseColumnNames": false,
+  "transforms": [
+    {
+      "mode": "sql",
+      "include": "routes/**/types/*.typed.sql",
+      "emitTemplate": "{{dir}}/{{name}}.queries.ts"
+    }
+  ]
+}

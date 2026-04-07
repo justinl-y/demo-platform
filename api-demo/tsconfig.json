@@ -22,6 +22,7 @@
   },
   "include": [
     "./src/**/*",
+    "./scripts/**/*",
     "./test/container-test/**/*"
   ],
   "exclude": [

@@ -5,7 +5,6 @@ import {
 import {
   cwd,
 } from '#utils/functions';
-
 import {
   bcryptCompare,
   bcryptHash,
@@ -17,34 +16,30 @@ import type {
   FastifyReply,
   FastifyInstance,
 } from 'fastify';
+import type {
+  IAuthPostLoginGetUserResult,
+} from './types/get-user.typed.queries.ts';
+
+const relPath = import.meta.dirname;
+const error = new UnauthorizedError('Authentication failed');
 
 type Request = {
-  body: {
+  Body: {
     email: string;
     password: string;
   };
 };
 
-type UserRow = {
-  id: string;
-  full_name: string;
-  known_as: string;
-  password_hash: string;
-};
-
-const relPath = import.meta.dirname;
-const error = new UnauthorizedError('Authentication failed');
-
-async function postLogin(this: FastifyInstance, request: FastifyRequest, reply: FastifyReply) {
+async function postLogin(this: FastifyInstance, request: FastifyRequest<Request>, reply: FastifyReply) {
   const {
     body: {
       email: userEmail,
       password: incomingPassword,
     },
-  } = request as Request;
+  } = request;
 
   // get email + hashed password from db - if nothing throw
-  const user = await this.db.query<UserRow>(cwd('get-user', relPath), { email: userEmail }, 'one');
+  const user = await this.db.query<IAuthPostLoginGetUserResult>(cwd('get-user', relPath), { email: userEmail }, 'one');
   if (!user) throw error;
 
   const {

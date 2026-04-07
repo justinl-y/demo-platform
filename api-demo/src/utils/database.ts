@@ -195,7 +195,7 @@ function errorsToHandle(err: unknown, code: string | undefined, file: string | u
 */
 
 async function query<
-  TRow extends QueryRow = QueryRow,
+  TRow extends object = QueryRow,
   F extends QueryOutputFormat = 'collection',
 >(
   this: Pool,

@@ -4,7 +4,7 @@ export type QueryRow = Record<string, unknown>;
 
 export type QueryOutputFormat = 'collection' | 'one';
 
-export type QueryResult<F extends QueryOutputFormat, TRow extends QueryRow> = F extends 'one'
+export type QueryResult<F extends QueryOutputFormat, TRow extends object> = F extends 'one'
   ? TRow | null
   : TRow[] | null;
 
@@ -17,13 +17,13 @@ export type TransactionResult = Record<string, QueryRow[]>;
 
 export type DatabaseDecorator = {
   query: {
-    <TRow extends QueryRow = QueryRow>(
+    <TRow extends object = QueryRow>(
       file: string,
       params: SqlParams,
       outputFormat: 'one',
     ): Promise<QueryResult<'one', TRow>>;
 
-    <TRow extends QueryRow = QueryRow>(
+    <TRow extends object = QueryRow>(
       file: string,
       params: SqlParams,
       outputFormat?: 'collection',

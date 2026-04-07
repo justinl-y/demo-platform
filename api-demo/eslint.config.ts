@@ -6,6 +6,7 @@ export default [
   ...neostandard({
     ignores: [
       '**/node_modules/**',
+      '**/*.typed.queries.ts',
     ],
     ts: true,
   }),
