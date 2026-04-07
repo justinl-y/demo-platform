@@ -1,0 +1,9 @@
+SELECT
+  u.id
+  , u.token_refresh_hash
+FROM
+  public.users AS u
+WHERE
+  u.id = $userId
+  AND u.token_refresh_hash IS NOT NULL
+;

@@ -6,6 +6,7 @@ function authConfig() {
     audience: secretValues.AUTH_AUDIENCE,
     accessTokenExpiration: '60m',
     refreshTokenExpiration: '7d',
+    saltWorkFactor: 10,
   };
 }
 

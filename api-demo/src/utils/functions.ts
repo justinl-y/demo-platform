@@ -60,7 +60,7 @@ function routePropertiesPrehandler(preHandler: preHandlerHookHandler[]): PreHand
   };
 }
 
-function CWD(file: string, relativePath: string) {
+function cwd(file: string, relativePath: string) {
   return path.resolve(relativePath, file);
 }
 
@@ -69,5 +69,5 @@ export {
   routePropertiesOnRequest,
   routePropertiesPrehandler,
   getServerDetails,
-  CWD,
+  cwd,
 };

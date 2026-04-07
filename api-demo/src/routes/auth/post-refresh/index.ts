@@ -3,10 +3,11 @@ import {
 } from 'http-errors-enhanced';
 
 import {
-  CWD,
+  cwd,
 } from '#utils/functions';
 
 import {
+  bcryptCompare,
   generateJwt,
 } from '#utils/authentication';
 
@@ -15,6 +16,10 @@ import type {
   FastifyReply,
   FastifyInstance,
 } from 'fastify';
+
+import type {
+  VerifyPayloadTypeCustom,
+} from '../../../types/jwt-payload.ts';
 
 type Request = {
   body: {
@@ -32,31 +37,35 @@ async function postRefresh(this: FastifyInstance, request: FastifyRequest, reply
     },
   } = request as Request;
 
-  // check for valid token
-  try {
-    this.jwt.verify(tokenRefresh);
-  }
-  catch (err) {
-    console.log(err);
-
-    throw error;
-  }
-
-  // check for token esistance
-  type UserRow = {
-    id: string;
-    email: string;
-  };
-
-  const user = await this.db.query<UserRow>(CWD('get-user-by-refresh-token', relPath), { tokenRefresh }, 'one');
-  if (!user) throw error;
+  // check for valid token and token type - if not throw
+  const decodedToken: VerifyPayloadTypeCustom = this.jwt.verify(tokenRefresh);
 
   const {
     id: userId,
     email: userEmail,
+    type: tokenType,
+  } = decodedToken;
+
+  if (tokenType !== 'refresh') throw new UnauthorizedError('Incorrect authorization token type');
+
+  type UserRow = {
+    id: string;
+    token_refresh_hash: string;
+  };
+
+  // get hashed access token if existing - if not throw
+  const user = await this.db.query<UserRow>(cwd('get-user-with-refresh-token', relPath), { userId }, 'one');
+  if (!user) throw error;
+
+  const {
+    token_refresh_hash: tokenRefreshHash,
   } = user;
 
-  // if existing create a new access token
+  // compare tokenRefreshHash to incoming token - if not the same throw
+  const validAccessTokem = await bcryptCompare(tokenRefresh, tokenRefreshHash);
+  if (!validAccessTokem) throw error;
+
+  // create a new access token
   const tokenAccess = generateJwt.call(this, userId, userEmail, 'access');
 
   const result = { token_access: tokenAccess };

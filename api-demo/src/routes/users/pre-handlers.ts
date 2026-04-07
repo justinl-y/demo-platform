@@ -3,12 +3,12 @@ import { routePropertiesPrehandler } from '#utils/functions';
 import type { FastifyInstance } from 'fastify';
 import type { RouteKey } from './index.ts';
 
-function onRequest(this: FastifyInstance, key: RouteKey) {
-  const routePreHander = {
+function preHandler(this: FastifyInstance, key: RouteKey) {
+  const routePreHandler = {
     getUsers: routePropertiesPrehandler([]),
   };
 
-  return routePreHander[key] ?? {};
+  return routePreHandler[key] ?? {};
 }
 
-export default onRequest;
+export default preHandler;

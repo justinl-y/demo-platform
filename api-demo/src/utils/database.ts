@@ -213,7 +213,7 @@ async function query<
     const regexPattern = wordsToSearch.map((word) => `\\b${word}\\b`).join('|');
     const testRegex = new RegExp(regexPattern, 'i');
 
-    if (testRegex.test(templatedBlob)) throw new InternalServerError('INSERT|UPDATE|DELETE queries should use db.transact');
+    if (testRegex.test(templatedBlob)) throw new InternalServerError('INSERT|UPDATE|DELETE queries should use db.transaction');
 
     pgClient = await pgConnect.call(this);
 

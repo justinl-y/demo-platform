@@ -3,11 +3,12 @@ import {
 } from 'http-errors-enhanced';
 
 import {
-  CWD,
+  cwd,
 } from '#utils/functions';
 
 import {
   bcryptCompare,
+  bcryptHash,
   generateJwt,
 } from '#utils/authentication';
 
@@ -43,7 +44,7 @@ async function postLogin(this: FastifyInstance, request: FastifyRequest, reply: 
   } = request as Request;
 
   // get email + hashed password from db - if nothing throw
-  const user = await this.db.query<UserRow>(CWD('get-user', relPath), { email: userEmail }, 'one');
+  const user = await this.db.query<UserRow>(cwd('get-user', relPath), { email: userEmail }, 'one');
   if (!user) throw error;
 
   const {
@@ -62,14 +63,15 @@ async function postLogin(this: FastifyInstance, request: FastifyRequest, reply: 
   const tokenRefresh = generateJwt.call(this, userId, userEmail, 'refresh');
 
   // hash tokenRefresh
+  const hashedTokenRefresh = await bcryptHash(tokenRefresh);
 
-  // save tokenRefresh to db and set last_login to now
+  // save hashedTokenRefresh to db and set last_login to now
   const statements = [
     {
       files: [
-        CWD('set-user-token', relPath),
+        cwd('set-user-token', relPath),
       ],
-      params: { tokenRefresh, userId },
+      params: { hashedTokenRefresh, userId },
     },
   ];
 
