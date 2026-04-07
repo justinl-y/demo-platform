@@ -1,6 +1,20 @@
+import {
+  UnauthorizedError,
+} from 'http-errors-enhanced';
+
+import {
+  CWD,
+} from '#utils/functions';
+
+import {
+  bcryptCompare,
+  generateJwt,
+} from '#utils/authentication';
+
 import type {
   FastifyRequest,
   FastifyReply,
+  FastifyInstance,
 } from 'fastify';
 
 type Request = {
@@ -10,23 +24,70 @@ type Request = {
   };
 };
 
-async function postLogin(request: FastifyRequest, reply: FastifyReply) {
+type UserRow = {
+  id: string;
+  full_name: string;
+  known_as: string;
+  password_hash: string;
+};
+
+const relPath = import.meta.dirname;
+const error = new UnauthorizedError('Authentication failed');
+
+async function postLogin(this: FastifyInstance, request: FastifyRequest, reply: FastifyReply) {
   const {
     body: {
-      email,
-      password,
+      email: userEmail,
+      password: incomingPassword,
     },
   } = request as Request;
 
-  const defaultResponse = {
-    id: '7acd58cc-4ae5-4046-9037-383a057e4970',
-    email,
-    full_name: 'John Doe',
-    known_as: 'John',
-    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.demo.signature',
+  // get email + hashed password from db - if nothing throw
+  const user = await this.db.query<UserRow>(CWD('get-user', relPath), { email: userEmail }, 'one');
+  if (!user) throw error;
+
+  const {
+    id: userId,
+    full_name: fullName,
+    known_as: knownAs,
+    password_hash: passwordHash,
+  } = user;
+
+  // bcrypt compare incoming password with hashed password - if not a match throw
+  const compare = await bcryptCompare(incomingPassword, passwordHash);
+  if (!compare) throw error;
+
+  // generate jwts
+  const tokenAccess = generateJwt.call(this, userId, userEmail, 'access');
+  const tokenRefresh = generateJwt.call(this, userId, userEmail, 'refresh');
+
+  // hash tokenRefresh
+
+  // save tokenRefresh to db and set last_login to now
+  const statements = [
+    {
+      files: [
+        CWD('set-user-token', relPath),
+      ],
+      params: { tokenRefresh, userId },
+    },
+  ];
+
+  await this.db.transaction(statements);
+
+  const response = {
+    id: userId,
+    email: userEmail,
+    full_name: fullName,
+    known_as: knownAs,
+    token_access: tokenAccess,
+    token_refresh: tokenRefresh,
   };
 
-  return reply.send(defaultResponse);
+  reply
+    .send(response);
+
+  return reply;
 }
 
 export default postLogin;

@@ -17,8 +17,10 @@ const routes = {
   getHealthEB: routePropertiesCore(GET, '/health_eb', getHealthEB),
 };
 
+export type HealthCheckRouteKey = keyof typeof routes;
+
 export default (instance: FastifyInstance) => {
-  (Object.keys(routes) as Array<keyof typeof routes>).forEach((key) => {
+  (Object.keys(routes) as Array<HealthCheckRouteKey>).forEach((key) => {
     const value = routes[key];
 
     instance.route({ ...value, ...schema[key] });

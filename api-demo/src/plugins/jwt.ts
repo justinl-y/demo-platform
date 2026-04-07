@@ -14,10 +14,6 @@ function jwtPlugin(fastify: FastifyInstance, options: FastifyPluginOptions): voi
 
   const jwtOptions = {
     secret: jwtAuthConfig.secret,
-    sign: {
-      aud: jwtAuthConfig.audience,
-      expiresIn: Config.userConfig.password.expirationTime,
-    },
   };
 
   fastify.register(fastifyJwt, jwtOptions);

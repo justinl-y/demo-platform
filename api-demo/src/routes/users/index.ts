@@ -17,10 +17,10 @@ const routes = {
   getUsers: routePropertiesCore(GET, '/users', getUsers),
 };
 
-export type UsersRouteKey = keyof typeof routes;
+export type RouteKey = keyof typeof routes;
 
 export default (instance: FastifyInstance) => {
-  (Object.keys(routes) as Array<UsersRouteKey>).forEach((key) => {
+  (Object.keys(routes) as Array<RouteKey>).forEach((key) => {
     const value = routes[key];
 
     instance.route({ ...value, ...schema[key], ...onRequest.call(instance, key), ...preHandlers.call(instance, key) });

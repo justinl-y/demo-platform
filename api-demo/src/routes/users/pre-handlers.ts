@@ -1,9 +1,7 @@
 import { routePropertiesPrehandler } from '#utils/functions';
 
 import type { FastifyInstance } from 'fastify';
-import type { UsersRouteKey } from './index.ts';
-
-type RouteKey = UsersRouteKey;
+import type { RouteKey } from './index.ts';
 
 function onRequest(this: FastifyInstance, key: RouteKey) {
   const routePreHander = {

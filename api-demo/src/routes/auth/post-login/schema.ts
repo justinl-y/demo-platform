@@ -29,7 +29,8 @@ const response = {
       'email',
       'full_name',
       'known_as',
-      'token',
+      'token_access',
+      'token_refresh',
     ],
     additionalProperties: false,
     properties: {
@@ -57,9 +58,14 @@ const response = {
         description: 'User known as name (usually first name)',
         example: 'John',
       },
-      token: {
+      token_access: {
         type: 'string',
         description: 'JWT bearer token for authenticated requests',
+        example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.demo.signature',
+      },
+      token_refresh: {
+        type: 'string',
+        description: 'JWT bearer token for refreshing access token',
         example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.demo.signature',
       },
     },

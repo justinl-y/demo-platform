@@ -1,11 +1,8 @@
 import {
   describe,
-  expect,
-  test,
 } from 'vitest';
 
 // import db from '../lib/db';
-import { noAuthAPI } from '../lib/api.ts';
 import { getFileNumber } from '../lib/functions.ts';
 
 const fileNumber = getFileNumber(import.meta.url);

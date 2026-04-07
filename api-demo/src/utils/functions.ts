@@ -1,3 +1,4 @@
+import path from 'path';
 import { Config } from '#config/index';
 import { localHost } from './constants.ts';
 
@@ -59,9 +60,14 @@ function routePropertiesPrehandler(preHandler: preHandlerHookHandler[]): PreHand
   };
 }
 
+function CWD(file: string, relativePath: string) {
+  return path.resolve(relativePath, file);
+}
+
 export {
   routePropertiesCore,
   routePropertiesOnRequest,
   routePropertiesPrehandler,
   getServerDetails,
+  CWD,
 };

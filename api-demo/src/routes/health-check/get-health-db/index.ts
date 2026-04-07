@@ -14,7 +14,7 @@ const CWD = (rel: string) => path.resolve(import.meta.dirname, rel);
 
 async function getHealthDB(this: FastifyInstance, request: FastifyRequest, reply: FastifyReply) {
   const healthDB = {
-    status: '',
+    status: 'BAD',
     timestamp: new Date().toISOString(),
   };
 
@@ -37,8 +37,6 @@ async function getHealthDB(this: FastifyInstance, request: FastifyRequest, reply
   }
   catch (err) {
     console.log(err);
-
-    healthDB.status = 'BAD';
 
     reply
       .status(500)

@@ -13,21 +13,19 @@ import type {
   Pool,
   PoolClient,
 } from 'pg';
-
-type SqlParams = Record<string, unknown>;
-type QueryRow = Record<string, unknown>;
-type QueryOutputFormat = 'collection' | 'one';
+import type {
+  QueryOutputFormat,
+  QueryResult,
+  QueryRow,
+  SqlParams,
+  TransactionInstruction,
+} from '../types/database.ts';
 
 type PatchedPgClient = PoolClient & {
   query: (queryText: string, values?: SqlParams) => Promise<{
     rowCount: number | null;
     rows: QueryRow[];
   }>;
-};
-
-type TransactionInstruction = {
-  files: string | string[];
-  params: SqlParams | SqlParams[];
 };
 
 type FlattenedInstruction = {
@@ -83,13 +81,15 @@ async function getBlob(file: string): Promise<string> {
   return blob;
 };
 
-async function templateBlob(file: string, params: SqlParams): Promise<string> {
+/* async function templateBlob(file: string, params: SqlParams): Promise<string> {
   const blob = await getBlob(file);
+
+  console.log(blob);
 
   const templatedBlob = _.template(blob)(params);
 
   return templatedBlob;
-};
+}; */
 
 async function pgConnect(this: Pool): Promise<PatchedPgClient> {
   const client = await this.connect();
@@ -194,11 +194,20 @@ function errorsToHandle(err: unknown, code: string | undefined, file: string | u
    ╚══▀▀═╝  ╚═════╝ ╚══════╝╚═╝  ╚═╝   ╚═╝
 */
 
-async function query(this: Pool, file: string, params: SqlParams, outputFormat: QueryOutputFormat = 'collection') {
+async function query<
+  TRow extends QueryRow = QueryRow,
+  F extends QueryOutputFormat = 'collection',
+>(
+  this: Pool,
+  file: string,
+  params: SqlParams,
+  outputFormat?: F,
+): Promise<QueryResult<F, TRow>> {
   let pgClient: PatchedPgClient | undefined;
 
   try {
-    const templatedBlob = await templateBlob(file, params);
+    const templatedBlob = await getBlob(file);
+    // const templatedBlob = await templateBlob(file, params);
 
     const wordsToSearch = ['INSERT', 'UPDATE', 'DELETE'];
     const regexPattern = wordsToSearch.map((word) => `\\b${word}\\b`).join('|');
@@ -208,17 +217,15 @@ async function query(this: Pool, file: string, params: SqlParams, outputFormat: 
 
     pgClient = await pgConnect.call(this);
 
-    const result = await pgClient.query(templatedBlob);
+    const result = await pgClient.query(templatedBlob, params);
 
     const { rowCount } = result;
+    const resolvedOutputFormat = (outputFormat ?? 'collection') as QueryOutputFormat;
 
-    let returnRows;
+    if (rowCount === 0) return null as QueryResult<F, TRow>;
+    if (resolvedOutputFormat === 'one') return ((result.rows[0] as TRow | undefined) ?? null) as QueryResult<F, TRow>;
 
-    if (rowCount === 0) returnRows = null; // return null
-    else if (outputFormat === 'one') returnRows = result.rows[0]; // or a single object
-    else if (outputFormat === 'collection') returnRows = result.rows; // or an array of objects
-
-    return returnRows;
+    return result.rows as QueryResult<F, TRow>;
   }
   catch (err) {
     let {
@@ -306,7 +313,7 @@ async function flattenInstruction(files: string[], paramsGroup: SqlParams[]): Pr
         results.push({
           file,
           params,
-          query: _.template(blob)(params),
+          query: blob, // _.template(blob)(params),
         });
       }
     }
@@ -434,7 +441,6 @@ async function transaction(this: Pool, rawInstructions: TransactionInstruction |
 
     const { message } = errorDetails;
     const sqlFileName = errorDetails.sqlFileName || errorDetails.path;
-
     const handledError = errorsToHandle(err, code, sqlFileName, message);
 
     throw handledError;

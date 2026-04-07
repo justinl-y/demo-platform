@@ -3,9 +3,7 @@ import customAjvFormatsPlugin from '../plugins/custom-ajv-formats.ts';
 
 import type { IncomingMessage, ServerResponse } from 'http';
 import type { FastifyServerOptions } from 'fastify';
-
-type AjvPlugins = NonNullable<NonNullable<FastifyServerOptions['ajv']>['plugins']>;
-type AjvPlugin = Exclude<AjvPlugins[number], [unknown, unknown]>;
+import type { AjvPlugin } from '../types/ajv.ts';
 
 const ajvFormatsPlugin = ajvFormats as unknown as AjvPlugin;
 
