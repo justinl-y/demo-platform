@@ -1,7 +1,7 @@
 const route = {
   tags: ['auth'],
   summary: 'User refresh access token',
-  description: 'Refreshes a user/s token with a valid refresh token',
+  description: 'Refreshes a user\'s token with a valid refresh token',
 };
 
 const body = {

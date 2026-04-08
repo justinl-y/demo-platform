@@ -21,7 +21,6 @@ import type {
 } from './types/get-user.typed.queries.ts';
 
 const relPath = import.meta.dirname;
-const error = new UnauthorizedError('Authentication failed');
 
 type Request = {
   Body: {
@@ -40,7 +39,7 @@ async function postLogin(this: FastifyInstance, request: FastifyRequest<Request>
 
   // get email + hashed password from db - if nothing throw
   const user = await this.db.query<IAuthPostLoginGetUserResult>(cwd('get-user', relPath), { email: userEmail }, 'one');
-  if (!user) throw error;
+  if (!user) throw new UnauthorizedError('Authentication failed');
 
   const {
     id: userId,
@@ -51,7 +50,7 @@ async function postLogin(this: FastifyInstance, request: FastifyRequest<Request>
 
   // bcrypt compare incoming password with hashed password - if not a match throw
   const compare = await bcryptCompare(incomingPassword, passwordHash);
-  if (!compare) throw error;
+  if (!compare) throw new UnauthorizedError('Authentication failed');
 
   // generate jwts
   const tokenAccess = generateJwt.call(this, userId, userEmail, 'access');

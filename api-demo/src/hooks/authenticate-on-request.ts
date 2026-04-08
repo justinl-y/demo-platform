@@ -21,7 +21,6 @@ async function authenticateOnRequest(request: FastifyRequest, reply: FastifyRepl
     console.log(err);
 
     throw new UnauthorizedError('Authentication failed');
-    // reply.send(err);
   }
 };
 

@@ -36,7 +36,7 @@ CREATE TABLE public.users (
   , email VARCHAR(255) NOT NULL UNIQUE
   , full_name VARCHAR(255) NOT NULL
   , known_as VARCHAR(255)
-	, is_active BOOLEAN NOT NULL DEFAULT TRUE
+  , is_active BOOLEAN NOT NULL DEFAULT TRUE
   , password_hash VARCHAR(255) NOT NULL
   , token_password_reset_hash VARCHAR(255) UNIQUE
   , token_refresh_hash VARCHAR(255) UNIQUE

@@ -26,7 +26,6 @@ import type {
 } from './types/get-user-with-refresh-token.typed.queries.ts';
 
 const relPath = import.meta.dirname;
-const error = new UnauthorizedError('Authentication failed');
 
 type Request = {
   Body: {
@@ -50,7 +49,7 @@ async function postRefresh(this: FastifyInstance, request: FastifyRequest<Reques
   catch (err) {
     console.log(err);
 
-    throw error;
+    throw new UnauthorizedError('Authentication failed');
   }
 
   const {
@@ -63,15 +62,15 @@ async function postRefresh(this: FastifyInstance, request: FastifyRequest<Reques
 
   // get hashed access token if existing - if not throw
   const user = await this.db.query<IAuthPostRefreshGetUserWithRefreshTokenResult>(cwd('get-user-with-refresh-token', relPath), { userId }, 'one');
-  if (!user) throw error;
+  if (!user) throw new UnauthorizedError('Authentication failed');
 
   const {
     token_refresh_hash: tokenRefreshHash,
   } = user;
 
   // compare tokenRefreshHash to incoming token - if not the same throw
-  const validAccessToken = await bcryptCompare(tokenRefresh, tokenRefreshHash);
-  if (!validAccessToken) throw error;
+  const validRefreshToken = await bcryptCompare(tokenRefresh, tokenRefreshHash);
+  if (!validRefreshToken) throw new UnauthorizedError('Authentication failed');
 
   // create a new access token
   const tokenAccess = generateJwt.call(this, userId, userEmail, 'access');

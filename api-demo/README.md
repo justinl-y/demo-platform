@@ -78,7 +78,6 @@ npm run ci-up test
 TEST_CASE=1 npm run ci-up test
 ```
 
-
 ----
 
 ## Database Library - util/database.js

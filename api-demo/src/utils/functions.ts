@@ -26,13 +26,13 @@ function getServerDetails(serverAddress: AddressInfo | string | null): string {
   return '... Server address information is unavailable';
 }
 
-type RouteProperties = {
+type RouteProperties<H extends RouteHandlerMethod = RouteHandlerMethod> = {
   method: string;
   url: string;
-  handler: RouteHandlerMethod;
+  handler: H;
 };
 
-function routePropertiesCore(method: string, url: string, handler: (...args: any[]) => any): RouteProperties {
+function routePropertiesCore(method: string, url: string, handler: unknown): RouteProperties {
   return {
     method,
     url,
