@@ -28,7 +28,7 @@ This section will include a modern frontend application (e.g., **React/Next.js**
 
 - 🔧 Configurable API environments (local and remote)  
 - ✅ Integration testing with **Vitest**  
-- 🤖 Github action CI/CD
+- 🤖 GitHub action CI/CD
 
 ### ☁️ Cloud Infrastructure (AWS)
 

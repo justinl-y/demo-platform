@@ -2,6 +2,7 @@
 set -euo pipefail
 
 compose_cmd=(docker compose -p ci -f docker-compose-ci.yml)
+STARTED_CONTAINER="false"
 
 cleanup() {
   if [[ "$STARTED_CONTAINER" == "true" ]]; then
@@ -13,10 +14,10 @@ trap cleanup EXIT
 
 # Check if container is already running
 if "${compose_cmd[@]}" ps db 2>/dev/null | grep -q "Up"; then
-  STARTED_CONTAINER="false"
+  :
 else
-  "${compose_cmd[@]}" up -d --wait db
   STARTED_CONTAINER="true"
+  "${compose_cmd[@]}" up -d --wait db
 fi
 
 npm run sql:types
