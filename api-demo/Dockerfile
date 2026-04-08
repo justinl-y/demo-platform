@@ -12,7 +12,11 @@ RUN cat <<'EOF' > /usr/local/bin/npm-ci-with-token
 #!/bin/sh
 set -eu
 
-NPM_ARGS="${1:-}"
+cleanup() {
+	rm -f .npmrc
+}
+
+trap cleanup EXIT INT TERM
 
 if test -f /run/secrets/npm_token; then
 	NPM_TOKEN="$(cat /run/secrets/npm_token)"
@@ -21,8 +25,7 @@ if test -f /run/secrets/npm_token; then
 	fi
 fi
 
-npm ci ${NPM_ARGS} --legacy-peer-deps
-rm -f .npmrc
+npm ci --legacy-peer-deps "$@"
 EOF
 
 RUN chmod +x /usr/local/bin/npm-ci-with-token

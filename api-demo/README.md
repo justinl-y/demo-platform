@@ -18,10 +18,9 @@ flowchart TB
     subgraph Local Environment
         A[Developer Machine]
 
-        A -->|Docker Compose| B[API Container]
-        A -->|HTTP Requests - localhost:6662| B
+        A -->|User HTTP Requests - localhost:6662| B[API Container]
 
-        B -->|Connects to| C[Remote Stage DB]
+        B -->|Reads/Writes| C[Remote Stage DB]
         B -->|AWS Requests| D[AWS Services]
     end
 
@@ -38,11 +37,11 @@ flowchart TB
     subgraph Test Environment
         E[Developer Machine]
 
-        E -->|Docker Compose| F[TEST Container]
-        E -->|HTTP Requests - localhost:6663| H[API Container]
+        E -->|Initiate Test Run| F[TEST Container]
+        E -->|User HTTP Requests - localhost:6663| H[API Container]
 
-        F -->|Seeds & Runs Tests| G[Local Test DB Container]
-        F -->|Calls API| H
+        F -->|1 -Create and Seeds DB| G[Local Test DB Container]
+        F -->|2 - Execute Tests| H
         H -->|Reads/Writes| G
     end
 
