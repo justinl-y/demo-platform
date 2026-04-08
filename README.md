@@ -1,6 +1,6 @@
 # 🚀 Demo Platform
 
-Demo Platform is a **concept project** showcasing a distributed, type-safe JavaScript web application platform built within a **monorepo**.
+Demo Platform is a **concept project** showcasing a distributed, full stack web application using type-safe JavaScript and built within a platform **monorepo**.
 
 The goal of this project is to demonstrate modern **full-stack web development practices**, from frontend and backend to cloud infrastructure and developer experience.  
 
@@ -23,18 +23,18 @@ This section will include a modern frontend application (e.g., **React/Next.js**
 - ⚡ Fastify framework  
 - 📄 OpenAPI (JSON schema + docs)  
 - 🗄️ PostgreSQL database
-- 📊 Observability: Sentry errors + tracing
 
 ### 🧪 Developer Experience
 
-- 🔧 Configurable API environments (local and remote)  
-- ✅ Integration testing with **Vitest**  
+- 🔧 Configurable API environments (local and remote)
+- ✅ Integration testing with **Vitest**
+- 📊 Observability: Sentry errors + tracing
 - 🤖 GitHub action CI/CD
 
 ### ☁️ Cloud Infrastructure (AWS)
 
-- 🔑 AWS SSO for authentication  
-- 🗄️ RDS (PostgreSQL)  
+- 🔑 AWS SSO for authentication
+- 🗄️ RDS (PostgreSQL)
 - 🕵️ Secrets Manager
 - 🚀 Elastic Beanstalk / EC2 for deployment
 
