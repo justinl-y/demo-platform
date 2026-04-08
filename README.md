@@ -1,6 +1,7 @@
 # 🚀 Demo Platform
 
-Demo Platform is a **concept project** showcasing a distributed, type-safe JavaScript web application platform built within a **monorepo**.  
+Demo Platform is a **concept project** showcasing a distributed, type-safe JavaScript web application platform built within a **monorepo**.
+
 The goal of this project is to demonstrate modern **full-stack web development practices**, from frontend and backend to cloud infrastructure and developer experience.  
 
 ---
@@ -36,6 +37,8 @@ This section will include a modern frontend application (e.g., **React/Next.js**
 - 🗄️ RDS (PostgreSQL)  
 - 🕵️ Secrets Manager
 - 🚀 Elastic Beanstalk / EC2 for deployment
+
+[Read more here ...](/api-demo/README.md)
 
 ---
 

@@ -12,7 +12,6 @@ API-Demo uses Docker containers for hosting development and test environments.
 It supports:
 
 - **Local API container** connected to remote services (AWS, staging DB)
-- **Test API container** connected to a local DB for integration testing or development
 
 ```mermaid
 flowchart TB
@@ -22,6 +21,16 @@ flowchart TB
         B -->|AWS Requests| D[AWS Services]
     end
 
+    style A fill:#f9f,stroke:#333,stroke-width:2px
+    style B fill:#bbf,stroke:#333,stroke-width:2px
+    style C fill:#bfb,stroke:#333,stroke-width:2px
+    style D fill:#ffb,stroke:#333,stroke-width:2px
+```
+
+- **Test API container** connected to a local DB for integration testing or development
+
+```mermaid
+flowchart TB
     subgraph Test Environment
         E[Developer Machine] -->|Docker Compose| F(TEST Container)
         F -->|Seeds & Runs Tests| G[Local Test DB Container]
@@ -29,10 +38,6 @@ flowchart TB
         H -->|Reads/Writes| G
     end
 
-    style A fill:#f9f,stroke:#333,stroke-width:2px
-    style B fill:#bbf,stroke:#333,stroke-width:2px
-    style C fill:#bfb,stroke:#333,stroke-width:2px
-    style D fill:#ffb,stroke:#333,stroke-width:2px
     style E fill:#f9f,stroke:#333,stroke-width:2px
     style F fill:#bbf,stroke:#333,stroke-width:2px
     style G fill:#bfb,stroke:#333,stroke-width:2px

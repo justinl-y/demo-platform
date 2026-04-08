@@ -11,7 +11,7 @@ COPY package*.json ${API_HOME}/
 COPY tsconfig.json ${API_HOME}/
 
 # Use deterministic installs and mount npm token as a BuildKit secret when present.
-RUN --mount=type=secret,id=npm_token --mount=type=cache,target=/root/.npm /bin/bash -c "if test -f /run/secrets/npm_token; then NPM_TOKEN=$(cat /run/secrets/npm_token); if test -n \"${NPM_TOKEN}\"; then printf '//registry.npmjs.org/:_authToken=%s\n' \"${NPM_TOKEN}\" > .npmrc; fi; fi; npm ci; rm -f .npmrc"
+RUN --mount=type=secret,id=npm_token --mount=type=cache,target=/root/.npm /bin/bash -c "if test -f /run/secrets/npm_token; then NPM_TOKEN=$(cat /run/secrets/npm_token); if test -n \"${NPM_TOKEN}\"; then printf '//registry.npmjs.org/:_authToken=%s\n' \"${NPM_TOKEN}\" > .npmrc; fi; fi; npm ci --legacy-peer-deps; rm -f .npmrc"
 
 COPY src ${API_HOME}/src
 
