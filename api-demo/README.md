@@ -33,7 +33,7 @@ flowchart TB
 
 - **Test API container** connected to a local DB for integration testing or development
 
-````mermaid
+```mermaid
 flowchart TB
     subgraph Test Environment
         E[Developer Machine]
