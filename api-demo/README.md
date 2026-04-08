@@ -5,6 +5,15 @@ It demonstrates modern **full-stack development practices**, including backend a
 
 This project showcases how to build **scalable and maintainable web services** using **Node.js, TypeScript, Fastify, and PostgreSQL**, with automated workflows and a developer-friendly environment.
 
+## 🐳 Dockerized Environments
+
+API-Demo uses Docker containers for hosting development and test environments.
+
+It supports:
+
+- **Local API container** connected to remote services (AWS, staging DB)
+- **Test API container** connected to a local DB for integration testing or development
+
 ```mermaid
 flowchart TB
     subgraph Local Environment
@@ -29,15 +38,6 @@ flowchart TB
     style G fill:#bfb,stroke:#333,stroke-width:2px
     style H fill:#bbf,stroke:#333,stroke-width:2px
 ```
-
-## 🐳 Dockerized Environments
-
-API-Demo uses Docker containers for hosting development and test environments.
-
-It supports:
-
-- **Local API container** connected to remote services (AWS, staging DB)
-- **Test API container** connected to a local DB for integration testing or development
 
 ### ⚡ Local Environment (Remote Services)
 
