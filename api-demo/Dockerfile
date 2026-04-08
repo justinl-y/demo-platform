@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.7
-FROM node:24-alpine AS builder
+FROM node:24-alpine AS base
 
 RUN apk add --no-cache bash
 
@@ -7,18 +7,44 @@ ENV API_HOME="/srv/api"
 
 WORKDIR ${API_HOME}
 
+# Reuse a single install path for both builder and runtime dependency stages.
+RUN cat <<'EOF' > /usr/local/bin/npm-ci-with-token
+#!/bin/sh
+set -eu
+
+cleanup() {
+	rm -f .npmrc
+}
+
+trap cleanup EXIT INT TERM
+
+if test -f /run/secrets/npm_token; then
+	NPM_TOKEN="$(cat /run/secrets/npm_token)"
+	if test -n "${NPM_TOKEN}"; then
+		printf '//registry.npmjs.org/:_authToken=%s\n' "${NPM_TOKEN}" > .npmrc
+	fi
+fi
+
+npm ci --legacy-peer-deps "$@"
+EOF
+
+RUN chmod +x /usr/local/bin/npm-ci-with-token
+
 COPY package*.json ${API_HOME}/
 COPY tsconfig.json ${API_HOME}/
 
-# Use deterministic installs and mount npm token as a BuildKit secret when present.
-RUN --mount=type=secret,id=npm_token --mount=type=cache,target=/root/.npm /bin/bash -c "if test -f /run/secrets/npm_token; then NPM_TOKEN=$(cat /run/secrets/npm_token); if test -n \"${NPM_TOKEN}\"; then printf '//registry.npmjs.org/:_authToken=%s\n' \"${NPM_TOKEN}\" > .npmrc; fi; fi; npm ci --legacy-peer-deps; rm -f .npmrc"
+FROM base AS builder
+
+RUN --mount=type=secret,id=npm_token --mount=type=cache,target=/root/.npm npm-ci-with-token
 
 COPY src ${API_HOME}/src
 
 # check for ts errors as using node native ts support
 RUN npm run typecheck
 
-RUN npm prune --omit=dev
+FROM base AS runtime-deps
+
+RUN --mount=type=secret,id=npm_token --mount=type=cache,target=/root/.npm npm-ci-with-token "--omit=dev"
 
 FROM node:24-alpine AS runtime
 
@@ -28,8 +54,8 @@ WORKDIR ${API_HOME}
 
 RUN npm i -g pm2@6.0.14
 
-COPY --from=builder ${API_HOME}/package*.json ${API_HOME}/
-COPY --from=builder ${API_HOME}/node_modules ${API_HOME}/node_modules
+COPY --from=runtime-deps ${API_HOME}/package*.json ${API_HOME}/
+COPY --from=runtime-deps ${API_HOME}/node_modules ${API_HOME}/node_modules
 COPY --from=builder ${API_HOME}/src ${API_HOME}/src
 COPY pm2 ${API_HOME}/pm2
 

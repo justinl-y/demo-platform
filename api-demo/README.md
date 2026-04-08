@@ -16,8 +16,11 @@ It supports:
 ```mermaid
 flowchart TB
     subgraph Local Environment
-        A[Developer Machine] -->|Docker Compose| B(API Container)
-        B -->|Connects to| C[Remote Stage DB]
+        A[Developer Machine]
+
+        A -->|User HTTP Requests - localhost:6662| B[API Container]
+
+        B -->|Reads/Writes| C[Remote Stage DB]
         B -->|AWS Requests| D[AWS Services]
     end
 
@@ -32,9 +35,13 @@ flowchart TB
 ```mermaid
 flowchart TB
     subgraph Test Environment
-        E[Developer Machine] -->|Docker Compose| F(TEST Container)
-        F -->|Seeds & Runs Tests| G[Local Test DB Container]
-        F -->|Calls API| H[API Container]
+        E[Developer Machine]
+
+        E -->|Initiate Test Run| F[TEST Container]
+        E -->|User HTTP Requests - localhost:6663| H[API Container]
+
+        F -->|1 -Create and Seeds DB| G[Local Test DB Container]
+        F -->|2 - Execute Tests| H
         H -->|Reads/Writes| G
     end
 
