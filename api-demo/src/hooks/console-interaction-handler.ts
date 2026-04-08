@@ -5,13 +5,13 @@ import type {
   FastifyReply,
 } from 'fastify';
 
-function buildInteractionMessage(req: FastifyRequest, rep: FastifyReply): string | null {
-  const reqMethod = req.method;
+function buildInteractionMessage(request: FastifyRequest, reply: FastifyReply): string | null {
+  const reqMethod = request.method;
   const reqMethodUpper = reqMethod.toUpperCase();
-  const reqUrl = req.url;
-  const reqUser = req.user;
-  const reqBody = req.body;
-  const route = req.routeOptions?.url;
+  const reqUrl = request.url;
+  const reqUser = request.user;
+  const reqBody = request.body;
+  const route = request.routeOptions?.url;
   const {
     raw: {
       statusMessage: repStatusMessage,
@@ -19,7 +19,7 @@ function buildInteractionMessage(req: FastifyRequest, rep: FastifyReply): string
     statusCode: repStatusCode,
     elapsedTime,
     error: repErrBody,
-  } = rep;
+  } = reply;
 
   // ignore OPTIONS requests
   if (reqMethodUpper === 'OPTIONS') return null;
@@ -28,7 +28,7 @@ function buildInteractionMessage(req: FastifyRequest, rep: FastifyReply): string
   if (reqUrl === '/health_eb') return null;
   if (reqUrl.match(/api-docs/)) return null;
 
-  // req messages
+  // reqest messages
   const reqRoute = `${reqMethodUpper} ${route || reqUrl}`;
   const reqMessage = `Request: ${reqMethodUpper} ${reqUrl}`;
   const reqBodyJson = _.isObject(reqBody) ? JSON.stringify(_.omit(reqBody, ['password'])) : '{}';
@@ -40,7 +40,7 @@ function buildInteractionMessage(req: FastifyRequest, rep: FastifyReply): string
   let userEmail = 'Not Set';
   if (_.has(reqUser, 'email')) ({ email: userEmail } = reqUser);
 
-  // res messages
+  // reply messages
   const resMessage = `Response: ${repStatusCode} ${repStatusMessage || ''}`.trim();
 
   const resErrBodyJson = _.isObject(repErrBody) ? JSON.stringify(repErrBody) : repErrBody;
@@ -59,8 +59,8 @@ Response Time: ${(typeof elapsedTime === 'number' ? elapsedTime : 0).toFixed(0)}
   return message;
 };
 
-function buildSentryInteractionMessage(req: FastifyRequest, rep: FastifyReply): string | null {
-  const message = buildInteractionMessage(req, rep);
+function buildSentryInteractionMessage(request: FastifyRequest, reply: FastifyReply): string | null {
+  const message = buildInteractionMessage(request, reply);
 
   if (!message) return null;
 
@@ -68,8 +68,8 @@ function buildSentryInteractionMessage(req: FastifyRequest, rep: FastifyReply): 
   return message.replace(/\b\d{10,16}\b/g, '[redacted-number]');
 };
 
-async function consoleInteractionHandler(req: FastifyRequest, rep: FastifyReply) {
-  const message = buildInteractionMessage(req, rep);
+async function consoleInteractionHandler(request: FastifyRequest, reply: FastifyReply) {
+  const message = buildInteractionMessage(request, reply);
 
   if (!message) return;
 

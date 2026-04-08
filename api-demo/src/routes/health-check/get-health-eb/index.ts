@@ -3,15 +3,15 @@ import type {
   FastifyReply,
 } from 'fastify';
 
-function getHealthEB(req: FastifyRequest, rep: FastifyReply) {
+function getHealthEB(request: FastifyRequest, reply: FastifyReply) {
   const healthEB = {
     status: 'OK',
     timestamp: new Date().toISOString(),
   };
 
-  rep.send(healthEB);
+  reply.send(healthEB);
 
-  return rep;
+  return reply;
 }
 
 export default getHealthEB;

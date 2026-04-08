@@ -1,6 +1,7 @@
 import _ from 'lodash';
-
-type NamedParameters = Record<string, unknown>;
+import type {
+  SqlParams,
+} from '../types/database.ts';
 
 type NumericQuery = {
   sql: string;
@@ -22,7 +23,7 @@ type QueryConfig = {
 
 const tokenPattern = /\$[a-zA-Z]([a-zA-Z0-9_]*)\b/g;
 
-function isNamedParameters(value: unknown): value is NamedParameters {
+function isNamedParameters(value: unknown): value is SqlParams {
   return _.isPlainObject(value);
 };
 
@@ -32,7 +33,7 @@ function isQueryConfig(value: unknown): value is QueryConfig {
   return 'text' in value && 'values' in value;
 };
 
-function numericFromNamed(sql: string, parameters: NamedParameters): NumericQuery {
+function numericFromNamed(sql: string, parameters: SqlParams): NumericQuery {
   const objTokens = Object.keys(parameters);
   const sqlTokens = _.uniq((sql.match(tokenPattern) ?? []).map((token) => token.substring(1)));
   const fillTokens = _.intersection(objTokens, sqlTokens).sort();

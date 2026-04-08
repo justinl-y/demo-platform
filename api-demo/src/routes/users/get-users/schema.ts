@@ -1,12 +1,12 @@
 const route = {
-  tags: ['health'],
-  summary: 'Elastic Beanstalk health check endpoint',
-  description: 'Returns the current health status of Elastic Beanstalk API service',
-  security: [],
+  tags: ['users'],
+  // summary: 'Database health check endpoint',
+  // description: 'Returns the current health status of the database server',
+  security: [{ bearerAuth: [] }],
 };
 
 const response = {
-  200: {
+  /* 200: {
     type: 'object',
     properties: {
       status: {
@@ -21,10 +21,13 @@ const response = {
       },
     },
     required: ['status', 'timestamp'],
-  },
+    additionalProperties: false,
+  }, */
 };
 
 export default {
-  ...route,
-  response,
+  schema: {
+    ...route,
+    response,
+  },
 };

@@ -1,0 +1,21 @@
+{
+  "name": "demo-platform",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/justinl-y/demo-platform#readme",
+  "bugs": {
+    "url": "https://github.com/justinl-y/demo-platform/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/justinl-y/demo-platform.git"
+  },
+  "private": true,
+  "license": "ISC",
+  "author": "Justin Levett-Yeats",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {}
+}

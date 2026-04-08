@@ -2,10 +2,6 @@ import fp from 'fastify-plugin';
 import {
   Pool,
 } from 'pg';
-import type {
-  FastifyInstance,
-  FastifyPluginOptions,
-} from 'fastify';
 
 import {
   Config,
@@ -14,6 +10,11 @@ import {
   query,
   transaction,
 } from '#utils/database';
+
+import type {
+  FastifyInstance,
+  FastifyPluginOptions,
+} from 'fastify';
 
 // const NUMERIC_PG_OID = 1700;
 
@@ -35,9 +36,11 @@ function postgresPlugin(fastify: FastifyInstance, options: FastifyPluginOptions)
 
   const pool = new Pool(Config.postgresConfig());
 
+  const boundQuery = query.bind(pool) as FastifyInstance['db']['query'];
+
   // bind configured pg pool to query and transaction functions as partial application
   const boundMethods = {
-    query: query.bind(pool),
+    query: boundQuery,
     transaction: transaction.bind(pool),
   };
 

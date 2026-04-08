@@ -1,48 +1,55 @@
-# API-Demo Docs
+# 🚀 API-Demo
 
-API-Demo is a concept project showcasing a RESTful web API for use as part of a web application. This project has the intent of demonstrating all aspects of modern web api development covering:
+**API-Demo** is a **RESTful web API** that serves as the **primary data service** for a web application.
+It demonstrates modern **full-stack development practices**, including backend architecture, API design, database integration, and cloud deployment.
 
-API:
+This project showcases how to build **scalable and maintainable web services** using **Node.js, TypeScript, Fastify, and PostgreSQL**, with automated workflows and a developer-friendly environment.
 
-- Docker containerization
-- RESTful API
-- Node.js v25
-- Fastify
-- OpenAPI JSON schema
-- OpenAPI docs
-- TypeScript
-- Postgres SQL
+## 🐳 Dockerized Environments
 
-Developer Experience:
+API-Demo uses Docker containers for hosting development and test environments.
 
-- API environments for development and testing with local and remote resources
-- Integration testing with Vitest
-- CI/CD pipelines
+It supports:
 
-Cloud:
+- **Local API container** connected to remote services (AWS, staging DB)
+- **Test API container** connected to a local DB for integration testing or development
 
-- AWS utilization:
+```mermaid
+flowchart TB
+    subgraph Local Environment
+        A[Developer Machine] -->|Docker Compose| B(API Container)
+        B -->|Connects to| C[Remote Stage DB]
+        B -->|AWS Requests| D[AWS Services]
+    end
 
-- User AWS SSO authentication
-- RDS Postgres
-- Secrets Manager
-- Elastic Beanstalk/EC2
+    subgraph Test Environment
+        E[Developer Machine] -->|Docker Compose| F(TEST Container)
+        F -->|Seeds & Runs Tests| G[Local Test DB Container]
+        F -->|Calls API| H[API Container]
+        H -->|Reads/Writes| G
+    end
 
-## Dockerized Environments
+    style A fill:#f9f,stroke:#333,stroke-width:2px
+    style B fill:#bbf,stroke:#333,stroke-width:2px
+    style C fill:#bfb,stroke:#333,stroke-width:2px
+    style D fill:#ffb,stroke:#333,stroke-width:2px
+    style E fill:#f9f,stroke:#333,stroke-width:2px
+    style F fill:#bbf,stroke:#333,stroke-width:2px
+    style G fill:#bfb,stroke:#333,stroke-width:2px
+    style H fill:#bbf,stroke:#333,stroke-width:2px
+```
 
-API-Demo utilizes Docker containers for environment hosting and can be spun up as a local API container with connection to remote services (AWS, stage DB) or a test API with connection to a local DB (for integration test runs or local DB operation development/testing).
+### ⚡ Local Environment (Remote Services)
 
-### Local Environment With Connection to Remote Services
+**Requirements**: AWS credentials via AWS SSO. Credentials should be **short-lived** and **not persisted** in shell profile files.
 
-AWS credentials are required, but should be short-lived and sourced from AWS SSO login (not persisted in shell profile files).
-
-One-time local setup:
+#### One-time setup
 
 ```bash
 aws configure sso --profile api-demo-stage
 ```
 
-Normal startup flow:
+#### Normal startup flow
 
 ```bash
 npm run api-down
@@ -50,19 +57,25 @@ npm run api-build
 npm run api-up-sso
 ```
 
-The `api-up-sso` command performs AWS SSO login, exports temporary credentials for the process, and starts Docker compose with those values. A user account on AWS Identity Center needs to be set for this to work correctly.
+The `api-up-sso` command performs AWS SSO login, exports temporary credentials for the process, and starts Docker Compose with those credentials.
 
-Live DBs are protected with a whitelist IP security group. Run `https://whatismyipaddress.com` and send your IPv4 to @justin.
+Ensure your user account exists on **AWS Identity Center**.
 
-Once server start has completed the API will be available on `localhost:6662`
+Live databases are protected with **IP whitelist security groups**. Verify your IPv4 at whatismyipaddress.com and provide it to the administrator.
 
-### Test Environment
+Once started, the API will be accessible at: <http://localhost:6662>
 
-Three containers are utilized for operations with the test environment: DB, API and TEST. The DB container uses the upstream PostGIS image and mounts the Demo DB schema from `test/container-db/schema` into `/docker-entrypoint-initdb.d`. The API container hosts the API built with local code. The TEST container is run time available with the purpose of seeding the DB with seed data and executing end point integration test.
+### 🧪 Test Environment
 
-To create the TEST environment open two terminal windows and complete the following steps:
+The test environment uses **three Docker containers**:
 
-In terminal 1:
+- **DB Container**: Uses upstream PostGIS image and mounts the demo DB schema from `test/container-db/schema` into `/docker-entrypoint-initdb.d.`
+- **API Container**: Hosts the API built from local code.
+- **TEST Container**: Seeds the database and runs endpoint integration tests.
+
+#### Setup steps
+
+#### Terminal 1: Build and start DB + API
 
 ```bash
 npm run ci-down
@@ -70,17 +83,21 @@ npm run ci-build
 npm run ci-up api
 ```
 
-This will remove any existing docker volumes (any `package.json` changes will require this!), build the CI API/TEST images, and spin up the DB and API.
+Notes:
 
-Once completed the API will be available on `localhost:6663`.
+- Removes existing Docker volumes (required if package.json changes).
+- Builds CI API/TEST images and starts DB + API.
+- API will be available at <http://localhost:6663>.
 
-In terminal 2:
+#### Terminal 2: Start TEST container
 
 ```bash
 npm run ci-up test
 ```
 
-This will spin up the test container.  The test DB will be rebuilt, seed data will be inserted into the DB and integration tests run.  Run the command again to repeat the process as needed.  Specific test files can be run with the below example, the TEST_CASE value being the integration test file integer prefix.
+- Rebuilds the test DB, inserts seed data, and executes integration tests.
+- Run the command again to repeat tests as needed.
+- To run a specific test file, set the TEST_CASE environment variable to the integer prefix of the integration test file:
 
 ```bash
 TEST_CASE=1 npm run ci-up test
@@ -274,8 +291,8 @@ e.g.
 // routes/users/postLogin.js
 const authenticate = require(CWD('util/authenticate'));
 
-async function postLogin(req, res) {
-  const { email, password, level = 0 } = req.body;
+async function postLogin(request, reply) {
+  const { email, password, level = 0 } = request.body;
 
   try {
     ...

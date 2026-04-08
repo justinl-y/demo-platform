@@ -1,0 +1,12 @@
+SELECT
+  u.id
+  , u.email
+  , u.full_name
+  , u.known_as
+  , u.password_hash
+FROM
+  public.users AS u
+WHERE
+  u.email = $email
+  and u.is_active = true
+;

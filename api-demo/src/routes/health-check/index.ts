@@ -7,8 +7,8 @@ import {
   routePropertiesCore,
 } from '#utils/functions';
 import schema from './schema.ts';
-import getHealthDB from './getHealthDB/getHealthDB.ts';
-import getHealthEB from './getHealthEB/getHealthEB.ts';
+import getHealthDB from './get-health-db/index.ts';
+import getHealthEB from './get-health-eb/index.ts';
 
 const { GET } = HTTP_METHODS;
 
@@ -17,10 +17,12 @@ const routes = {
   getHealthEB: routePropertiesCore(GET, '/health_eb', getHealthEB),
 };
 
+export type HealthCheckRouteKey = keyof typeof routes;
+
 export default (instance: FastifyInstance) => {
-  (Object.keys(routes) as Array<keyof typeof routes>).forEach((key) => {
+  (Object.keys(routes) as Array<HealthCheckRouteKey>).forEach((key) => {
     const value = routes[key];
 
-    instance.route({ ...value, schema: schema[key] });
+    instance.route({ ...value, ...schema[key] });
   });
 };

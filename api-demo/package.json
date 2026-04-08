@@ -11,16 +11,14 @@
   },
   "type": "module",
   "main": "src/index.ts",
-  "repository": {
-    "type": "git",
-    "url": "git@github.com:justinl-y/api-demo.git"
-  },
   "imports": {
     "#utils/*": "./src/utils/*.ts",
     "#config/*": "./src/config/*.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",
+    "sql:types": "jiti scripts/generate-typed-sql.ts && pgtyped -c pgtyped.config.json --uri \"${PGTYPED_DATABASE_URL:-postgres://test:test@localhost:5430/test_template}\" && jiti scripts/refine-generated-query-types.ts",
+    "sql:types:ci": "bash scripts/sql-types-ci.sh",
     "api-build": "docker compose -p api -f docker-compose-local.yml build",
     "api-up": "docker compose -p api -f docker-compose-local.yml up",
     "api-up-sso": "bash scripts/api-up-sso.sh",
@@ -59,10 +57,13 @@
     "pg": "^8.20.0"
   },
   "devDependencies": {
+    "@pgtyped/cli": "^2.4.3",
+    "@pgtyped/runtime": "^2.4.2",
     "@tsconfig/node24": "^24.0.4",
     "@types/lodash": "^4.17.24",
     "@types/node": "^25.5.0",
     "eslint": "^9.36.0",
+    "jiti": "^2.6.1",
     "lint-staged": "^16.4.0",
     "neostandard": "^0.13.0",
     "typescript": "^6.0.2"

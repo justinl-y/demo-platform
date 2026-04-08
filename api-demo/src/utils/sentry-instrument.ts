@@ -25,9 +25,14 @@ function parseInteractionData(interactionLog: string) {
   };
 };
 
-const sentryDsn = Config.sentryConfig.getDsn();
+async function initSentry() {
+  const sentryDsn = Config.sentryConfig.getDsn();
 
-if (Config.apiEnv !== 'TEST' && sentryDsn) {
+  if (Config.apiEnv === 'TEST' || !sentryDsn) {
+    console.info('... Sentry disabled');
+    return;
+  }
+
   let profilingIntegration: unknown;
   let profilesSampleRate: number | undefined;
   let profilingStatusMessage = 'disabled: integration not initialized';
@@ -47,7 +52,7 @@ if (Config.apiEnv !== 'TEST' && sentryDsn) {
 
   Sentry.init({
     dsn: sentryDsn,
-    sendDefaultPii: true,
+    // sendDefaultPii: true,
     tracesSampleRate: Config.sentryConfig.tracesSampleRate[Config.apiEnv],
     environment: Config.apiEnv,
     ignoreTransactions: [
@@ -92,6 +97,12 @@ if (Config.apiEnv !== 'TEST' && sentryDsn) {
       return breadcrumb;
     },
     integrations: [
+      Sentry.requestDataIntegration({
+        include: {
+          cookies: false, // Disable cookie capture for privacy
+          ip: true,       // Explicitly enable IP capture (off by default)
+        },
+      }),
       ...(profilingIntegration ? [profilingIntegration as any] : []),
     ],
     profilesSampleRate,
@@ -101,8 +112,7 @@ if (Config.apiEnv !== 'TEST' && sentryDsn) {
     normalizeDepth: 5,
   });
 
-  console.info(`... Sentry profiling ${profilingStatusMessage}`);
+  console.info(`... Sentry ${profilingStatusMessage}`);
 }
-else {
-  console.info('... Sentry profiling disabled');
-}
+
+export { initSentry };

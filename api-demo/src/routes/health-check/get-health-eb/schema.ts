@@ -1,7 +1,7 @@
 const route = {
   tags: ['health'],
-  summary: 'Database health check endpoint',
-  description: 'Returns the current health status of the database server',
+  summary: 'Elastic Beanstalk health check endpoint',
+  description: 'Returns the current health status of the API service for Elastic Beanstalk',
   security: [],
 };
 
@@ -21,11 +21,12 @@ const response = {
       },
     },
     required: ['status', 'timestamp'],
-    additionalProperties: false,
   },
 };
 
 export default {
-  ...route,
-  response,
+  schema: {
+    ...route,
+    response,
+  },
 };
