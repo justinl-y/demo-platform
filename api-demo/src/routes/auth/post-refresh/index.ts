@@ -28,17 +28,17 @@ import type {
 const relPath = import.meta.dirname;
 
 type Request = {
-  Body: {
+  body: {
     token_refresh: string;
   };
 };
 
-async function postRefresh(this: FastifyInstance, request: FastifyRequest<Request>, reply: FastifyReply) {
+async function postRefresh(this: FastifyInstance, request: FastifyRequest, reply: FastifyReply) {
   const {
     body: {
       token_refresh: tokenRefresh,
     },
-  } = request;
+  } = request as Request;
 
   let decodedToken: VerifyPayloadTypeCustom;
 

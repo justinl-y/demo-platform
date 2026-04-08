@@ -23,19 +23,19 @@ import type {
 const relPath = import.meta.dirname;
 
 type Request = {
-  Body: {
+  body: {
     email: string;
     password: string;
   };
 };
 
-async function postLogin(this: FastifyInstance, request: FastifyRequest<Request>, reply: FastifyReply) {
+async function postLogin(this: FastifyInstance, request: FastifyRequest, reply: FastifyReply) {
   const {
     body: {
       email: userEmail,
       password: incomingPassword,
     },
-  } = request;
+  } = request as Request;
 
   // get email + hashed password from db - if nothing throw
   const user = await this.db.query<IAuthPostLoginGetUserResult>(cwd('get-user', relPath), { email: userEmail }, 'one');
