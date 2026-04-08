@@ -52,7 +52,7 @@ async function initSentry() {
 
   Sentry.init({
     dsn: sentryDsn,
-    sendDefaultPii: true,
+    // sendDefaultPii: true,
     tracesSampleRate: Config.sentryConfig.tracesSampleRate[Config.apiEnv],
     environment: Config.apiEnv,
     ignoreTransactions: [

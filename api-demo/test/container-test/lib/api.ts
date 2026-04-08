@@ -30,7 +30,7 @@ async function userLogin() {
     .set('Accept', 'application/json')
   ;
 
-  return result.body.token;
+  return result.body.token_access;
 };
 
 const bearerToken = await userLogin();

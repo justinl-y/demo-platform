@@ -73,7 +73,8 @@ function getErrorDetails(err: unknown): Required<Pick<KnownError, 'message' | 'n
 };
 
 async function getBlob(file: string): Promise<string> {
-  const [filePath] = file.split('.');
+  const filePath = file.replace(/\.[^/.]+$/, '');
+
   const qualifiedFile = `${filePath}.sql`;
 
   const blob = await fs.readFile(qualifiedFile, 'utf-8');
