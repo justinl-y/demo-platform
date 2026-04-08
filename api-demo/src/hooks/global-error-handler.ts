@@ -62,16 +62,19 @@ function globalErrorHandler(error: FastifyError, request: FastifyRequest, reply:
     message: fastifyError.message || 'An unexpected error occurred',
   };
 
-  reply.error = responseBody;
+  try {
+    reply.error = responseBody;
 
-  reply
-    .status(statusCode)
-    .send(responseBody)
-  ;
+    reply
+      .status(statusCode)
+      .send(responseBody)
+    ;
 
-  if (Config.apiEnv !== 'TEST') processSentryError(error, request, reply, statusCode);
-
-  return reply;
+    return reply;
+  }
+  finally {
+    if (Config.apiEnv !== 'TEST') processSentryError(error, request, reply, statusCode);
+  }
 };
 
 export default globalErrorHandler;

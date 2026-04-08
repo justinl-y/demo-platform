@@ -1,3 +1,5 @@
+import { initSentry } from '#utils/sentry-instrument';
+
 import Fastify from 'fastify';
 import helmet from '@fastify/helmet';
 import cors from '@fastify/cors';
@@ -32,8 +34,7 @@ import type { FastifyPluginCallback } from 'fastify';
 
 async function buildInstance() {
   await batchGetSecretValue();
-
-  await import('#utils/sentry-instrument');
+  await initSentry();
 
   const instance = Fastify(Config.fastifyConfig);
 

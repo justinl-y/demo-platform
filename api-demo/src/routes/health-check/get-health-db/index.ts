@@ -17,32 +17,21 @@ async function getHealthDB(this: FastifyInstance, request: FastifyRequest, reply
     status: 'BAD',
     timestamp: new Date().toISOString(),
   };
+  const file = CWD('get-pg-version');
 
-  try {
-    const file = CWD('get-pg-version');
+  const result = await this.db.query<IHealthCheckGetHealthDbGetPgVersionResult>(file, {}, 'one');
 
-    const result = await this.db.query<IHealthCheckGetHealthDbGetPgVersionResult>(file, {}, 'one');
+  const {
+    version,
+  } = result ?? {};
 
-    const {
-      version,
-    } = result ?? {};
+  if (!version) throw new Error('No version');
 
-    if (!version) throw new Error('No version');
+  healthDB.status = 'OK';
 
-    healthDB.status = 'OK';
-
-    reply
-      .status(200)
-      .send(healthDB);
-  }
-  catch (err) {
-    console.log(err);
-
-    reply
-      .status(500)
-      .send(healthDB)
-    ;
-  }
+  reply
+    .status(200)
+    .send(healthDB);
 
   return reply;
 }
