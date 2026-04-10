@@ -1,8 +1,6 @@
 # syntax=docker/dockerfile:1.7
 FROM node:24-alpine AS base
 
-RUN apk add --no-cache bash
-
 ENV API_HOME="/srv/api"
 
 WORKDIR ${API_HOME}
@@ -31,12 +29,12 @@ EOF
 RUN chmod +x /usr/local/bin/npm-ci-with-token
 
 COPY package*.json ${API_HOME}/
-COPY tsconfig.json ${API_HOME}/
 
 FROM base AS builder
 
 RUN --mount=type=secret,id=npm_token --mount=type=cache,target=/root/.npm npm-ci-with-token
 
+COPY tsconfig.json ${API_HOME}/
 COPY src ${API_HOME}/src
 
 # check for ts errors as using node native ts support
@@ -52,12 +50,15 @@ ENV API_HOME="/srv/api"
 
 WORKDIR ${API_HOME}
 
-RUN npm i -g pm2@6.0.14
+RUN --mount=type=cache,target=/root/.npm npm i -g pm2@6.0.14
 
 COPY --from=runtime-deps ${API_HOME}/package*.json ${API_HOME}/
 COPY --from=runtime-deps ${API_HOME}/node_modules ${API_HOME}/node_modules
 COPY --from=builder ${API_HOME}/src ${API_HOME}/src
 COPY pm2 ${API_HOME}/pm2
+
+RUN chown -R node:node ${API_HOME}
+USER node
 
 EXPOSE 8000
 

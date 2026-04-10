@@ -2,6 +2,16 @@ import * as Sentry from '@sentry/node';
 
 import { Config } from '#config/index';
 
+import type { RouteHandlerMethod } from 'fastify';
+
+function withSpan(name: string, handler: RouteHandlerMethod): RouteHandlerMethod {
+  const wrapped: RouteHandlerMethod = async function (request, reply) {
+    return Sentry.startSpan({ name, op: 'function' }, () => handler.call(this, request, reply));
+  };
+
+  return wrapped;
+}
+
 const INTERACTION_BREADCRUMB_CATEGORY = 'interaction.last';
 const INTERACTION_BREADCRUMB_MESSAGE = 'Interaction details';
 
@@ -23,7 +33,7 @@ function parseInteractionData(interactionLog: string) {
     responseBody: interactionLog.match(/Response Body:\s(.+)/)?.[1],
     responseTime: interactionLog.match(/Response Time:\s(.+)/)?.[1],
   };
-};
+}
 
 async function initSentry() {
   const sentryDsn = Config.sentryConfig.getDsn();
@@ -52,7 +62,7 @@ async function initSentry() {
 
   Sentry.init({
     dsn: sentryDsn,
-    // sendDefaultPii: true,
+    sendDefaultPii: true,
     tracesSampleRate: Config.sentryConfig.tracesSampleRate[Config.apiEnv],
     environment: Config.apiEnv,
     ignoreTransactions: [
@@ -103,6 +113,7 @@ async function initSentry() {
           ip: true,       // Explicitly enable IP capture (off by default)
         },
       }),
+      Sentry.postgresIntegration(),
       ...(profilingIntegration ? [profilingIntegration as any] : []),
     ],
     profilesSampleRate,
@@ -115,4 +126,4 @@ async function initSentry() {
   console.info(`... Sentry ${profilingStatusMessage}`);
 }
 
-export { initSentry };
+export { initSentry, withSpan };

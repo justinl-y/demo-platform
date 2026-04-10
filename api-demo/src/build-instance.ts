@@ -10,8 +10,6 @@ import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import replyValidation from '@fastify/response-validation';
 
-import plugins from './plugins/index.ts';
-import routes from './routes/index.ts';
 import {
   authenticateOnRequest,
   consoleErrorHandler,
@@ -35,6 +33,10 @@ import type { FastifyPluginCallback } from 'fastify';
 async function buildInstance() {
   await batchGetSecretValue();
   await initSentry();
+
+  // Dynamic imports ensure all modules are loaded after Sentry.init() so instrumentation can patch them
+  const { default: plugins } = await import('./plugins/index.ts');
+  const { default: routes } = await import('./routes/index.ts');
 
   const instance = Fastify(Config.fastifyConfig);
 

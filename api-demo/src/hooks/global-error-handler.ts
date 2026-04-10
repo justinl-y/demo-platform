@@ -73,7 +73,9 @@ function globalErrorHandler(error: FastifyError, request: FastifyRequest, reply:
     return reply;
   }
   finally {
-    if (Config.apiEnv !== 'TEST') processSentryError(error, request, reply, statusCode);
+    const sentryExcludedStatusCodes = [400, 401, 403, 404, 409, 418];
+
+    if (Config.apiEnv !== 'TEST' && !sentryExcludedStatusCodes.includes(statusCode)) processSentryError(error, request, reply, statusCode);
   }
 };
 
