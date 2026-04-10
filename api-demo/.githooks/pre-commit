@@ -1,3 +1,4 @@
 #!/bin/sh
 echo 'Running pre-commit checks...'
+npm run sql:types:ci
 npx lint-staged
