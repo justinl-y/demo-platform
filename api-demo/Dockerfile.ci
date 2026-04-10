@@ -7,6 +7,30 @@ ENV SCRIPTS_HOME="/srv"
 
 WORKDIR ${SCRIPTS_HOME}
 
+RUN apk add --no-cache bash
+
+RUN cat <<'EOF' > /usr/local/bin/npm-ci-with-token
+#!/bin/sh
+set -eu
+
+cleanup() {
+	rm -f .npmrc
+}
+
+trap cleanup EXIT INT TERM
+
+if test -f /run/secrets/npm_token; then
+	NPM_TOKEN="$(cat /run/secrets/npm_token)"
+	if test -n "${NPM_TOKEN}"; then
+		printf '//registry.npmjs.org/:_authToken=%s\n' "${NPM_TOKEN}" > .npmrc
+	fi
+fi
+
+npm ci --legacy-peer-deps "$@"
+EOF
+
+RUN chmod +x /usr/local/bin/npm-ci-with-token
+
 COPY test/run.sh ${SCRIPTS_HOME}
 COPY test/wait-db-container.sh ${SCRIPTS_HOME}
 RUN chmod +x ${SCRIPTS_HOME}/run.sh ${SCRIPTS_HOME}/wait-db-container.sh
@@ -23,7 +47,7 @@ COPY tsconfig.json ${API_HOME}/
 COPY src ${API_HOME}/src
 COPY pm2 ${API_HOME}/pm2
 
-RUN --mount=type=secret,id=npm_token --mount=type=cache,target=/root/.npm /bin/sh -c "set -eu; cleanup(){ rm -f .npmrc; }; trap cleanup EXIT INT TERM; if test -f /run/secrets/npm_token; then NPM_TOKEN="$(cat /run/secrets/npm_token)"; if test -n \"${NPM_TOKEN}\"; then printf '//registry.npmjs.org/:_authToken=%s\\n' \"${NPM_TOKEN}\" > .npmrc; fi; fi; npm ci --include=dev --legacy-peer-deps"
+RUN --mount=type=secret,id=npm_token --mount=type=cache,target=/root/.npm npm-ci-with-token "--include=dev"
 
 # check for ts errors as using node native ts support
 RUN npm run typecheck

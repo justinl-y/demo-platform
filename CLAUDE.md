@@ -13,5 +13,5 @@ A monorepo demonstrating a distributed full-stack web application using type-saf
 
 ## Packages
 
-- **api-demo** — see `@api-demo/CLAUDE.md` for commands, environments, conventions, and architecture
+- **api-demo** — see `api-demo/CLAUDE.md` for commands, environments, conventions, and architecture
 - **shared** — shared TypeScript types consumed across packages
