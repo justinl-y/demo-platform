@@ -1,5 +1,10 @@
 # syntax=docker/dockerfile:1.7
 FROM node:24-alpine AS base
+<<<<<<< HEAD
+=======
+
+RUN apk add --no-cache bash
+>>>>>>> db6cec39badcbd71ed1f409e58420118a8ab6baa
 
 ENV API_HOME="/srv/api"
 
