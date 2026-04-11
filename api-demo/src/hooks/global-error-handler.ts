@@ -10,7 +10,7 @@ import { Config } from '#config/index';
 
 const MAX_BREADCRUMB_MESSAGE_LENGTH = 4096;
 const TRUNCATED_SUFFIX = '\n...[truncated]';
-const sentryExcludedStatusCodes = [400, 401, 403, 404, 409, 418];
+const SENTRY_EXCLUDED_STATUS_CODES = [400, 401, 403, 404, 409, 418];
 
 type SentryAugmentedError = FastifyError & {
   interactionConsoleLog?: string;
@@ -74,7 +74,7 @@ function globalErrorHandler(error: FastifyError, request: FastifyRequest, reply:
     return reply;
   }
   finally {
-    if (Config.apiEnv !== 'TEST' && !sentryExcludedStatusCodes.includes(statusCode)) processSentryError(error, request, reply, statusCode);
+    if (Config.apiEnv !== 'TEST' && !SENTRY_EXCLUDED_STATUS_CODES.includes(statusCode)) processSentryError(error, request, reply, statusCode);
   }
 };
 

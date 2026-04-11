@@ -1,11 +1,22 @@
 # syntax=docker/dockerfile:1.7
+
+# ── Base ─────────────────────────────────────────────────────────────────────
+# Shared foundation for the builder and runtime-deps stages. Sets the working
+# directory and installs a helper script that performs `npm ci`, optionally
+# injecting an npm auth token from a BuildKit secret so private registry
+# packages can be pulled without leaking the token into any image layer.
 FROM node:24-alpine AS base
 
 ENV API_HOME="/srv/api"
 
 WORKDIR ${API_HOME}
 
-# Reuse a single install path for both builder and runtime dependency stages.
+# Write the npm-ci-with-token helper to a shared bin location so it can be
+# reused by both the builder and runtime-deps stages. The script:
+#   - reads an optional npm token from the BuildKit secret at /run/secrets/npm_token
+#   - writes a temporary .npmrc (cleaned up on exit via trap) so the token is
+#     never baked into an image layer
+#   - forwards any extra arguments to `npm ci --legacy-peer-deps`
 RUN cat <<'EOF' > /usr/local/bin/npm-ci-with-token
 #!/bin/sh
 set -eu
@@ -28,35 +39,56 @@ EOF
 
 RUN chmod +x /usr/local/bin/npm-ci-with-token
 
+# Copy manifests early so that dependency install layers are cached
+# independently from source changes.
 COPY package*.json ${API_HOME}/
 
+# ── Builder ───────────────────────────────────────────────────────────────────
+# Installs all dependencies (including devDependencies) and runs the TypeScript
+# type-checker. No compiled output is produced — Node 24 runs TS natively, so
+# only the source files are needed in the final image.
 FROM base AS builder
 
+# Install all deps (dev included). The npm cache is mounted so it persists
+# across builds without being committed to the image.
 RUN --mount=type=secret,id=npm_token --mount=type=cache,target=/root/.npm npm-ci-with-token
 
 COPY tsconfig.json ${API_HOME}/
 COPY src ${API_HOME}/src
 
-# check for ts errors as using node native ts support
+# Fail the build early on type errors — no tsc emit, source runs directly via
+# Node's native TS support.
 RUN npm run typecheck
 
+# ── Runtime deps ──────────────────────────────────────────────────────────────
+# Installs only production dependencies (--omit=dev) to keep the final image
+# lean. Kept as a separate stage so the builder's devDependencies are not
+# copied across.
 FROM base AS runtime-deps
 
 RUN --mount=type=secret,id=npm_token --mount=type=cache,target=/root/.npm npm-ci-with-token "--omit=dev"
 
+# ── Runtime ───────────────────────────────────────────────────────────────────
+# Final image. Assembles only the artefacts needed to run the API:
+#   - production node_modules  (from runtime-deps)
+#   - TypeScript source files  (from builder, after passing typecheck)
+#   - pm2 process config       (from build context)
 FROM node:24-alpine AS runtime
 
 ENV API_HOME="/srv/api"
 
 WORKDIR ${API_HOME}
 
+# Install pm2 globally for process management (cluster mode, restarts, logging).
 RUN --mount=type=cache,target=/root/.npm npm i -g pm2@6.0.14
 
+# Copy only what is needed at runtime — keeps the image free of dev tooling.
 COPY --from=runtime-deps ${API_HOME}/package*.json ${API_HOME}/
 COPY --from=runtime-deps ${API_HOME}/node_modules ${API_HOME}/node_modules
 COPY --from=builder ${API_HOME}/src ${API_HOME}/src
 COPY pm2 ${API_HOME}/pm2
 
+# Drop root privileges before the process starts.
 RUN chown -R node:node ${API_HOME}
 USER node
 
