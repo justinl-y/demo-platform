@@ -5,10 +5,45 @@ import type {
   FastifyReply,
 } from 'fastify';
 
-function buildInteractionMessage(request: FastifyRequest, reply: FastifyReply): string | null {
-  const reqMethod = request.method;
-  const reqMethodUpper = reqMethod.toUpperCase();
+type InteractionData = {
+  route: string;
+  request: string;
+  requestOn: string;
+  user: string;
+  response: string;
+  responseBody?: string;
+  responseTime: string;
+};
+
+// Minimal redaction: only redact long numeric sequences that might be sensitive
+const REDACT_PATTERN = /\b\d{10,16}\b/g;
+
+function redact(value: string): string {
+  return value.replace(REDACT_PATTERN, '[redacted-number]');
+}
+
+type InteractionFields = {
+  reqMethodUpper: string;
+  reqUrl: string;
+  reqRoute: string;
+  requestLine: string;
+  userEmail: string;
+  requestOn: string;
+  repStatusCode: number;
+  repStatusMessage: string;
+  elapsedMs: number;
+  repErrBody: unknown;
+  resErrBodyJson: string | null;
+};
+
+function extractInteractionFields(request: FastifyRequest, reply: FastifyReply): InteractionFields | null {
+  const reqMethodUpper = request.method.toUpperCase();
   const reqUrl = request.url;
+
+  if (reqMethodUpper === 'OPTIONS') return null;
+  if (reqUrl === '/health_eb') return null;
+  if (reqUrl.match(/api-docs/)) return null;
+
   const reqUser = request.user;
   const reqBody = request.body;
   const route = request.routeOptions?.url;
@@ -21,64 +56,82 @@ function buildInteractionMessage(request: FastifyRequest, reply: FastifyReply): 
     error: repErrBody,
   } = reply;
 
-  // ignore OPTIONS requests
-  if (reqMethodUpper === 'OPTIONS') return null;
-
-  // ignore routes...
-  if (reqUrl === '/health_eb') return null;
-  if (reqUrl.match(/api-docs/)) return null;
-
-  // reqest messages
-  const reqRoute = `${reqMethodUpper} ${route || reqUrl}`;
-  const reqMessage = `Request: ${reqMethodUpper} ${reqUrl}`;
   const reqBodyJson = _.isObject(reqBody) ? JSON.stringify(_.omit(reqBody, ['password'])) : '{}';
-  const reqReturn = _.includes(['POST', 'PUT', 'PATCH', 'DELETE'], reqMethodUpper)
-    ? `${reqMessage} => ${reqBodyJson}`
-    : reqMessage;
+  const isMutating = _.includes(['POST', 'PUT', 'PATCH', 'DELETE'], reqMethodUpper);
 
-  // set user email
   let userEmail = 'Not Set';
   if (_.has(reqUser, 'email')) ({ email: userEmail } = reqUser);
 
-  // reply messages
-  const resMessage = `Response: ${repStatusCode} ${repStatusMessage || ''}`.trim();
+  return {
+    reqMethodUpper,
+    reqUrl,
+    reqRoute: `${reqMethodUpper} ${route || reqUrl}`,
+    requestLine: isMutating ? `${reqMethodUpper} ${reqUrl} => ${reqBodyJson}` : `${reqMethodUpper} ${reqUrl}`,
+    userEmail,
+    requestOn: new Date().toISOString(),
+    repStatusCode,
+    repStatusMessage: repStatusMessage || '',
+    elapsedMs: typeof elapsedTime === 'number' ? elapsedTime : 0,
+    repErrBody,
+    resErrBodyJson: repErrBody
+      ? (_.isObject(repErrBody) ? JSON.stringify(repErrBody) : String(repErrBody))
+      : null,
+  };
+}
 
-  const resErrBodyJson = _.isObject(repErrBody) ? JSON.stringify(repErrBody) : repErrBody;
-  const resErrBodyMessage = `${resMessage}\nResponse Body: ${resErrBodyJson}`;
-  const resReturn = repErrBody ? resErrBodyMessage : resMessage;
+function buildInteractionMessage(request: FastifyRequest, reply: FastifyReply): string | null {
+  const fields = extractInteractionFields(request, reply);
 
-  const message = `\r\n
+  if (!fields) return null;
+
+  const { reqRoute, requestLine, userEmail, requestOn, repStatusCode, repStatusMessage, elapsedMs, repErrBody, resErrBodyJson } = fields;
+
+  const resMessage = `Response: ${repStatusCode} ${repStatusMessage}`.trim();
+  const resReturn = repErrBody ? `${resMessage}\nResponse Body: ${resErrBodyJson}` : resMessage;
+
+  return `\r\n
 Route: ${reqRoute}
-${reqReturn}
-Request On: ${new Date().toISOString()}
+Request: ${requestLine}
+Request On: ${requestOn}
 User: ${userEmail}
 ${resReturn}
-Response Time: ${(typeof elapsedTime === 'number' ? elapsedTime : 0).toFixed(0)}ms
+Response Time: ${elapsedMs.toFixed(0)}ms
 \r\n-----------------------------------------------------------------------------\r\n`;
+}
 
-  return message;
-};
+function buildInteractionData(request: FastifyRequest, reply: FastifyReply): InteractionData | null {
+  const fields = extractInteractionFields(request, reply);
 
-function buildSentryInteractionMessage(request: FastifyRequest, reply: FastifyReply): string | null {
-  const message = buildInteractionMessage(request, reply);
+  if (!fields) return null;
 
-  if (!message) return null;
+  const { reqRoute, requestLine, userEmail, requestOn, repStatusCode, repStatusMessage, elapsedMs, repErrBody, resErrBodyJson } = fields;
 
-  // Minimal redaction: only redact long numeric sequences that might be sensitive
-  return message.replace(/\b\d{10,16}\b/g, '[redacted-number]');
-};
+  const data: InteractionData = {
+    route: redact(reqRoute),
+    request: redact(requestLine),
+    requestOn,
+    user: redact(userEmail),
+    response: `${repStatusCode} ${repStatusMessage}`.trim(),
+    responseTime: `${elapsedMs.toFixed(0)}ms`,
+  };
+
+  if (repErrBody && resErrBodyJson) data.responseBody = redact(resErrBodyJson);
+
+  return data;
+}
 
 async function consoleInteractionHandler(request: FastifyRequest, reply: FastifyReply) {
   const message = buildInteractionMessage(request, reply);
 
   if (!message) return;
 
-  console.log(message);
-};
+  request.log.info(message);
+}
 
 export {
   buildInteractionMessage,
-  buildSentryInteractionMessage,
+  buildInteractionData,
 };
+export type { InteractionData };
 
 export default consoleInteractionHandler;

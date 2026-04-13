@@ -9,10 +9,17 @@ services:
       - API_ENV=${API_ENV}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
       - NODE_ENV=production
     expose:
       - '8000'
-    tty: true
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: ${AWS_DEFAULT_REGION}
+        awslogs-group: /api-demo/${API_ENV}
+        awslogs-stream: api
+        awslogs-create-group: "true"
   nginx-proxy:
     # for EB health reporting we need to:
     # 1 - to route traffic through a nginx proxy server...

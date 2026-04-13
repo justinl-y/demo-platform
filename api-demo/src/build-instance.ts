@@ -1,6 +1,8 @@
 import { initSentry } from '#utils/sentry-instrument';
+import { createLogger } from '#utils/logger';
 
 import Fastify from 'fastify';
+import type { FastifyBaseLogger } from 'fastify';
 import helmet from '@fastify/helmet';
 import cors from '@fastify/cors';
 import accepts from '@fastify/accepts';
@@ -38,7 +40,7 @@ async function buildInstance() {
   const { default: plugins } = await import('./plugins/index.ts');
   const { default: routes } = await import('./routes/index.ts');
 
-  const instance = Fastify(Config.fastifyConfig);
+  const instance = Fastify({ ...Config.fastifyConfig, loggerInstance: createLogger() as FastifyBaseLogger });
 
   // register @fastify plugins
   instance.register(helmet, Config.helmetConfig);

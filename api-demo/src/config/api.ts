@@ -1,4 +1,13 @@
-const apiEnv: 'TEST' | 'STAGE' | 'PROD' = (process.env.API_ENV || 'TEST').toUpperCase() as 'TEST' | 'STAGE' | 'PROD';
+const apiEnv: 'TEST' | 'LOCAL' | 'STAGE' | 'PROD' = (process.env.API_ENV || 'TEST').toUpperCase() as 'TEST' | 'LOCAL' | 'STAGE' | 'PROD';
+
+const resourceEnvs = {
+  TEST: 'TEST',
+  LOCAL: 'STAGE',
+  STAGE: 'STAGE',
+  PROD: 'PROD',
+} as const;
+
+const apiResouceEnv = resourceEnvs[apiEnv];
 
 const compressConfig = {
   global: true,
@@ -74,6 +83,7 @@ else {
 
 export {
   apiEnv,
+  apiResouceEnv,
   compressConfig,
   corsConfig,
   externalPort,

@@ -7,7 +7,7 @@ services:
       secrets:
         - npm_token
     environment:
-      - API_ENV=stage # <--change this to local eventually
+      - API_ENV=local
       - AWS_ACCESS_KEY_ID=${API_DEMO_AWS_ACCESS_KEY_ID:-}
       - AWS_SECRET_ACCESS_KEY=${API_DEMO_AWS_SECRET_ACCESS_KEY:-}
       - AWS_SESSION_TOKEN=${API_DEMO_AWS_SESSION_TOKEN:-}

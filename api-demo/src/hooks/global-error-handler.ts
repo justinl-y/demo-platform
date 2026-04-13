@@ -5,52 +5,30 @@ import type {
 } from 'fastify';
 import * as Sentry from '@sentry/node';
 
-import { buildSentryInteractionMessage } from './console-interaction-handler.ts';
+import { buildInteractionData } from './console-interaction-handler.ts';
 import { Config } from '#config/index';
 
-const MAX_BREADCRUMB_MESSAGE_LENGTH = 4096;
-const TRUNCATED_SUFFIX = '\n...[truncated]';
+import type { InteractionData } from './console-interaction-handler.ts';
+
 const SENTRY_EXCLUDED_STATUS_CODES = [400, 401, 403, 404, 409, 418];
 
 type SentryAugmentedError = FastifyError & {
-  interactionConsoleLog?: string;
-};
-
-function buildFallbackInteractionMessage(method: string, url: string, statusCode: number): string {
-  return `Route: ${method.toUpperCase()} ${url}\nResponse: ${statusCode}`;
+  interactionData?: InteractionData;
 };
 
 function processSentryError(
   error: FastifyError,
   request: FastifyRequest,
   reply: FastifyReply,
-  statusCode: number,
 ): void {
-  const fallbackInteractionMessage = buildFallbackInteractionMessage(request.method, request.url, statusCode);
-  let interactionMessage: string;
-
-  try {
-    interactionMessage = buildSentryInteractionMessage(request, reply) ?? fallbackInteractionMessage;
-  }
-  catch {
-    interactionMessage = fallbackInteractionMessage;
-  }
-
-  const breadcrumbMessage = interactionMessage.length > MAX_BREADCRUMB_MESSAGE_LENGTH
-    ? (() => {
-        if (MAX_BREADCRUMB_MESSAGE_LENGTH <= TRUNCATED_SUFFIX.length) {
-          return TRUNCATED_SUFFIX.slice(0, MAX_BREADCRUMB_MESSAGE_LENGTH);
-        }
-
-        const maxMessageLength = MAX_BREADCRUMB_MESSAGE_LENGTH - TRUNCATED_SUFFIX.length;
-
-        return `${interactionMessage.slice(0, maxMessageLength)}${TRUNCATED_SUFFIX}`;
-      })()
-    : interactionMessage;
-
   const sentryError = error as SentryAugmentedError;
 
-  sentryError.interactionConsoleLog = breadcrumbMessage;
+  try {
+    sentryError.interactionData = buildInteractionData(request, reply) ?? undefined;
+  }
+  catch {
+    // captured without interaction data
+  }
 
   Sentry.captureException(sentryError);
 };
@@ -74,7 +52,7 @@ function globalErrorHandler(error: FastifyError, request: FastifyRequest, reply:
     return reply;
   }
   finally {
-    if (Config.apiEnv !== 'TEST' && !SENTRY_EXCLUDED_STATUS_CODES.includes(statusCode)) processSentryError(error, request, reply, statusCode);
+    if (Config.apiEnv !== 'TEST' && !SENTRY_EXCLUDED_STATUS_CODES.includes(statusCode)) processSentryError(error, request, reply);
   }
 };
 
