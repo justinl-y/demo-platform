@@ -1,6 +1,8 @@
 import { initSentry } from '#utils/sentry-instrument';
+import { createLogger } from '#utils/logger';
 
 import Fastify from 'fastify';
+import type { FastifyBaseLogger } from 'fastify';
 import helmet from '@fastify/helmet';
 import cors from '@fastify/cors';
 import accepts from '@fastify/accepts';
@@ -10,8 +12,6 @@ import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import replyValidation from '@fastify/response-validation';
 
-import plugins from './plugins/index.ts';
-import routes from './routes/index.ts';
 import {
   authenticateOnRequest,
   consoleErrorHandler,
@@ -36,7 +36,11 @@ async function buildInstance() {
   await batchGetSecretValue();
   await initSentry();
 
-  const instance = Fastify(Config.fastifyConfig);
+  // Dynamic imports ensure all modules are loaded after Sentry.init() so instrumentation can patch them
+  const { default: plugins } = await import('./plugins/index.ts');
+  const { default: routes } = await import('./routes/index.ts');
+
+  const instance = Fastify({ ...Config.fastifyConfig, loggerInstance: createLogger() as FastifyBaseLogger });
 
   // register @fastify plugins
   instance.register(helmet, Config.helmetConfig);

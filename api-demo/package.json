@@ -54,7 +54,8 @@
     "fastify-plugin": "^5.1.0",
     "http-errors-enhanced": "^4.0.2",
     "lodash": "^4.17.23",
-    "pg": "^8.20.0"
+    "pg": "^8.20.0",
+    "pino": "^9.0.0"
   },
   "devDependencies": {
     "@pgtyped/cli": "^2.4.3",
@@ -66,6 +67,6 @@
     "jiti": "^2.6.1",
     "lint-staged": "^16.4.0",
     "neostandard": "^0.13.0",
-    "typescript": "^6.0.2"
+    "typescript": "^5.8.3"
   }
 }

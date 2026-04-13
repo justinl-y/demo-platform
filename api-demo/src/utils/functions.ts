@@ -1,6 +1,7 @@
 import path from 'path';
 import { Config } from '#config/index';
 import { localHost } from './constants.ts';
+import { withSpan } from './sentry-instrument.ts';
 
 import type { AddressInfo } from 'net';
 import type {
@@ -36,7 +37,7 @@ function routePropertiesCore(method: string, url: string, handler: RouteHandlerM
   return {
     method,
     url,
-    handler,
+    handler: withSpan(handler.name, handler),
   };
 };
 

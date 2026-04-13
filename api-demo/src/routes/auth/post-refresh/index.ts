@@ -47,7 +47,7 @@ async function postRefresh(this: FastifyInstance, request: FastifyRequest, reply
     decodedToken = this.jwt.verify(tokenRefresh);
   }
   catch (err) {
-    console.log(err);
+    request.log.error(err instanceof Error ? (err.stack ?? err.message) : String(err));
 
     throw new UnauthorizedError('Authentication failed');
   }

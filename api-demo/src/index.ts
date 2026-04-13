@@ -13,6 +13,7 @@ async function startServer() {
     console.log(`Node version is: ${NODE_VERSION}`);
     console.log('\r\nServer starting ...');
     console.log(`... API environment is ${Config.apiEnv}`);
+    console.log(`... Resource environment is ${Config.apiResourceEnv}`);
 
     const instance = await buildInstance();
 

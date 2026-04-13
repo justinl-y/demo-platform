@@ -7,7 +7,7 @@ import type {
 async function consoleErrorHandler(request: FastifyRequest, reply: FastifyReply, error: FastifyError): Promise<void> {
   if (error) {
     // required for console error tracing
-    console.log(error);
+    request.log.error(error.stack ?? String(error));
   }
 };
 

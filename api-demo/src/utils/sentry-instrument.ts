@@ -2,27 +2,26 @@ import * as Sentry from '@sentry/node';
 
 import { Config } from '#config/index';
 
+import type { RouteHandlerMethod } from 'fastify';
+import type { InteractionData } from '../hooks/console-interaction-handler.ts';
+
+function withSpan(name: string, handler: RouteHandlerMethod): RouteHandlerMethod {
+  const wrapped: RouteHandlerMethod = async function (request, reply) {
+    return Sentry.startSpan({ name, op: 'function' }, () => handler.call(this, request, reply));
+  };
+
+  return wrapped;
+}
+
 const INTERACTION_BREADCRUMB_CATEGORY = 'interaction.last';
 const INTERACTION_BREADCRUMB_MESSAGE = 'Interaction details';
 
 type InteractionHintException = {
-  interactionConsoleLog?: string;
+  interactionData?: InteractionData;
 };
 
 type NodeProfilingIntegration = {
   nodeProfilingIntegration: () => unknown;
-};
-
-function parseInteractionData(interactionLog: string) {
-  return {
-    route: interactionLog.match(/Route:\s(.+)/)?.[1],
-    request: interactionLog.match(/Request:\s(.+)/)?.[1],
-    requestOn: interactionLog.match(/Request On:\s(.+)/)?.[1],
-    user: interactionLog.match(/User:\s(.+)/)?.[1],
-    response: interactionLog.match(/Response:\s(.+)/)?.[1],
-    responseBody: interactionLog.match(/Response Body:\s(.+)/)?.[1],
-    responseTime: interactionLog.match(/Response Time:\s(.+)/)?.[1],
-  };
 };
 
 async function initSentry() {
@@ -52,7 +51,6 @@ async function initSentry() {
 
   Sentry.init({
     dsn: sentryDsn,
-    // sendDefaultPii: true,
     tracesSampleRate: Config.sentryConfig.tracesSampleRate[Config.apiEnv],
     environment: Config.apiEnv,
     ignoreTransactions: [
@@ -62,8 +60,9 @@ async function initSentry() {
     ],
     beforeSend(event, hint) {
       const headers = event.request?.headers;
-      const hintedException = hint?.originalException as InteractionHintException | undefined;
-      const interactionLog = event.extra?.interaction_console_log ?? hintedException?.interactionConsoleLog;
+      const originalException = hint?.originalException;
+      const interactionData = (originalException as InteractionHintException | undefined)?.interactionData;
+      const stack = originalException instanceof Error ? originalException.stack : undefined;
 
       if (headers) {
         delete headers.authorization;
@@ -72,9 +71,7 @@ async function initSentry() {
         delete headers['x-api-key'];
       }
 
-      if (typeof interactionLog === 'string' && interactionLog.length > 0) {
-        const interactionData = parseInteractionData(interactionLog);
-
+      if (interactionData) {
         event.breadcrumbs = event.breadcrumbs ?? [];
         event.breadcrumbs.push({
           category: INTERACTION_BREADCRUMB_CATEGORY,
@@ -84,6 +81,10 @@ async function initSentry() {
           data: interactionData,
           timestamp: Date.now() / 1000,
         });
+      }
+
+      if (stack) {
+        event.extra = { ...event.extra, stackTrace: stack };
       }
 
       return event;
@@ -103,6 +104,7 @@ async function initSentry() {
           ip: true,       // Explicitly enable IP capture (off by default)
         },
       }),
+      Sentry.postgresIntegration(),
       ...(profilingIntegration ? [profilingIntegration as any] : []),
     ],
     profilesSampleRate,
@@ -115,4 +117,4 @@ async function initSentry() {
   console.info(`... Sentry ${profilingStatusMessage}`);
 }
 
-export { initSentry };
+export { initSentry, withSpan };

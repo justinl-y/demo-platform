@@ -1,0 +1,9 @@
+#!/bin/sh
+set -e
+echo 'Running pre-commit checks...'
+cd api-demo
+if git diff --cached --name-only | grep -q '^api-demo/test/container-db/schema'; then
+  npm run sql:types:ci
+fi
+npm run typecheck
+npx lint-staged
