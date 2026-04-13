@@ -1,6 +1,7 @@
 import fp from 'fastify-plugin';
 import {
   Pool,
+  types as PGTypes,
 } from 'pg';
 
 import {
@@ -16,7 +17,7 @@ import type {
   FastifyPluginOptions,
 } from 'fastify';
 
-// const NUMERIC_PG_OID = 1700;
+const NUMERIC_PG_OID = 1700;
 
 function postgresPlugin(fastify: FastifyInstance, options: FastifyPluginOptions): void {
   // =============================================================================
@@ -31,7 +32,9 @@ function postgresPlugin(fastify: FastifyInstance, options: FastifyPluginOptions)
   // SELECT typname, oid, typarray FROM pg_type ORDER BY typname, oid;
   // https://github.com/brianc/node-pg-types
 
-  // PGTypes.setTypeParser(NUMERIC_PG_OID, (val) => ((val === null) ? null : parseFloat(val)));
+  // NOTE: This fix is a global override — PGTypes.setTypeParser affects every query in the process. If there will be a mix of safe and unsafe numeric columns, global parser is blunt. A safer pattern is to handle the conversion per-query in the result mapping rather than globally in this scenario.
+
+  PGTypes.setTypeParser(NUMERIC_PG_OID, (val) => ((val === null) ? null : parseFloat(val)));
   // =============================================================================
 
   const pool = new Pool(Config.postgresConfig());
