@@ -41,19 +41,14 @@ function globalErrorHandler(error: FastifyError, request: FastifyRequest, reply:
     message: fastifyError.message || 'An unexpected error occurred',
   };
 
-  try {
-    reply.error = responseBody;
+  if (Config.apiEnv !== 'TEST' && !SENTRY_EXCLUDED_STATUS_CODES.includes(statusCode)) processSentryError(error, request, reply);
 
-    reply
-      .status(statusCode)
-      .send(responseBody)
-    ;
+  reply.error = responseBody;
 
-    return reply;
-  }
-  finally {
-    if (Config.apiEnv !== 'TEST' && !SENTRY_EXCLUDED_STATUS_CODES.includes(statusCode)) processSentryError(error, request, reply);
-  }
+  return reply
+    .status(statusCode)
+    .send(responseBody)
+  ;
 };
 
 export default globalErrorHandler;
