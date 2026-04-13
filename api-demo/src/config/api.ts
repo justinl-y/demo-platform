@@ -7,7 +7,7 @@ const resourceEnvs = {
   PROD: 'PROD',
 } as const;
 
-const apiResouceEnv = resourceEnvs[apiEnv];
+const apiResourceEnv = resourceEnvs[apiEnv];
 
 const compressConfig = {
   global: true,
@@ -83,7 +83,7 @@ else {
 
 export {
   apiEnv,
-  apiResouceEnv,
+  apiResourceEnv,
   compressConfig,
   corsConfig,
   externalPort,

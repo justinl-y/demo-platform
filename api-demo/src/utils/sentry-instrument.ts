@@ -3,6 +3,7 @@ import * as Sentry from '@sentry/node';
 import { Config } from '#config/index';
 
 import type { RouteHandlerMethod } from 'fastify';
+import type { InteractionData } from '../hooks/console-interaction-handler.ts';
 
 function withSpan(name: string, handler: RouteHandlerMethod): RouteHandlerMethod {
   const wrapped: RouteHandlerMethod = async function (request, reply) {
@@ -11,8 +12,6 @@ function withSpan(name: string, handler: RouteHandlerMethod): RouteHandlerMethod
 
   return wrapped;
 }
-
-import type { InteractionData } from '../hooks/console-interaction-handler.ts';
 
 const INTERACTION_BREADCRUMB_CATEGORY = 'interaction.last';
 const INTERACTION_BREADCRUMB_MESSAGE = 'Interaction details';
@@ -52,7 +51,6 @@ async function initSentry() {
 
   Sentry.init({
     dsn: sentryDsn,
-    sendDefaultPii: true,
     tracesSampleRate: Config.sentryConfig.tracesSampleRate[Config.apiEnv],
     environment: Config.apiEnv,
     ignoreTransactions: [

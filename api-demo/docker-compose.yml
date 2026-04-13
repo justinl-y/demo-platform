@@ -18,7 +18,7 @@ services:
       options:
         awslogs-region: ${AWS_DEFAULT_REGION}
         awslogs-group: /api-demo/${API_ENV}
-        awslogs-stream: api
+        awslogs-stream-prefix: api
         awslogs-create-group: "true"
   nginx-proxy:
     # for EB health reporting we need to:

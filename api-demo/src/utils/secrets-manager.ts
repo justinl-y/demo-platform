@@ -54,7 +54,7 @@ async function batchGetSecretValue() {
 
       return;  // During the tests we don't want to fetch secrets
     }
-    else envKey = Config.apiResouceEnv;
+    else envKey = Config.apiResourceEnv;
 
     const params: BatchGetSecretValueCommandInput = {
       Filters: [

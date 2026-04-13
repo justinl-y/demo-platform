@@ -15,7 +15,8 @@ function createMsgStream(): Writable {
           const { msg } = JSON.parse(line) as { msg?: unknown };
 
           if (msg !== undefined && !String(msg).startsWith('Server listening at')) {
-            process.stdout.write(String(msg));
+            const output = String(msg);
+            process.stdout.write(output.endsWith('\n') ? output : `${output}\n`);
           }
         }
         catch {
