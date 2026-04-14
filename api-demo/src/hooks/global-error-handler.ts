@@ -21,16 +21,21 @@ function processSentryError(
   request: FastifyRequest,
   reply: FastifyReply,
 ): void {
-  const sentryError = error as SentryAugmentedError;
-
   try {
-    sentryError.interactionData = buildInteractionData(request, reply) ?? undefined;
+    const sentryError = error as SentryAugmentedError;
+
+    try {
+      sentryError.interactionData = buildInteractionData(request, reply) ?? undefined;
+    }
+    catch {
+      // captured without interaction data
+    }
+
+    Sentry.captureException(sentryError);
   }
   catch {
-    // captured without interaction data
+    // Sentry failure must not affect the HTTP response
   }
-
-  Sentry.captureException(sentryError);
 };
 
 function globalErrorHandler(error: FastifyError, request: FastifyRequest, reply: FastifyReply): unknown {
