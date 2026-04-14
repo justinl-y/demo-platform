@@ -7,7 +7,9 @@ import type { InteractionData } from '../hooks/console-interaction-handler.ts';
 
 function withSpan(name: string, handler: RouteHandlerMethod): RouteHandlerMethod {
   const wrapped: RouteHandlerMethod = async function (request, reply) {
-    return Sentry.startSpan({ name, op: 'function' }, () => handler.call(this, request, reply));
+    await Sentry.startSpan({ name, op: 'function' }, async () => {
+      await handler.call(this, request, reply);
+    });
   };
 
   return wrapped;

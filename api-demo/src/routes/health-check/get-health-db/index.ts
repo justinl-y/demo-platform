@@ -32,8 +32,6 @@ async function getHealthDB(this: FastifyInstance, request: FastifyRequest, reply
   reply
     .status(200)
     .send(healthDB);
-
-  return reply;
 }
 
 export default getHealthDB;

@@ -10,8 +10,6 @@ function getHealthEB(request: FastifyRequest, reply: FastifyReply) {
   };
 
   reply.send(healthEB);
-
-  return reply;
 }
 
 export default getHealthEB;

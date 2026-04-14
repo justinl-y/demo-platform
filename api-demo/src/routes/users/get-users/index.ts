@@ -10,8 +10,6 @@ function getUsers(request: FastifyRequest, reply: FastifyReply) {
   };
 
   reply.send(defaultResponse);
-
-  return reply;
 }
 
 export default getUsers;

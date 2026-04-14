@@ -21,11 +21,11 @@ if [ -z "${TOKEN}" ]; then
   exit 0
 fi
 
-INSTANCE_ID=$(curl -s -H "X-aws-ec2-metadata-token: ${TOKEN}" \
+INSTANCE_ID=$(curl -sf -H "X-aws-ec2-metadata-token: ${TOKEN}" \
   http://169.254.169.254/latest/meta-data/instance-id \
   --connect-timeout 2 --max-time 5)
 
-if [ -z "${INSTANCE_ID}" ]; then
+if [ -z "${INSTANCE_ID}" ] || [[ "${INSTANCE_ID}" != i-* ]]; then
   echo "WARNING: Could not retrieve instance ID, falling back to hostname (${FALLBACK_ID})" >&2
   INSTANCE_ID="${FALLBACK_ID}"
 fi
