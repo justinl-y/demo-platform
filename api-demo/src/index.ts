@@ -24,7 +24,7 @@ async function startServer() {
 
     logger.info(getServerDetails(instance.server.address()));
 
-    if (!['PROD', 'STAGE'].includes(Config.apiEnv)) logger.info(`... API documentation available at ${localHost}/api-docs`);
+    if (!Config.liveEnvironments.includes(Config.apiEnv)) logger.info(`... API documentation available at ${localHost}/api-docs`);
     logger.info('Server ready, let the magic begin!');
     logger.info('\r\n-----------------------------------------------------------------------------\r\n');
   }

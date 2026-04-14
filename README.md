@@ -15,6 +15,47 @@ This section will include a modern frontend application (e.g., **React/Next.js**
 
 ## ⚙️ Backend API
 
+```mermaid
+flowchart TD
+    Client["🌐 Frontend\ndemo(-stage).discovered-check.ca"]
+
+    subgraph AWS["☁️  AWS — us-west-2"]
+        subgraph EB["🚀 Elastic Beanstalk / EC2"]
+            subgraph DC["🐳 Docker Compose"]
+                Nginx["🔀 nginx-proxy\n:80 → :6661"]
+                API["⚡ Fastify API\n:8000"]
+                Nginx -->|proxy_pass| API
+            end
+        end
+
+        CW["📋 CloudWatch Logs\n/api-demo/STAGE · /api-demo/PROD"]
+        RDS[("🗄️ RDS PostgreSQL\nSSL · stage / prod")]
+        SM["🔑 Secrets Manager\nAPI_DEMO/STAGE · API_DEMO/PROD"]
+        SSO["🔐 AWS SSO\nadmin access"]
+    end
+
+    Sentry["🪲 Sentry\ntraces 20% · 10%\nprofiles 25% · 20%"]
+
+    Client -->|"HTTPS"| Nginx
+    DC -->|"awslogs driver"| CW
+    API -->|"BatchGetSecretValue\n(startup only)"| SM
+    API -->|"SSL + pool"| RDS
+    API -->|"errors + traces"| Sentry
+    SSO -.->|"credentials"| EB
+
+    classDef aws fill:#FF9900,stroke:#c47600,color:#000
+    classDef app fill:#4A90D9,stroke:#2c6fad,color:#fff
+    classDef external fill:#6C4FBB,stroke:#4a3485,color:#fff
+    classDef client fill:#2ECC71,stroke:#1fa355,color:#000
+    classDef db fill:#E74C3C,stroke:#b03a2e,color:#fff
+
+    class Client client
+    class Nginx,API app
+    class RDS db
+    class SM,CW,SSO aws
+    class Sentry external
+```
+
 ### 🏛️ Core Features
 
 - 🐳 Docker containerization
@@ -33,10 +74,12 @@ This section will include a modern frontend application (e.g., **React/Next.js**
 
 ### ☁️ Cloud Infrastructure (AWS)
 
-- 🔑 AWS SSO for authentication
 - 🗄️ RDS (PostgreSQL)
-- 🕵️ Secrets Manager
+- ⚙️ CloudFront for reverse proxy
 - 🚀 Elastic Beanstalk / EC2 for deployment
+- 🔑 Secrets Manager
+- 📋 Cloudwatch for logging
+- 🔐 AWS SSO for authentication
 
 [Read more here ...](/api-demo/README.md)
 

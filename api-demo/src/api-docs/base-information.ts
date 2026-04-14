@@ -14,11 +14,11 @@ const baseInformation = {
     ],
     components: {
       securitySchemes: {
-        bearerAuth: {
-          type: 'http' as const,
-          scheme: 'bearer',
-          bearerFormat: 'JWT',
-          description: 'JWT bearer token supplied in the Authorization header',
+        cookieAuth: {
+          type: 'apiKey' as const,
+          in: 'cookie' as const,
+          name: 'access_token',
+          description: 'JWT supplied as an HttpOnly cookie',
         },
       },
     },

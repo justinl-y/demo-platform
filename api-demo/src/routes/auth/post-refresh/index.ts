@@ -8,8 +8,12 @@ import {
 
 import {
   bcryptCompare,
+  cookieOptions,
   generateJwt,
 } from '#utils/authentication';
+import {
+  Config,
+} from '#config/index';
 
 import type {
   FastifyRequest,
@@ -27,18 +31,17 @@ import type {
 
 const relPath = import.meta.dirname;
 
-type Request = {
-  body: {
-    token_refresh: string;
-  };
-};
-
 async function postRefresh(this: FastifyInstance, request: FastifyRequest, reply: FastifyReply) {
   const {
-    body: {
-      token_refresh: tokenRefresh,
-    },
-  } = request as Request;
+    accessTokenCookie,
+    accessTokenCookieMaxAge,
+    accessTokenJwt,
+    refreshTokenCookie,
+    refreshTokenJwt,
+  } = Config.authConfig();
+
+  const tokenRefresh = request.cookies[refreshTokenCookie];
+  if (!tokenRefresh) throw new UnauthorizedError('Authentication failed');
 
   let decodedToken: VerifyPayloadTypeCustom;
 
@@ -58,9 +61,9 @@ async function postRefresh(this: FastifyInstance, request: FastifyRequest, reply
     type: tokenType,
   } = decodedToken;
 
-  if (tokenType !== 'refresh') throw new UnauthorizedError('Incorrect authorization token type');
+  if (tokenType !== refreshTokenJwt) throw new UnauthorizedError('Incorrect authorization token type');
 
-  // get hashed access token if existing - if not throw
+  // get hashed refresh token if existing - if not throw
   const user = await this.db.query<IAuthPostRefreshGetUserWithRefreshTokenResult>(cwd('get-user-with-refresh-token', relPath), { userId }, 'one');
   if (!user) throw new UnauthorizedError('Authentication failed');
 
@@ -72,12 +75,12 @@ async function postRefresh(this: FastifyInstance, request: FastifyRequest, reply
   const validRefreshToken = await bcryptCompare(tokenRefresh, tokenRefreshHash);
   if (!validRefreshToken) throw new UnauthorizedError('Authentication failed');
 
-  // create a new access token
-  const tokenAccess = generateJwt.call(this, userId, userEmail, 'access');
+  // issue a new access token cookie
+  const tokenAccess = generateJwt.call(this, userId, userEmail, accessTokenJwt);
 
-  const result = { token_access: tokenAccess };
+  reply.setCookie(accessTokenCookie, tokenAccess, { ...cookieOptions, maxAge: accessTokenCookieMaxAge });
 
-  reply.send(result);
+  reply.code(204).send();
 }
 
 export default postRefresh;

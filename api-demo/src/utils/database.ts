@@ -238,9 +238,7 @@ async function query<
 
     if (!code) code = name;
 
-    const handledError = errorsToHandle(err, code, file, message);
-
-    throw handledError;
+    throw errorsToHandle(err, code, file, message);
   }
   finally {
     if (pgClient) pgClient.release();

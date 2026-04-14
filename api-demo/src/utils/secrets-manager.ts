@@ -87,7 +87,7 @@ async function batchGetSecretValue() {
     logger.info('... Secrets fetch successful');
   }
   catch (err) {
-    if (['PROD', 'STAGE'].includes(Config.apiEnv)) process.exit(1);
+    if (Config.liveEnvironments.includes(Config.apiEnv)) process.exit(1);
 
     logger.error(err, '... Secrets fetch failed');
   }

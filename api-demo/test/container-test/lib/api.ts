@@ -22,7 +22,7 @@ type ApiClient = Record<ApiMethod, ApiRequest>;
 
 async function userLogin() {
   const result = await app
-    .post('/users/login')
+    .post('/login')
     .send({
       email: 'user.super@email.com',
       password: 'user.super@email.com',
@@ -30,10 +30,14 @@ async function userLogin() {
     .set('Accept', 'application/json')
   ;
 
-  return result.body.token_access;
+  const setCookie = result.headers['set-cookie'] as string[] | string | undefined;
+  const cookies = Array.isArray(setCookie) ? setCookie : (setCookie ? [setCookie] : []);
+  const accessTokenCookie = cookies.find((c) => c.startsWith('access_token='));
+
+  return accessTokenCookie?.split(';')[0] ?? '';
 };
 
-const bearerToken = await userLogin();
+const accessTokenCookie = await userLogin();
 
 const methods: ApiMethod[] = ['get', 'put', 'patch', 'del', 'post'];
 const requestByMethod: Record<ApiMethod, (resource: string) => Supertest.Test> = {
@@ -52,7 +56,7 @@ methods.forEach((method) => {
   // Return a pre-configured Supertest request with authorization headers
   authAPI[method] = async (resource, data = {}, headers = {}) => {
     const rep = await requestByMethod[method](resource)
-      .set('Authorization', `Bearer ${bearerToken}`)
+      .set('Cookie', accessTokenCookie)
       .send(data)
       .set(headers)
       .set('Accept', 'application/json');

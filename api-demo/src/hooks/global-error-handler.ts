@@ -39,11 +39,10 @@ function processSentryError(
 };
 
 function globalErrorHandler(error: FastifyError, request: FastifyRequest, reply: FastifyReply): unknown {
-  const fastifyError = error;
-  const statusCode = fastifyError.statusCode || 500;
+  const statusCode = error.statusCode || 500;
   const responseBody = {
     statusCode,
-    message: fastifyError.message || 'An unexpected error occurred',
+    message: error.message || 'An unexpected error occurred',
   };
 
   reply.error = responseBody;

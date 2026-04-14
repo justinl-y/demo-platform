@@ -30,8 +30,6 @@ function createMsgStream(): Writable {
 }
 
 function createLogger() {
-  if (apiEnv === 'TEST') return pino({ level: 'silent' });
-
   if (apiEnv === 'STAGE' || apiEnv === 'PROD') {
     return pino(
       { level: 'info' },

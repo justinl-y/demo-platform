@@ -7,7 +7,7 @@ import type {
   FastifyReply,
 } from 'fastify';
 
-async function setSentryUserOnRequest(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+async function setSentryUserOnRequest(request: FastifyRequest, _reply: FastifyReply): Promise<void> {
   if (Config.apiEnv !== 'TEST') {
     const user = request.user;
 

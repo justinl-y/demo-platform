@@ -14,6 +14,13 @@ import type {
   JwtTokenType,
 } from '../types/auth.ts';
 
+const cookieOptions = {
+  httpOnly: true,
+  secure: (Config.liveEnvironments as string[]).includes(Config.apiEnv),
+  sameSite: 'strict' as const,
+  path: '/',
+};
+
 async function bcryptCompare(secret: string, secretHash: string) {
   return bcrypt.compare(secret, secretHash);
 };
@@ -41,12 +48,14 @@ function generateJwt(this: FastifyInstance, userId: string, userEmail: string, j
   };
 
   const {
-    accessTokenExpiration,
-    refreshTokenExpiration,
+    accessTokenJwt,
+    accessTokenJwtExpiration,
+    refreshTokenJwt,
+    refreshTokenJwtExpiration,
   } = Config.authConfig();
 
-  if (jwtType === 'access') options.expiresIn = accessTokenExpiration;
-  else if (jwtType === 'refresh') options.expiresIn = refreshTokenExpiration;
+  if (jwtType === accessTokenJwt) options.expiresIn = accessTokenJwtExpiration;
+  else if (jwtType === refreshTokenJwt) options.expiresIn = refreshTokenJwtExpiration;
   else throw new UnauthorizedError('Invalid token type');
 
   return this.jwt.sign(payload, options);
@@ -55,5 +64,6 @@ function generateJwt(this: FastifyInstance, userId: string, userEmail: string, j
 export {
   bcryptCompare,
   bcryptHash,
+  cookieOptions,
   generateJwt,
 };

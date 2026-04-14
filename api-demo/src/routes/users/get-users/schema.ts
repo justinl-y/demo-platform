@@ -2,7 +2,7 @@ const route = {
   tags: ['users'],
   // summary: 'Database health check endpoint',
   // description: 'Returns the current health status of the database server',
-  security: [{ bearerAuth: [] }],
+  security: [{ cookieAuth: [] }],
 };
 
 const response = {

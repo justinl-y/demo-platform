@@ -12,11 +12,13 @@ import {
 function jwtPlugin(fastify: FastifyInstance, options: FastifyPluginOptions): void {
   const jwtAuthConfig = Config.authConfig();
 
-  const jwtOptions = {
+  fastify.register(fastifyJwt, {
     secret: jwtAuthConfig.secret,
-  };
-
-  fastify.register(fastifyJwt, jwtOptions);
+    cookie: {
+      cookieName: jwtAuthConfig.accessTokenCookie,
+      signed: false,  // no need, jwt is signed
+    },
+  });
 }
 
 export default fp(jwtPlugin);
