@@ -78,8 +78,6 @@ async function postRefresh(this: FastifyInstance, request: FastifyRequest, reply
   const result = { token_access: tokenAccess };
 
   reply.send(result);
-
-  return reply;
 }
 
 export default postRefresh;

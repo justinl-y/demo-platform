@@ -80,10 +80,7 @@ async function postLogin(this: FastifyInstance, request: FastifyRequest, reply: 
     token_refresh: tokenRefresh,
   };
 
-  reply
-    .send(response);
-
-  return reply;
+  reply.send(response);
 }
 
 export default postLogin;
