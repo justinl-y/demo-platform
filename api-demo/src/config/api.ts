@@ -42,6 +42,11 @@ const helmetConfig = {
   global: true,
 } as const;
 
+const rateLimitConfig = {
+  max: 100,
+  timeWindow: '1 minute',
+} as const;
+
 const serverConfig = {
   port: 8000,
   host: '0.0.0.0',
@@ -88,6 +93,7 @@ export {
   corsConfig,
   externalPort,
   helmetConfig,
+  rateLimitConfig,
   serverConfig,
   userConfig,
 };

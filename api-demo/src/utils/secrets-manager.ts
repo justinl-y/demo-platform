@@ -7,6 +7,9 @@ import {
 import {
   Config,
 } from '#config/index';
+import { createLogger } from '#utils/logger';
+
+const logger = createLogger();
 
 // initialized with values for env test
 const secretValues = {
@@ -41,7 +44,7 @@ async function batchGetSecretValue() {
     // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/client/secrets-manager/command/BatchGetSecretValueCommand/
 
     if (!Config.apiEnv) {
-      console.warn('Secrets fetch failed: API_ENV is not set');
+      logger.warn('Secrets fetch failed: API_ENV is not set');
       return;
     }
 
@@ -50,7 +53,7 @@ async function batchGetSecretValue() {
     let envKey: string;
 
     if (Config.apiEnv === 'TEST') {
-      console.log('... Secrets fetch skipped');
+      logger.info('... Secrets fetch skipped');
 
       return;  // During the tests we don't want to fetch secrets
     }
@@ -81,10 +84,12 @@ async function batchGetSecretValue() {
 
     updateSecretValues(secrets, secretValues);
 
-    console.log('... Secrets fetch successful');
+    logger.info('... Secrets fetch successful');
   }
   catch (err) {
-    console.error('... Secrets fetch failed:', err);
+    if (['PROD', 'STAGE'].includes(Config.apiEnv)) process.exit(1);
+
+    logger.error(err, '... Secrets fetch failed');
   }
 };
 

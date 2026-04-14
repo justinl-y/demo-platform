@@ -1,4 +1,7 @@
 import bcrypt from 'bcryptjs';
+import {
+  UnauthorizedError,
+} from 'http-errors-enhanced';
 
 import {
   Config,
@@ -16,21 +19,14 @@ async function bcryptCompare(secret: string, secretHash: string) {
 };
 
 async function bcryptHash(secret: string) {
-  try {
-    const {
-      saltWorkFactor,
-    } = Config.authConfig();
+  const {
+    saltWorkFactor,
+  } = Config.authConfig();
 
-    const salt = await bcrypt.genSalt(saltWorkFactor);
-    const hash = await bcrypt.hash(secret, salt);
+  const salt = await bcrypt.genSalt(saltWorkFactor);
+  const hash = await bcrypt.hash(secret, salt);
 
-    return hash;
-  }
-  catch (err) {
-    console.log(err);
-
-    throw err;
-  }
+  return hash;
 };
 
 function generateJwt(this: FastifyInstance, userId: string, userEmail: string, jwtType: JwtTokenType) {
@@ -49,13 +45,9 @@ function generateJwt(this: FastifyInstance, userId: string, userEmail: string, j
     refreshTokenExpiration,
   } = Config.authConfig();
 
-  if (jwtType === 'access') {
-    options.expiresIn = accessTokenExpiration;
-  };
-
-  if (jwtType === 'refresh') {
-    options.expiresIn = refreshTokenExpiration;
-  };
+  if (jwtType === 'access') options.expiresIn = accessTokenExpiration;
+  else if (jwtType === 'refresh') options.expiresIn = refreshTokenExpiration;
+  else throw new UnauthorizedError('Invalid token type');
 
   return this.jwt.sign(payload, options);
 };
