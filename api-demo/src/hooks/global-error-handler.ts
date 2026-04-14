@@ -21,16 +21,21 @@ function processSentryError(
   request: FastifyRequest,
   reply: FastifyReply,
 ): void {
-  const sentryError = error as SentryAugmentedError;
-
   try {
-    sentryError.interactionData = buildInteractionData(request, reply) ?? undefined;
+    const sentryError = error as SentryAugmentedError;
+
+    try {
+      sentryError.interactionData = buildInteractionData(request, reply) ?? undefined;
+    }
+    catch {
+      // captured without interaction data
+    }
+
+    Sentry.captureException(sentryError);
   }
   catch {
-    // captured without interaction data
+    // Sentry failure must not affect the HTTP response
   }
-
-  Sentry.captureException(sentryError);
 };
 
 function globalErrorHandler(error: FastifyError, request: FastifyRequest, reply: FastifyReply): unknown {
@@ -41,19 +46,12 @@ function globalErrorHandler(error: FastifyError, request: FastifyRequest, reply:
     message: fastifyError.message || 'An unexpected error occurred',
   };
 
-  try {
-    reply.error = responseBody;
+  reply.error = responseBody;
+  reply.status(statusCode);
 
-    reply
-      .status(statusCode)
-      .send(responseBody)
-    ;
+  if (Config.apiEnv !== 'TEST' && !SENTRY_EXCLUDED_STATUS_CODES.includes(statusCode)) processSentryError(error, request, reply);
 
-    return reply;
-  }
-  finally {
-    if (Config.apiEnv !== 'TEST' && !SENTRY_EXCLUDED_STATUS_CODES.includes(statusCode)) processSentryError(error, request, reply);
-  }
+  return reply.send(responseBody);
 };
 
 export default globalErrorHandler;
