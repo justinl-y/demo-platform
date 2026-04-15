@@ -9,19 +9,23 @@ const resourceEnvs = {
 
 const apiResourceEnv = resourceEnvs[apiEnv];
 
+const liveEnvironments = ['PROD', 'STAGE'];
+
 const compressConfig = {
   global: true,
 } as const;
 
 const corsConfig = {
   allowedHeaders: [
-    'Authorization',
     'Content-Type',
     'X-Demo-Application',
   ],
   credentials: true,
   exposedHeaders: [
-    'Authorization',
+    'X-RateLimit-Limit',
+    'X-RateLimit-Remaining',
+    'X-RateLimit-Reset',
+    'Retry-After',
   ],
   maxAge: 5,
   methods: [
@@ -40,6 +44,11 @@ const externalPort = apiEnv === 'TEST' ? '6663' : '6662' as const;
 
 const helmetConfig = {
   global: true,
+} as const;
+
+const rateLimitConfig = {
+  max: 100,
+  timeWindow: '1 minute',
 } as const;
 
 const serverConfig = {
@@ -88,6 +97,8 @@ export {
   corsConfig,
   externalPort,
   helmetConfig,
+  liveEnvironments,
+  rateLimitConfig,
   serverConfig,
   userConfig,
 };

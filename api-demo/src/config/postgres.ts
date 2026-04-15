@@ -23,8 +23,10 @@ function postgresConfig() {
           ca: secretValues.PG_SSL_CERT,
           rejectUnauthorized: true,
         },
+    min: 2,
     max: maxPoolSize,
-    idleTimeoutMillis: 10000,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 3000,
   };
 }
 

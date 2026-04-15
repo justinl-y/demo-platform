@@ -7,7 +7,7 @@ A RESTful web API serving as the primary data service for the demo platform. Bui
 All commands run from `api-demo/`:
 
 | Command | Purpose |
-|---|---|
+| --- | --- |
 | `npm run api-down` | Tear down local Docker environment |
 | `npm run api-build` | Build local Docker images |
 | `npm run api-up-sso` | SSO login + start local API (localhost:6662) |

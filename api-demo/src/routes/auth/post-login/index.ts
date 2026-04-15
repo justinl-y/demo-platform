@@ -8,8 +8,12 @@ import {
 import {
   bcryptCompare,
   bcryptHash,
+  cookieOptions,
   generateJwt,
 } from '#utils/authentication';
+import {
+  Config,
+} from '#config/index';
 
 import type {
   FastifyRequest,
@@ -52,9 +56,18 @@ async function postLogin(this: FastifyInstance, request: FastifyRequest, reply: 
   const compare = await bcryptCompare(incomingPassword, passwordHash);
   if (!compare) throw new UnauthorizedError('Authentication failed');
 
+  const {
+    accessTokenCookie,
+    accessTokenJwt,
+    accessTokenCookieMaxAge,
+    refreshTokenCookie,
+    refreshTokenJwt,
+    refreshTokenCookieMaxAge,
+  } = Config.authConfig();
+
   // generate jwts
-  const tokenAccess = generateJwt.call(this, userId, userEmail, 'access');
-  const tokenRefresh = generateJwt.call(this, userId, userEmail, 'refresh');
+  const tokenAccess = generateJwt.call(this, userId, userEmail, accessTokenJwt);
+  const tokenRefresh = generateJwt.call(this, userId, userEmail, refreshTokenJwt);
 
   // hash tokenRefresh
   const hashedTokenRefresh = await bcryptHash(tokenRefresh);
@@ -71,16 +84,15 @@ async function postLogin(this: FastifyInstance, request: FastifyRequest, reply: 
 
   await this.db.transaction(statements);
 
-  const response = {
+  reply.setCookie(accessTokenCookie, tokenAccess, { ...cookieOptions, maxAge: accessTokenCookieMaxAge });
+  reply.setCookie(refreshTokenCookie, tokenRefresh, { ...cookieOptions, maxAge: refreshTokenCookieMaxAge });
+
+  reply.send({
     id: userId,
     email: userEmail,
     full_name: fullName,
     known_as: knownAs,
-    token_access: tokenAccess,
-    token_refresh: tokenRefresh,
-  };
-
-  reply.send(response);
+  });
 }
 
 export default postLogin;

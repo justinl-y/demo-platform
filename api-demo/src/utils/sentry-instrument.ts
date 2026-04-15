@@ -1,9 +1,12 @@
 import * as Sentry from '@sentry/node';
 
 import { Config } from '#config/index';
+import { createLogger } from '#utils/logger';
 
 import type { RouteHandlerMethod } from 'fastify';
 import type { InteractionData } from '../hooks/console-interaction-handler.ts';
+
+const logger = createLogger();
 
 function withSpan(name: string, handler: RouteHandlerMethod): RouteHandlerMethod {
   const wrapped: RouteHandlerMethod = async function (request, reply) {
@@ -11,6 +14,8 @@ function withSpan(name: string, handler: RouteHandlerMethod): RouteHandlerMethod
       await handler.call(this, request, reply);
     });
   };
+
+  Object.defineProperty(wrapped, 'name', { value: name });
 
   return wrapped;
 }
@@ -30,7 +35,7 @@ async function initSentry() {
   const sentryDsn = Config.sentryConfig.getDsn();
 
   if (Config.apiEnv === 'TEST' || !sentryDsn) {
-    console.info('... Sentry disabled');
+    logger.info('... Sentry disabled');
     return;
   }
 
@@ -116,7 +121,7 @@ async function initSentry() {
     normalizeDepth: 5,
   });
 
-  console.info(`... Sentry ${profilingStatusMessage}`);
+  logger.info(`... Sentry ${profilingStatusMessage}`);
 }
 
 export { initSentry, withSpan };

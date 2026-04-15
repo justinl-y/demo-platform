@@ -4,6 +4,7 @@
       "name": "api-demo",
       "script": "src/index.ts",
       "interpreter": "node",
+      "node_args": "--experimental-strip-types",
       "exec_mode": "cluster",
       "instances": "max"
     }

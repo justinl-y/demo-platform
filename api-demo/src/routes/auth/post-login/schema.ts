@@ -24,13 +24,18 @@ const body = {
 const response = {
   200: {
     type: 'object',
+    headers: {
+      'set-cookie': {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Sets access_token and refresh_token as HttpOnly cookies',
+      },
+    },
     required: [
       'id',
       'email',
       'full_name',
       'known_as',
-      'token_access',
-      'token_refresh',
     ],
     additionalProperties: false,
     properties: {
@@ -57,16 +62,6 @@ const response = {
         nullable: true,
         description: 'User known as name (usually first name)',
         example: 'John',
-      },
-      token_access: {
-        type: 'string',
-        description: 'JWT bearer token for authenticated requests',
-        example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.demo.signature',
-      },
-      token_refresh: {
-        type: 'string',
-        description: 'JWT bearer token for refreshing access token',
-        example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.demo.signature',
       },
     },
   },

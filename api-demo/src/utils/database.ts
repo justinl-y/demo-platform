@@ -8,6 +8,9 @@ import {
 import {
   pgPatch,
 } from './postgres-named.ts';
+import { createLogger } from '#utils/logger';
+
+const logger = createLogger();
 
 import type {
   Pool,
@@ -42,10 +45,10 @@ type KnownError = {
   name?: string;
   path?: string;
   sqlFileName?: string;
-  err?: {
-    code?: string;
-  };
 };
+
+const wordsToSearch = ['INSERT', 'UPDATE', 'DELETE'];
+const regexPattern = wordsToSearch.map((word) => `\\b${word}\\b`).join('|');
 
 function getErrorDetails(err: unknown): Required<Pick<KnownError, 'message' | 'name'>> & KnownError {
   if (err instanceof Error) {
@@ -210,8 +213,6 @@ async function query<
     const templatedBlob = await getBlob(file);
     // const templatedBlob = await templateBlob(file, params);
 
-    const wordsToSearch = ['INSERT', 'UPDATE', 'DELETE'];
-    const regexPattern = wordsToSearch.map((word) => `\\b${word}\\b`).join('|');
     const testRegex = new RegExp(regexPattern, 'i');
 
     if (testRegex.test(templatedBlob)) throw new InternalServerError('INSERT|UPDATE|DELETE queries should use db.transaction');
@@ -237,9 +238,7 @@ async function query<
 
     if (!code) code = name;
 
-    const handledError = errorsToHandle(err, code, file, message);
-
-    throw handledError;
+    throw errorsToHandle(err, code, file, message);
   }
   finally {
     if (pgClient) pgClient.release();
@@ -368,12 +367,12 @@ async function transaction(this: Pool, rawInstructions: TransactionInstruction |
 
     // define (but don't run!) the rollback function to possibly be used later.
     const pgRollbackTransaction = async (error?: unknown): Promise<never> => {
-      console.log('Rolling back transaction');
+      logger.warn('Rolling back transaction');
 
       await client.query('ROLLBACK');
 
       if (dryRun) {
-        console.log(todos);
+        logger.info({ todos }, 'Dry run transaction rolled back');
 
         throw new ImaTeapotError('Dry run enabled. Transaction rolled back.');
       }
@@ -387,7 +386,7 @@ async function transaction(this: Pool, rawInstructions: TransactionInstruction |
         await client.query(transactionStage);
       }
       catch (error) {
-        await pgRollbackTransaction({ error });
+        await pgRollbackTransaction(error);
       }
     };
 
@@ -410,16 +409,12 @@ async function transaction(this: Pool, rawInstructions: TransactionInstruction |
         results[fileName].push(result.rows);
       }
       catch (err) {
-        const errorDetails = getErrorDetails(err);
-        const error = {
-          err,
-          ...{
-            sqlFileName: fileName,
-            message: errorDetails.message,
-          },
-        };
+        const errWithContext = Object.assign(
+          err instanceof Error ? err : new Error(String(err)),
+          { sqlFileName: fileName },
+        );
 
-        await pgRollbackTransaction(error);
+        await pgRollbackTransaction(errWithContext);
       }
     }
 
@@ -438,7 +433,7 @@ async function transaction(this: Pool, rawInstructions: TransactionInstruction |
     let code;
 
     if (errorDetails.message.includes('Missing Parameters')) code = 'ReferenceError';
-    else code = errorDetails.code || errorDetails.name || errorDetails.err?.code;
+    else code = errorDetails.code || errorDetails.name;
 
     const { message } = errorDetails;
     const sqlFileName = errorDetails.sqlFileName || errorDetails.path;

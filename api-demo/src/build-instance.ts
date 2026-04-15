@@ -8,6 +8,7 @@ import cors from '@fastify/cors';
 import accepts from '@fastify/accepts';
 import compress from '@fastify/compress';
 import formBody from '@fastify/formbody';
+import rateLimit from '@fastify/rate-limit';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import replyValidation from '@fastify/response-validation';
@@ -48,10 +49,11 @@ async function buildInstance() {
   instance.register(accepts);
   instance.register(compress, Config.compressConfig);
   instance.register(formBody);
+  instance.register(rateLimit, Config.rateLimitConfig);
   instance.register(replyValidation as FastifyPluginCallback, Config.replyValidationConfig);
 
   // Register Swagger and Swagger UI only in non-prod environments
-  if (Config.apiEnv !== 'PROD') {
+  if (!Config.liveEnvironments.includes(Config.apiEnv)) {
     instance.register(swagger, baseInformation);
     instance.register(swaggerUi, Config.swaggerConfig);
   }

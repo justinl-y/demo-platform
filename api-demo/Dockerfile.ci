@@ -31,7 +31,7 @@ EOF
 
 RUN chmod +x /usr/local/bin/npm-ci-with-token
 
-COPY test/run.sh ${SCRIPTS_HOME}
+COPY scripts/run-api.sh ${SCRIPTS_HOME}/run.sh
 COPY test/wait-db-container.sh ${SCRIPTS_HOME}
 RUN chmod +x ${SCRIPTS_HOME}/run.sh ${SCRIPTS_HOME}/wait-db-container.sh
 

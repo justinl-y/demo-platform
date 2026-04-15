@@ -10,7 +10,7 @@ import { Config } from '#config/index';
 
 import type { InteractionData } from './console-interaction-handler.ts';
 
-const SENTRY_EXCLUDED_STATUS_CODES = [400, 401, 403, 404, 409, 418];
+const SENTRY_EXCLUDED_STATUS_CODES = [400, 401, 403, 404, 409, 418, 429];
 
 type SentryAugmentedError = FastifyError & {
   interactionData?: InteractionData;
@@ -39,11 +39,10 @@ function processSentryError(
 };
 
 function globalErrorHandler(error: FastifyError, request: FastifyRequest, reply: FastifyReply): unknown {
-  const fastifyError = error;
-  const statusCode = fastifyError.statusCode || 500;
+  const statusCode = error.statusCode || 500;
   const responseBody = {
     statusCode,
-    message: fastifyError.message || 'An unexpected error occurred',
+    message: error.message || 'An unexpected error occurred',
   };
 
   reply.error = responseBody;

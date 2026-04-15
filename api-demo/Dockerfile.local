@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1.7
 FROM node:24-alpine
 
+ENV SCRIPTS_HOME="/srv"
 ENV API_HOME="/srv/api"
 
 WORKDIR ${API_HOME}
@@ -27,6 +28,9 @@ EOF
 
 RUN chmod +x /usr/local/bin/npm-ci-with-token
 
+COPY scripts/run-api.sh ${SCRIPTS_HOME}/run.sh
+RUN chmod +x ${SCRIPTS_HOME}/run.sh
+
 RUN --mount=type=cache,target=/root/.npm npm i pm2@6.0.14 -g
 
 COPY package*.json ${API_HOME}/
@@ -43,4 +47,4 @@ RUN npm run typecheck
 
 EXPOSE 8000
 
-CMD ["pm2-runtime", "start", "pm2/process-local.json"]
+CMD ["/srv/run.sh"]

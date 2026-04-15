@@ -1,34 +1,17 @@
 const route = {
   tags: ['auth'],
   summary: 'User refresh access token',
-  description: 'Refreshes a user\'s token with a valid refresh token',
-};
-
-const body = {
-  type: 'object',
-  required: ['token_refresh'],
-  additionalProperties: false,
-  properties: {
-    token_refresh: {
-      type: 'string',
-      description: 'JWT bearer token for refreshing access token',
-      example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.demo.signature',
-    },
-  },
+  description: 'Refreshes the access token cookie using the refresh token cookie',
 };
 
 const response = {
-  200: {
-    type: 'object',
-    required: [
-      'token_access',
-    ],
-    additionalProperties: false,
-    properties: {
-      token_access: {
+  204: {
+    type: 'null',
+    description: 'Access token cookie refreshed',
+    headers: {
+      'set-cookie': {
         type: 'string',
-        description: 'JWT bearer token for authenticated requests',
-        example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.demo.signature',
+        description: 'Sets access_token as an HttpOnly cookie',
       },
     },
   },
@@ -37,7 +20,6 @@ const response = {
 export default {
   schema: {
     ...route,
-    body,
     response,
   },
 };

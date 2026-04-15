@@ -1,4 +1,7 @@
 import bcrypt from 'bcryptjs';
+import {
+  UnauthorizedError,
+} from 'http-errors-enhanced';
 
 import {
   Config,
@@ -7,55 +10,55 @@ import {
 import type {
   FastifyInstance,
 } from 'fastify';
+
 import type {
-  JwtTokenType,
-} from '../types/auth.ts';
+  JwtUser,
+  TokenTypes,
+} from '../types/jwt.ts';
+
+const cookieOptions = {
+  httpOnly: true,
+  secure: (Config.liveEnvironments as string[]).includes(Config.apiEnv),
+  sameSite: 'lax' as const,
+  path: '/',
+};
 
 async function bcryptCompare(secret: string, secretHash: string) {
   return bcrypt.compare(secret, secretHash);
 };
 
 async function bcryptHash(secret: string) {
-  try {
-    const {
-      saltWorkFactor,
-    } = Config.authConfig();
+  const {
+    saltWorkFactor,
+  } = Config.authConfig();
 
-    const salt = await bcrypt.genSalt(saltWorkFactor);
-    const hash = await bcrypt.hash(secret, salt);
+  const salt = await bcrypt.genSalt(saltWorkFactor);
+  const hash = await bcrypt.hash(secret, salt);
 
-    return hash;
-  }
-  catch (err) {
-    console.log(err);
-
-    throw err;
-  }
+  return hash;
 };
 
-function generateJwt(this: FastifyInstance, userId: string, userEmail: string, jwtType: JwtTokenType) {
+function generateJwt(this: FastifyInstance, userId: string, userEmail: string, jwtType: TokenTypes) {
   const payload = {
     id: userId,
     email: userEmail,
     type: jwtType,
-  };
+  } as JwtUser;
 
   const options = {
     expiresIn: '0m',
   };
 
   const {
-    accessTokenExpiration,
-    refreshTokenExpiration,
+    accessTokenJwt,
+    accessTokenJwtExpiration,
+    refreshTokenJwt,
+    refreshTokenJwtExpiration,
   } = Config.authConfig();
 
-  if (jwtType === 'access') {
-    options.expiresIn = accessTokenExpiration;
-  };
-
-  if (jwtType === 'refresh') {
-    options.expiresIn = refreshTokenExpiration;
-  };
+  if (jwtType === accessTokenJwt) options.expiresIn = accessTokenJwtExpiration;
+  else if (jwtType === refreshTokenJwt) options.expiresIn = refreshTokenJwtExpiration;
+  else throw new UnauthorizedError('Invalid token type');
 
   return this.jwt.sign(payload, options);
 };
@@ -63,5 +66,6 @@ function generateJwt(this: FastifyInstance, userId: string, userEmail: string, j
 export {
   bcryptCompare,
   bcryptHash,
+  cookieOptions,
   generateJwt,
 };

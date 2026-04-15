@@ -8,6 +8,7 @@ import type { AjvPlugin } from '../types/ajv.ts';
 const ajvFormatsPlugin = ajvFormats as unknown as AjvPlugin;
 
 const fastifyConfig: FastifyServerOptions = {
+  trustProxy: true,
   disableRequestLogging: true, // interaction hooks handle request/response logging
   ajv: {
     plugins: [
