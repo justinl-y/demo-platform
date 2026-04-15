@@ -82,7 +82,7 @@ async function postRefresh(this: FastifyInstance, request: FastifyRequest, reply
 
   reply
     .code(204)
-    .send(null)
+    .send()
   ;
 }
 

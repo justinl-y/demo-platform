@@ -17,26 +17,26 @@ This section will include a modern frontend application (e.g., **React/Next.js**
 
 ```mermaid
 flowchart TD
-    Client["🌐 Frontend\ndemo(-stage).discovered-check.ca"]
+    Client["🌐 Frontend\ndemo-stage.discovered-check.ca"]
 
-    subgraph AWS["☁️  AWS — us-west-2"]
+    subgraph AWS["☁️ AWS — VPC"]
         subgraph EB["🚀 Elastic Beanstalk / EC2"]
             subgraph DC["🐳 Docker Compose"]
-                Nginx["🔀 nginx-proxy\n:80 → :6661"]
+                Nginx["🔀 nginx-proxy\n:6661 → :80"]
+                Nginx -->|proxy_pass :80 → :8000| API
                 API["⚡ Fastify API\n:8000"]
-                Nginx -->|proxy_pass| API
             end
         end
 
-        CW["📋 CloudWatch Logs\n/api-demo/STAGE · /api-demo/PROD"]
-        RDS[("🗄️ RDS PostgreSQL\nSSL · stage / prod")]
-        SM["🔑 Secrets Manager\nAPI_DEMO/STAGE · API_DEMO/PROD"]
-        SSO["🔐 AWS SSO\nadmin access"]
+        CW["📋 CloudWatch Logs\n · stage / prod"]
+        RDS[("🗄️ RDS PostgreSQL\nSSL\n · stage / prod")]
+        SM["🔑 Secrets Manager\n · stage / prod"]
+        SSO["🔐 AWS SSO\ndev local access\n · stage"]
     end
 
-    Sentry["🪲 Sentry\ntraces 20% · 10%\nprofiles 25% · 20%"]
+    Sentry["🪲 Sentry\ntraces \nerrors"]
 
-    Client -->|"HTTPS"| Nginx
+    Client -->|"⚙️ CloudFront HTTPS → HTTP"| Nginx
     DC -->|"awslogs driver"| CW
     API -->|"BatchGetSecretValue\n(startup only)"| SM
     API -->|"SSL + pool"| RDS
@@ -75,7 +75,7 @@ flowchart TD
 ### ☁️ Cloud Infrastructure (AWS)
 
 - 🗄️ RDS (PostgreSQL)
-- ⚙️ CloudFront for reverse proxy
+- ⚙️ CloudFront
 - 🚀 Elastic Beanstalk / EC2 for deployment
 - 🔑 Secrets Manager
 - 📋 Cloudwatch for logging

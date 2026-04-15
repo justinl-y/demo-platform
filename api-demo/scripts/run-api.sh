@@ -7,7 +7,7 @@ set -eu
 if [ ! -f node_modules/.install-lock-hash ]; then
   # First time in this volume, create the hash file (no npm ci needed, image has fresh node_modules)
   sha256sum package-lock.json > node_modules/.install-lock-hash
-elif ! sha256sum -c node_modules/.install-lock-hash --status 2>/dev/null; then
+elif ! sha256sum -c node_modules/.install-lock-hash > /dev/null 2>&1; then
   # Hash file exists but doesn't match - package-lock.json changed
   >&2 echo "node_modules is out of sync with package-lock.json — running npm ci..."
   npm ci --include=dev

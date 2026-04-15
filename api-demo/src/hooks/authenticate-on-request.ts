@@ -4,7 +4,7 @@ import {
 
 import {
   Config,
-} from '../config/index.ts';
+} from '#config/index';
 
 import type {
   FastifyRequest,

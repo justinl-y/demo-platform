@@ -34,7 +34,11 @@ async function userLogin() {
   const cookies = Array.isArray(setCookie) ? setCookie : (setCookie ? [setCookie] : []);
   const accessTokenCookie = cookies.find((c) => c.startsWith('access_token='));
 
-  return accessTokenCookie?.split(';')[0] ?? '';
+  if (!accessTokenCookie) {
+    throw new Error(`userLogin failed: no access_token cookie (status ${result.status})\n${JSON.stringify(result.body)}`);
+  }
+
+  return accessTokenCookie.split(';')[0];
 };
 
 const accessTokenCookie = await userLogin();
