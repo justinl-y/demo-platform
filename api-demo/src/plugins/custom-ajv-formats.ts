@@ -20,17 +20,32 @@ function customAjvFormatsPlugin(ajv: unknown): void {
         return Number.isFinite(n) && Number.isInteger(n) && n >= Number.MIN_SAFE_INTEGER && n <= Number.MAX_SAFE_INTEGER;
       },
     },
-    // BigInt format: accepts numbers and strings that can be converted to BigInt within 64-bit signed integer range
-    // This is useful for PG IDs that exceed JavaScript's safe integer limit
+    // BigInt format: accepts numbers and strings within 64-bit signed integer range.
+    // String inputs are parsed directly with BigInt() to preserve precision beyond MAX_SAFE_INTEGER,
+    // which is exactly the case for Postgres int8/bigint IDs.
+    // Number inputs are restricted to MAX_SAFE_INTEGER to avoid silent rounding.
     bigint: {
       validate: (x: string | number) => {
-        const n = typeof x === 'number' ? x : Number(x);
+        const INT64_MIN = BigInt('-9223372036854775808');
+        const INT64_MAX = BigInt('9223372036854775807');
 
-        if (!Number.isFinite(n) || !Number.isInteger(n)) return false;
+        if (typeof x === 'number') {
+          if (!Number.isFinite(x) || !Number.isInteger(x)) return false;
+          if (x < Number.MIN_SAFE_INTEGER || x > Number.MAX_SAFE_INTEGER) return false;
 
-        const b = BigInt(Math.trunc(n));
+          return BigInt(x) >= INT64_MIN && BigInt(x) <= INT64_MAX;
+        }
 
-        return b >= BigInt('-9223372036854775808') && b <= BigInt('9223372036854775807');
+        if (!/^-?\d+$/.test(x)) return false;
+
+        try {
+          const b = BigInt(x);
+
+          return b >= INT64_MIN && b <= INT64_MAX;
+        }
+        catch {
+          return false;
+        }
       },
     },
   };
