@@ -1,7 +1,9 @@
 import { secretValues } from '#utils/secrets-manager';
 
-const expirationMinutes = 60 * 60;
-const expirationDays = 7 * 24 * 60 * 60;
+const accessJwtExpirationMinutes = 60;
+const accessCookieExpirationSeconds = accessJwtExpirationMinutes * 60;
+const refreshJwtExpirationtDays = 7;
+const refreshCookieExpirationSeconds = refreshJwtExpirationtDays * 24 * 60 * 60;
 
 function authConfig() {
   return {
@@ -9,13 +11,13 @@ function authConfig() {
     secret: secretValues.AUTH_SECRET,
     saltWorkFactor: 10,
     accessTokenJwt: 'access',
-    accessTokenJwtExpiration: `${expirationMinutes}m`,
+    accessTokenJwtExpiration: `${accessJwtExpirationMinutes}m`,
     accessTokenCookie: 'access_token',
-    accessTokenCookieMaxAge: expirationMinutes,
+    accessTokenCookieMaxAge: accessCookieExpirationSeconds,
     refreshTokenJwt: 'refresh',
-    refreshTokenJwtExpiration: `${expirationDays}d`,
+    refreshTokenJwtExpiration: `${refreshJwtExpirationtDays}d`,
     refreshTokenCookie: 'refresh_token',
-    refreshTokenCookieMaxAge: expirationDays,
+    refreshTokenCookieMaxAge: refreshCookieExpirationSeconds,
   } as const;
 }
 

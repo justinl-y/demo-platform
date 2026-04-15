@@ -22,8 +22,8 @@ import type {
 } from 'fastify';
 
 import type {
-  VerifyPayloadTypeCustom,
-} from '../../../types/jwt-payload.ts';
+  JwtUser,
+} from '../../../types/jwt.ts';
 
 import type {
   IAuthPostRefreshGetUserWithRefreshTokenResult,
@@ -43,7 +43,7 @@ async function postRefresh(this: FastifyInstance, request: FastifyRequest, reply
   const tokenRefresh = request.cookies[refreshTokenCookie];
   if (!tokenRefresh) throw new UnauthorizedError('Authentication failed');
 
-  let decodedToken: VerifyPayloadTypeCustom;
+  let decodedToken: JwtUser;
 
   try {
     // check for valid token and token type - if not throw
@@ -80,7 +80,10 @@ async function postRefresh(this: FastifyInstance, request: FastifyRequest, reply
 
   reply.setCookie(accessTokenCookie, tokenAccess, { ...cookieOptions, maxAge: accessTokenCookieMaxAge });
 
-  reply.code(204).send();
+  reply
+    .code(204)
+    .send(null)
+  ;
 }
 
 export default postRefresh;

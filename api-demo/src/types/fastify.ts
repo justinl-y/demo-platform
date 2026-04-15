@@ -1,9 +1,10 @@
 import type {
   DatabaseDecorator,
 } from './database.ts';
+
 import type {
   JwtUser,
-} from './auth.ts';
+} from './jwt.ts';
 
 declare module '@fastify/jwt' {
   interface FastifyJWT {

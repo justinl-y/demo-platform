@@ -10,9 +10,11 @@ import {
 import type {
   FastifyInstance,
 } from 'fastify';
+
 import type {
-  JwtTokenType,
-} from '../types/auth.ts';
+  JwtUser,
+  TokenTypes,
+} from '../types/jwt.ts';
 
 const cookieOptions = {
   httpOnly: true,
@@ -36,12 +38,12 @@ async function bcryptHash(secret: string) {
   return hash;
 };
 
-function generateJwt(this: FastifyInstance, userId: string, userEmail: string, jwtType: JwtTokenType) {
+function generateJwt(this: FastifyInstance, userId: string, userEmail: string, jwtType: TokenTypes) {
   const payload = {
     id: userId,
     email: userEmail,
     type: jwtType,
-  };
+  } as JwtUser;
 
   const options = {
     expiresIn: '0m',

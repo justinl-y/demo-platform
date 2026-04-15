@@ -2,17 +2,21 @@ import {
   UnauthorizedError,
 } from 'http-errors-enhanced';
 
+import {
+  Config,
+} from '../config/index.ts';
+
 import type {
   FastifyRequest,
   FastifyReply,
 } from 'fastify';
 
 import type {
-  VerifyPayloadTypeCustom,
-} from '../types/jwt-payload.ts';
+  JwtUser,
+} from '../types/jwt.ts';
 
 async function authenticateOnRequest(request: FastifyRequest, _reply: FastifyReply): Promise<void> {
-  let decodedToken: VerifyPayloadTypeCustom;
+  let decodedToken: JwtUser;
 
   try {
     decodedToken = await request.jwtVerify();
@@ -21,7 +25,11 @@ async function authenticateOnRequest(request: FastifyRequest, _reply: FastifyRep
     throw new UnauthorizedError('Authentication failed');
   }
 
-  if (decodedToken.type !== 'access') throw new UnauthorizedError('Incorrect authorization token type');
+  const {
+    accessTokenJwt,
+  } = Config.authConfig();
+
+  if (decodedToken.type !== accessTokenJwt) throw new UnauthorizedError('Incorrect authorization token type');
 };
 
 export default authenticateOnRequest;
