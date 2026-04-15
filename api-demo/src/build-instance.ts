@@ -19,7 +19,6 @@ import {
   consoleInteractionHandler,
   globalErrorHandler,
   replyBodyOnErrorHandler,
-  setSentryUserOnRequest,
 } from './hooks/index.ts';
 import {
   batchGetSecretValue,
@@ -64,7 +63,6 @@ async function buildInstance() {
   instance.addHook('onError', consoleErrorHandler);
   instance.addHook('onResponse', consoleInteractionHandler);
   instance.addHook('onSend', replyBodyOnErrorHandler);
-  instance.addHook('onRequest', setSentryUserOnRequest);
 
   // add global error handler
   instance.setErrorHandler(globalErrorHandler);
