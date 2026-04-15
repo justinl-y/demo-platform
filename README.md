@@ -17,31 +17,36 @@ This section will include a modern frontend application (e.g., **React/Next.js**
 
 ```mermaid
 flowchart TD
-    Client["🌐 Frontend\ndemo-stage.discovered-check.ca"]
+    Client["🌐 Frontend<br/>demo-stage.discovered-check.ca"]
 
-    subgraph AWS["☁️ AWS — VPC"]
-        subgraph EB["🚀 Elastic Beanstalk / EC2"]
-            subgraph DC["🐳 Docker Compose"]
-                Nginx["🔀 nginx-proxy\n:6661 → :80"]
-                Nginx -->|proxy_pass :80 → :8000| API
-                API["⚡ Fastify API\n:8000"]
+    subgraph AWS["☁️ AWS"]
+        CF["⚙️ CloudFront<br/>SSL | WAF<br/>:443 → :80"]
+        subgraph VPC["🔒 VPC"]
+            subgraph EB["🚀 Elastic Beanstalk"]
+                ELB["⚖️ Elastic Load Balancer<br/>:80 → :6661"]
+                subgraph DC["📦 EC2 / 🐳 Docker Compose"]
+                    Nginx["🔀 nginx-proxy<br/>:6661 → :80"]
+                    Nginx -->|proxy_pass :80 → :8000| API
+                    API["⚡ Fastify API<br/>:8000"]
+                end
             end
+            RDS[("🗄️ RDS PostgreSQL<br/>stage / prod")]
         end
-
-        CW["📋 CloudWatch Logs\n · stage / prod"]
-        RDS[("🗄️ RDS PostgreSQL\nSSL\n · stage / prod")]
-        SM["🔑 Secrets Manager\n · stage / prod"]
-        SSO["🔐 AWS SSO\ndev local access\n · stage"]
+        SM["🔑 Secrets Manager<br/> stage / prod"]
+        CW["📋 CloudWatch Logs<br/> stage / prod"]
+        SSO["🔐 AWS SSO<br/>local (stage)"]
     end
 
-    Sentry["🪲 Sentry\ntraces \nerrors"]
+    Sentry["👁️ Sentry<br/>Errors | Traces<br/>local / stage / prod"]
 
-    Client -->|"⚙️ CloudFront HTTPS → HTTP"| Nginx
-    DC -->|"awslogs driver"| CW
-    API -->|"BatchGetSecretValue\n(startup only)"| SM
+    Client -->|"HTTPS"| CF
+    CF -->|"HTTP"| ELB
+    ELB -->| | Nginx
+    API -->|"observation"| CW
+    API -->|"(startup only)"| SM
     API -->|"SSL + pool"| RDS
-    API -->|"errors + traces"| Sentry
-    SSO -.->|"credentials"| EB
+    API -->|"instrumentation"| Sentry
+    SSO -.->|"dev credentials"| DC
 
     classDef aws fill:#FF9900,stroke:#c47600,color:#000
     classDef app fill:#4A90D9,stroke:#2c6fad,color:#fff
@@ -52,7 +57,7 @@ flowchart TD
     class Client client
     class Nginx,API app
     class RDS db
-    class SM,CW,SSO aws
+    class SM,CW,SSO,ELB,CF aws
     class Sentry external
 ```
 
@@ -67,9 +72,9 @@ flowchart TD
 
 ### 🧪 Developer Experience
 
-- 🔧 Configurable API environments (local and remote)
+- 🔧 Configurable API environments (local -> remote and test)
 - ✅ Integration testing with **Vitest**
-- 📊 Observability: Sentry errors + tracing
+- 👁️ Observability: Sentry errors + tracing
 - 🤖 GitHub action CI/CD
 
 ### ☁️ Cloud Infrastructure (AWS)
@@ -87,9 +92,10 @@ flowchart TD
 
 ## 📌 Future Improvements
 
-- 🖥️ Frontend implementation  
+- 🖥️ Frontend implementation
+- 🎨 UI/UX polish and sample data
 - 🏗️ Infrastructure as Code (Terraform/CDK)  
-- 🎨 UI/UX polish and sample data  
+- 🚢 Migrate to ECS/EKS
 
 ---
 
