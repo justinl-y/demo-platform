@@ -6,11 +6,33 @@ function customAjvFormatsPlugin(ajv: unknown): void {
   const instance = ajv as AjvInstance;
 
   const customFormats: Record<string, FormatDefinition<string | number>> = {
-    number: { validate: (x: string | number) => typeof x === 'number' || (/^-?\d*\.?\d+$/.test(String(x)) && Number(x) >= Number.MIN_VALUE && Number(x) <= Number.MAX_VALUE) },
-    integer: { validate: (x: string | number) => typeof x === 'number' || (/^-?\d+$/.test(String(x)) && Number(x) >= Number.MIN_SAFE_INTEGER && Number(x) <= Number.MAX_SAFE_INTEGER) },
+    number: {
+      validate: (x: string | number) => {
+        const n = typeof x === 'number' ? x : Number(x);
+
+        return Number.isFinite(n) && n >= -Number.MAX_VALUE && n <= Number.MAX_VALUE;
+      },
+    },
+    integer: {
+      validate: (x: string | number) => {
+        const n = typeof x === 'number' ? x : Number(x);
+
+        return Number.isFinite(n) && Number.isInteger(n) && n >= Number.MIN_SAFE_INTEGER && n <= Number.MAX_SAFE_INTEGER;
+      },
+    },
     // BigInt format: accepts numbers and strings that can be converted to BigInt within 64-bit signed integer range
     // This is useful for PG IDs that exceed JavaScript's safe integer limit
-    bigint: { validate: (x: string | number) => typeof x === 'number' || (/^-?\d+$/.test(String(x)) && BigInt(x) >= BigInt('-9223372036854775808') && BigInt(x) <= BigInt('9223372036854775807')) },
+    bigint: {
+      validate: (x: string | number) => {
+        const n = typeof x === 'number' ? x : Number(x);
+
+        if (!Number.isFinite(n) || !Number.isInteger(n)) return false;
+
+        const b = BigInt(Math.trunc(n));
+
+        return b >= BigInt('-9223372036854775808') && b <= BigInt('9223372036854775807');
+      },
+    },
   };
 
   Object.entries(customFormats).forEach(([formatName, formatDefinition]) => {
