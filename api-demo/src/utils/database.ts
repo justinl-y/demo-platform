@@ -409,9 +409,12 @@ async function transaction(this: Pool, rawInstructions: TransactionInstruction |
         results[fileName].push(result.rows);
       }
       catch (err) {
-        const { code, message, name } = getErrorDetails(err);
+        const errWithContext = Object.assign(
+          err instanceof Error ? err : new Error(String(err)),
+          { sqlFileName: fileName },
+        );
 
-        await pgRollbackTransaction({ code: code || name, message, sqlFileName: fileName });
+        await pgRollbackTransaction(errWithContext);
       }
     }
 
