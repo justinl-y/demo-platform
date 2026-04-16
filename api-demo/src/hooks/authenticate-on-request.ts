@@ -6,7 +6,7 @@ import {
   Config,
 } from '#config/index';
 
-import { setSentryUser } from '#utils/sentry-instrument';
+import { setSentryUser } from '#lib/sentry-instrument';
 
 import type {
   FastifyRequest,

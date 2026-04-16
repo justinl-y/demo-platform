@@ -21,6 +21,16 @@
       "types": "./src/config/*.ts",
       "tsx": "./src/config/*.ts",
       "default": "./dist/config/*.js"
+    },
+    "#lib/*": {
+      "types": "./src/lib/*.ts",
+      "tsx": "./src/lib/*.ts",
+      "default": "./dist/lib/*.js"
+    },
+    "#decorators/*": {
+      "types": "./src/decorators/*.ts",
+      "tsx": "./src/decorators/*.ts",
+      "default": "./dist/decorators/*.js"
     }
   },
   "scripts": {

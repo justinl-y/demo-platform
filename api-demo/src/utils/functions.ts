@@ -2,7 +2,7 @@ import path from 'path';
 
 import { Config } from '#config/index';
 import { localHost } from './constants.ts';
-import { withSpan } from './sentry-instrument.ts';
+import { setWithSpan } from '#decorators/with-span';
 
 import type { AddressInfo } from 'net';
 import type {
@@ -10,6 +10,20 @@ import type {
   preHandlerHookHandler,
   RouteHandlerMethod,
 } from 'fastify';
+
+type RouteProperties<H extends RouteHandlerMethod = RouteHandlerMethod> = {
+  method: string;
+  url: string;
+  handler: H;
+};
+
+type OnRequestProperties = {
+  onRequest: onRequestHookHandler[];
+};
+
+type PreHandlerProperties = {
+  preHandler: preHandlerHookHandler[];
+};
 
 function getServerDetails(serverAddress: AddressInfo | string | null): string {
   // Use a type guard to safely check if it's an AddressInfo object
@@ -28,32 +42,18 @@ function getServerDetails(serverAddress: AddressInfo | string | null): string {
   return '... Server address information is unavailable';
 }
 
-type RouteProperties<H extends RouteHandlerMethod = RouteHandlerMethod> = {
-  method: string;
-  url: string;
-  handler: H;
-};
-
 function routePropertiesCore(method: string, url: string, handler: RouteHandlerMethod): RouteProperties {
   return {
     method,
     url,
-    handler: withSpan(handler.name, handler),
+    handler: setWithSpan(handler.name, handler),
   };
-};
-
-type OnRequestProperties = {
-  onRequest: onRequestHookHandler[];
 };
 
 function routePropertiesOnRequest(onRequest: onRequestHookHandler[]): OnRequestProperties {
   return {
     onRequest,
   };
-};
-
-type PreHandlerProperties = {
-  preHandler: preHandlerHookHandler[];
 };
 
 function routePropertiesPrehandler(preHandler: preHandlerHookHandler[]): PreHandlerProperties {

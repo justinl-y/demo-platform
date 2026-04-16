@@ -1,5 +1,5 @@
-import { initSentry } from '#utils/sentry-instrument';
-import { createLogger } from '#utils/logger';
+import { initSentry } from '#lib/sentry-instrument';
+import { createLogger } from '#lib/logger';
 
 import {
   authenticateOnRequest,
@@ -10,7 +10,7 @@ import {
 } from './hooks/index.ts';
 import {
   batchGetSecretValue,
-} from '#utils/secrets-manager';
+} from '#lib/secrets-manager';
 import {
   Config,
 } from '#config/index';

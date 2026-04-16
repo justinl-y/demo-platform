@@ -8,7 +8,7 @@ import {
 import {
   pgPatch,
 } from './postgres-named.ts';
-import { createLogger } from '#utils/logger';
+import { createLogger } from '#lib/logger';
 
 const logger = createLogger();
 
@@ -99,7 +99,7 @@ async function pgConnect(this: Pool): Promise<PatchedPgClient> {
   const client = await this.connect();
 
   // Patch the client with pgPatch for a named-parameter SQL interface.
-  // See src/util/postgres-named.ts for implementation details.
+  // See src/lib/postgres-named.ts for implementation details.
   pgPatch(client);
 
   return client as PatchedPgClient;

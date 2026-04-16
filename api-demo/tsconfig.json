@@ -16,7 +16,9 @@
     ],
     "paths": {
       "#utils/*": ["./src/utils/*.ts"],
-      "#config/*": ["./src/config/*.ts"]
+      "#config/*": ["./src/config/*.ts"],
+      "#lib/*": ["./src/lib/*.ts"],
+      "#decorators/*": ["./src/decorators/*.ts"]
     },
   },
   "include": [

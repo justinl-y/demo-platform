@@ -1,5 +1,5 @@
 import os from 'os';
-import { secretValues } from '#utils/secrets-manager';
+import { secretValues } from '#lib/secrets-manager';
 import { apiEnv } from './api.ts';
 
 const numberCPUs = os.cpus().length;

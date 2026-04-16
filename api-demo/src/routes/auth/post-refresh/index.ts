@@ -10,7 +10,7 @@ import {
   bcryptCompare,
   cookieOptions,
   generateJwt,
-} from '#utils/authentication';
+} from '#lib/authentication';
 import {
   Config,
 } from '#config/index';
@@ -40,7 +40,10 @@ async function postRefresh(this: FastifyInstance, request: FastifyRequest, reply
     refreshTokenJwt,
   } = Config.authConfig();
 
-  const tokenRefresh = request.cookies[refreshTokenCookie];
+  const {
+    cookies: { [refreshTokenCookie]: tokenRefresh },
+  } = request;
+
   if (!tokenRefresh) throw new UnauthorizedError('Authentication failed');
 
   let decodedToken: JwtUser;
@@ -71,13 +74,18 @@ async function postRefresh(this: FastifyInstance, request: FastifyRequest, reply
     token_refresh_hash: tokenRefreshHash,
   } = user;
 
+  const [
+    validRefreshToken,
+    tokenAccess,
+  ] = await Promise.all([
+    bcryptCompare(tokenRefresh, tokenRefreshHash),
+    generateJwt(this, userId, userEmail, accessTokenJwt),
+  ]);
+
   // compare tokenRefreshHash to incoming token - if not the same throw
-  const validRefreshToken = await bcryptCompare(tokenRefresh, tokenRefreshHash);
   if (!validRefreshToken) throw new UnauthorizedError('Authentication failed');
 
   // issue a new access token cookie
-  const tokenAccess = generateJwt.call(this, userId, userEmail, accessTokenJwt);
-
   reply.setCookie(accessTokenCookie, tokenAccess, { ...cookieOptions, maxAge: accessTokenCookieMaxAge });
 
   reply

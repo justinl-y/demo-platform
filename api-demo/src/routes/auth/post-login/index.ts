@@ -10,7 +10,7 @@ import {
   bcryptHash,
   cookieOptions,
   generateJwt,
-} from '#utils/authentication';
+} from '#lib/authentication';
 import {
   Config,
 } from '#config/index';
@@ -52,10 +52,6 @@ async function postLogin(this: FastifyInstance, request: FastifyRequest, reply: 
     password_hash: passwordHash,
   } = user;
 
-  // bcrypt compare incoming password with hashed password - if not a match throw
-  const compare = await bcryptCompare(incomingPassword, passwordHash);
-  if (!compare) throw new UnauthorizedError('Authentication failed');
-
   const {
     accessTokenCookie,
     accessTokenJwt,
@@ -65,11 +61,19 @@ async function postLogin(this: FastifyInstance, request: FastifyRequest, reply: 
     refreshTokenCookieMaxAge,
   } = Config.authConfig();
 
-  // generate jwts
-  const tokenAccess = generateJwt.call(this, userId, userEmail, accessTokenJwt);
-  const tokenRefresh = generateJwt.call(this, userId, userEmail, refreshTokenJwt);
+  const tokenRefresh = generateJwt(this, userId, userEmail, refreshTokenJwt);
 
-  // hash tokenRefresh
+  const [
+    tokenAccess,
+    validPassword,
+  ] = await Promise.all([
+    generateJwt(this, userId, userEmail, accessTokenJwt),
+    bcryptCompare(incomingPassword, passwordHash),
+  ]);
+
+  // bcrypt compare incoming password with hashed password - if not a match throw
+  if (!validPassword) throw new UnauthorizedError('Authentication failed');
+
   const hashedTokenRefresh = await bcryptHash(tokenRefresh);
 
   // save hashedTokenRefresh to db and set last_login to now
