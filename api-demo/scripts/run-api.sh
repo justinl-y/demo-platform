@@ -16,4 +16,4 @@ fi
 
 node node_modules/typescript/bin/tsc --noEmit --watch --preserveWatchOutput &
 
-pm2-runtime start pm2/process-local.json
+exec pm2-runtime start pm2/process-local.json
