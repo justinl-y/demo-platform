@@ -1,18 +1,6 @@
 import { initSentry } from '#utils/sentry-instrument';
 import { createLogger } from '#utils/logger';
 
-import Fastify from 'fastify';
-import type { FastifyBaseLogger } from 'fastify';
-import helmet from '@fastify/helmet';
-import cors from '@fastify/cors';
-import accepts from '@fastify/accepts';
-import compress from '@fastify/compress';
-import formBody from '@fastify/formbody';
-import rateLimit from '@fastify/rate-limit';
-import swagger from '@fastify/swagger';
-import swaggerUi from '@fastify/swagger-ui';
-import replyValidation from '@fastify/response-validation';
-
 import {
   authenticateOnRequest,
   consoleErrorHandler,
@@ -30,13 +18,27 @@ import {
   baseInformation,
 } from './api-docs/base-information.ts';
 
-import type { FastifyPluginCallback } from 'fastify';
+import type {
+  FastifyPluginCallback,
+  FastifyBaseLogger,
+} from 'fastify';
 
 async function buildInstance() {
   await batchGetSecretValue();
   await initSentry();
 
   // Dynamic imports ensure all modules are loaded after Sentry.init() so instrumentation can patch them
+  const Fastify = (await import('fastify')).default;
+  const helmet = (await import('@fastify/helmet')).default;
+  const cors = (await import('@fastify/cors')).default;
+  const accepts = (await import('@fastify/accepts')).default;
+  const compress = (await import('@fastify/compress')).default;
+  const formBody = (await import('@fastify/formbody')).default;
+  const rateLimit = (await import('@fastify/rate-limit')).default;
+  const swagger = (await import('@fastify/swagger')).default;
+  const swaggerUi = (await import('@fastify/swagger-ui')).default;
+  const replyValidation = (await import('@fastify/response-validation')).default;
+
   const { default: plugins } = await import('./plugins/index.ts');
   const { default: routes } = await import('./routes/index.ts');
 
