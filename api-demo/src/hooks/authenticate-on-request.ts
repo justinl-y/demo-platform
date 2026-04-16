@@ -1,5 +1,3 @@
-import * as Sentry from '@sentry/node';
-
 import {
   UnauthorizedError,
 } from 'http-errors-enhanced';
@@ -7,6 +5,8 @@ import {
 import {
   Config,
 } from '#config/index';
+
+import { setSentryUser } from '#utils/sentry-instrument';
 
 import type {
   FastifyRequest,
@@ -33,13 +33,7 @@ async function authenticateOnRequest(request: FastifyRequest, _reply: FastifyRep
 
   if (decodedToken.type !== accessTokenJwt) throw new UnauthorizedError('Incorrect authorization token type');
 
-  // Set Sentry user context on the per-request isolation scope so it never bleeds between requests
-  if (Config.apiEnv !== 'TEST') {
-    Sentry.getIsolationScope().setUser({
-      id: decodedToken.id,
-      email: decodedToken.email,
-    });
-  }
+  setSentryUser({ id: decodedToken.id, email: decodedToken.email });
 };
 
 export default authenticateOnRequest;
