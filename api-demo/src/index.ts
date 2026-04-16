@@ -2,7 +2,7 @@ import buildInstance from './build-instance.ts';
 import { Config } from '#config/index';
 import { getServerDetails } from '#utils/functions';
 import { localHost } from '#utils/constants';
-import { createLogger } from '#utils/logger';
+import { createLogger } from '#lib/logger';
 
 const PM2_VERSION = 'v6.0.14';
 const NODE_VERSION = process.version;

@@ -4,7 +4,7 @@ import type {
   FastifyRequest,
 } from 'fastify';
 
-import { processSentryError } from '#utils/sentry-instrument';
+import { processSentryError } from '#lib/sentry-instrument';
 
 function globalErrorHandler(error: FastifyError, request: FastifyRequest, reply: FastifyReply): unknown {
   const statusCode = error.statusCode || 500;

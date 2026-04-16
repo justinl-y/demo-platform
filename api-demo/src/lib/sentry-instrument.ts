@@ -3,7 +3,7 @@ import * as Sentry from '@sentry/node';
 import { Config } from '#config/index';
 import { buildInteractionData } from '../hooks/console-interaction-handler.ts';
 
-import type { FastifyError, FastifyReply, FastifyRequest, RouteHandlerMethod } from 'fastify';
+import type { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
 import type { InteractionData } from '../hooks/console-interaction-handler.ts';
 
 type InteractionHintException = {
@@ -116,18 +116,6 @@ async function initSentry() {
   console.info(`... Sentry ${profilingStatusMessage}`);
 }
 
-function withSpan(name: string, handler: RouteHandlerMethod): RouteHandlerMethod {
-  const wrapped: RouteHandlerMethod = async function (request, reply) {
-    await Sentry.startSpan({ name, op: 'function' }, async () => {
-      await handler.call(this, request, reply);
-    });
-  };
-
-  Object.defineProperty(wrapped, 'name', { value: name });
-
-  return wrapped;
-}
-
 function setSentryUser(user: { id: string; email: string }): void {
   if (Config.apiEnv === 'TEST') return;
   Sentry.getIsolationScope().setUser(user);
@@ -161,7 +149,6 @@ function processSentryError(
 
 export {
   initSentry,
-  withSpan,
   setSentryUser,
   processSentryError,
 };

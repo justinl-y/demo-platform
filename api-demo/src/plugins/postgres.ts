@@ -10,7 +10,7 @@ import {
 import {
   query,
   transaction,
-} from '#utils/database';
+} from '#lib/database';
 
 import type {
   FastifyInstance,

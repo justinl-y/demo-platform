@@ -1,4 +1,4 @@
-import { secretValues } from '#utils/secrets-manager';
+import { secretValues } from '#lib/secrets-manager';
 
 const accessJwtExpirationMinutes = 60;
 const accessCookieExpirationSeconds = accessJwtExpirationMinutes * 60;
