@@ -23,7 +23,7 @@ import type {
 
 const cookieOptions = {
   httpOnly: true,
-  secure: (Config.liveEnvironments as string[]).includes(Config.apiEnv),
+  secure: Config.liveEnvironments.includes(Config.apiEnv),
   sameSite: 'lax' as const,
   path: '/',
 };
