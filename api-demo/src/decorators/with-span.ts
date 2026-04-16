@@ -34,7 +34,15 @@ function wrapWithInactiveSpan<This, Args extends unknown[], Return>(
 ): (this: This, ...args: Args) => Return {
   const wrapped = function (this: This, ...args: Args): Return {
     const span = Sentry.startInactiveSpan({ name, op: 'function' });
-    const result = fn.call(this, ...args);
+    let result: Return;
+
+    try {
+      result = fn.call(this, ...args);
+    }
+    catch (error) {
+      span.end();
+      throw error;
+    }
 
     if (result instanceof Promise) {
       return (result as Promise<unknown>).then(
