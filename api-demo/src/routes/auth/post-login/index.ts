@@ -65,14 +65,14 @@ async function postLogin(this: FastifyInstance, request: FastifyRequest, reply: 
 
   const [
     tokenAccess,
-    validToken,
+    validPassword,
   ] = await Promise.all([
     generateJwt(this, userId, userEmail, accessTokenJwt),
     bcryptCompare(incomingPassword, passwordHash),
   ]);
 
   // bcrypt compare incoming password with hashed password - if not a match throw
-  if (!validToken) throw new UnauthorizedError('Authentication failed');
+  if (!validPassword) throw new UnauthorizedError('Authentication failed');
 
   const hashedTokenRefresh = await bcryptHash(tokenRefresh);
 
