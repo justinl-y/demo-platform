@@ -44,9 +44,8 @@ RUN chmod +x /usr/local/bin/npm-ci-with-token
 COPY package*.json ${API_HOME}/
 
 # ── Builder ───────────────────────────────────────────────────────────────────
-# Installs all dependencies (including devDependencies) and runs the TypeScript
-# type-checker. No compiled output is produced — Node 24 runs TS natively, so
-# only the source files are needed in the final image.
+# Installs all dependencies (including devDependencies) and compiles TypeScript
+# to dist/ via tsc + tsc-alias. Fails the build on type errors.
 FROM base AS builder
 
 # Install all deps (dev included). The npm cache is mounted so it persists
@@ -54,11 +53,12 @@ FROM base AS builder
 RUN --mount=type=secret,id=npm_token --mount=type=cache,target=/root/.npm npm-ci-with-token
 
 COPY tsconfig.json ${API_HOME}/
+COPY tsconfig.build.json ${API_HOME}/
 COPY src ${API_HOME}/src
 
-# Fail the build early on type errors — no tsc emit, source runs directly via
-# Node's native TS support.
-RUN npm run typecheck
+# Compile TypeScript to dist/ and rewrite path aliases to relative imports.
+# Fails the build on type errors.
+RUN npm run build
 
 # ── Runtime deps ──────────────────────────────────────────────────────────────
 # Installs only production dependencies (--omit=dev) to keep the final image
@@ -71,7 +71,7 @@ RUN --mount=type=secret,id=npm_token --mount=type=cache,target=/root/.npm npm-ci
 # ── Runtime ───────────────────────────────────────────────────────────────────
 # Final image. Assembles only the artefacts needed to run the API:
 #   - production node_modules  (from runtime-deps)
-#   - TypeScript source files  (from builder, after passing typecheck)
+#   - compiled JavaScript      (from builder)
 #   - pm2 process config       (from build context)
 FROM node:24-alpine AS runtime
 
@@ -85,7 +85,7 @@ RUN --mount=type=cache,target=/root/.npm npm i -g pm2@6.0.14
 # Copy only what is needed at runtime — keeps the image free of dev tooling.
 COPY --from=runtime-deps ${API_HOME}/package*.json ${API_HOME}/
 COPY --from=runtime-deps ${API_HOME}/node_modules ${API_HOME}/node_modules
-COPY --from=builder ${API_HOME}/src ${API_HOME}/src
+COPY --from=builder ${API_HOME}/dist ${API_HOME}/dist
 COPY pm2 ${API_HOME}/pm2
 
 # Drop root privileges before the process starts.

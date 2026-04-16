@@ -2,10 +2,8 @@
   "extends": "@tsconfig/node24/tsconfig.json",
   "compilerOptions": {
     "allowImportingTsExtensions": true,
-    "noEmit": true,
     "noImplicitAny": true,
     "isolatedModules": true,
-    "erasableSyntaxOnly": true,
     "forceConsistentCasingInFileNames": true,
     "verbatimModuleSyntax": true,
     "rewriteRelativeImportExtensions": true,

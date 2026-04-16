@@ -79,4 +79,4 @@ src/
 
 **Database access**: Via `this.db.query(sqlFile, params, outputFormat?)` and `this.db.transaction(fnParamGroup)` — both decorated on the Fastify instance by the postgres plugin. Do not import a db module directly.
 
-**TypeScript**: Strict mode (`noImplicitAny`, `verbatimModuleSyntax`, `erasableSyntaxOnly`). Uses Node 24 tsconfig base. No `tsc` emit — source runs directly via Node's native TS support.
+**TypeScript**: Strict mode (`noImplicitAny`, `verbatimModuleSyntax`). Stage 3 decorators enabled. Uses Node 24 tsconfig base. Local/CI: source runs directly via tsx (hot reload via pm2 watch). Production: compiled to `dist/` via `npm run build` (`tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json`). Type errors reported in local/CI by `tsc --noEmit --watch` running alongside the server.
