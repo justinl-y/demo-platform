@@ -2,26 +2,10 @@ import * as Sentry from '@sentry/node';
 
 import { Config } from '#config/index';
 import { createLogger } from '#utils/logger';
+import { buildInteractionData } from '../hooks/console-interaction-handler.ts';
 
-import type { RouteHandlerMethod } from 'fastify';
+import type { FastifyError, FastifyReply, FastifyRequest, RouteHandlerMethod } from 'fastify';
 import type { InteractionData } from '../hooks/console-interaction-handler.ts';
-
-const logger = createLogger();
-
-function withSpan(name: string, handler: RouteHandlerMethod): RouteHandlerMethod {
-  const wrapped: RouteHandlerMethod = async function (request, reply) {
-    await Sentry.startSpan({ name, op: 'function' }, async () => {
-      await handler.call(this, request, reply);
-    });
-  };
-
-  Object.defineProperty(wrapped, 'name', { value: name });
-
-  return wrapped;
-}
-
-const INTERACTION_BREADCRUMB_CATEGORY = 'interaction.last';
-const INTERACTION_BREADCRUMB_MESSAGE = 'Interaction details';
 
 type InteractionHintException = {
   interactionData?: InteractionData;
@@ -30,6 +14,15 @@ type InteractionHintException = {
 type NodeProfilingIntegration = {
   nodeProfilingIntegration: () => unknown;
 };
+
+type SentryAugmentedError = FastifyError & {
+  interactionData?: InteractionData;
+};
+
+const logger = createLogger();
+const INTERACTION_BREADCRUMB_CATEGORY = 'interaction.last';
+const INTERACTION_BREADCRUMB_MESSAGE = 'Interaction details';
+const SENTRY_EXCLUDED_STATUS_CODES = [400, 401, 403, 404, 409, 418, 429];
 
 async function initSentry() {
   const sentryDsn = Config.sentryConfig.getDsn();
@@ -105,10 +98,11 @@ async function initSentry() {
       return breadcrumb;
     },
     integrations: [
+      Sentry.fastifyIntegration(),
       Sentry.requestDataIntegration({
         include: {
-          cookies: false, // Disable cookie capture for privacy
-          ip: true,       // Explicitly enable IP capture (off by default)
+          cookies: false,
+          ip: true,
         },
       }),
       Sentry.postgresIntegration(),
@@ -124,4 +118,52 @@ async function initSentry() {
   logger.info(`... Sentry ${profilingStatusMessage}`);
 }
 
-export { initSentry, withSpan };
+function withSpan(name: string, handler: RouteHandlerMethod): RouteHandlerMethod {
+  const wrapped: RouteHandlerMethod = async function (request, reply) {
+    await Sentry.startSpan({ name, op: 'function' }, async () => {
+      await handler.call(this, request, reply);
+    });
+  };
+
+  Object.defineProperty(wrapped, 'name', { value: name });
+
+  return wrapped;
+}
+
+function setSentryUser(user: { id: string; email: string }): void {
+  if (Config.apiEnv === 'TEST') return;
+  Sentry.getIsolationScope().setUser(user);
+}
+
+function processSentryError(
+  statusCode: number,
+  error: FastifyError,
+  request: FastifyRequest,
+  reply: FastifyReply,
+): void {
+  if (Config.apiEnv === 'TEST') return;
+  if (SENTRY_EXCLUDED_STATUS_CODES.includes(statusCode)) return;
+
+  try {
+    const sentryError = error as SentryAugmentedError;
+
+    try {
+      sentryError.interactionData = buildInteractionData(request, reply) ?? undefined;
+    }
+    catch {
+      // captured without interaction data
+    }
+
+    Sentry.captureException(sentryError);
+  }
+  catch {
+    // Sentry failure must not affect the HTTP response
+  }
+}
+
+export {
+  initSentry,
+  withSpan,
+  setSentryUser,
+  processSentryError,
+};

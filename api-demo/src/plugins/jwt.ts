@@ -9,7 +9,7 @@ import {
   Config,
 } from '#config/index';
 
-function jwtPlugin(fastify: FastifyInstance, options: FastifyPluginOptions): void {
+function jwtPlugin(fastify: FastifyInstance, _options: FastifyPluginOptions): void {
   const jwtAuthConfig = Config.authConfig();
 
   fastify.register(fastifyJwt, {

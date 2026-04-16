@@ -16,6 +16,9 @@
     "#config/*": "./src/config/*.ts"
   },
   "scripts": {
+    "build": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json && npm run copy-sql && npm run verify-dist",
+    "copy-sql": "find src -name '*.sql' ! -name '*.typed.sql' -exec sh -c 'for f; do dest=\"dist/${f#src/}\"; mkdir -p \"$(dirname \"$dest\")\"; cp \"$f\" \"$dest\"; done' _ {} +",
+    "verify-dist": "! find dist -name '*.js' -exec grep -Eq '#utils/|#config/' {} + 2>/dev/null",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "sql:types": "jiti scripts/generate-typed-sql.ts && pgtyped -c pgtyped.config.json --uri \"${PGTYPED_DATABASE_URL:-postgres://test:test@localhost:5430/test_template}\" && jiti scripts/refine-generated-query-types.ts",
     "sql:types:ci": "bash scripts/sql-types-ci.sh",
@@ -67,6 +70,8 @@
     "@types/node": "^25.5.0",
     "eslint": "^9.36.0",
     "jiti": "^2.6.1",
+    "tsc-alias": "^1.8.16",
+    "tsx": "^4.21.0",
     "lint-staged": "^16.4.0",
     "neostandard": "^0.13.0",
     "typescript": "^5.8.3"

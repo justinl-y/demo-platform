@@ -6,6 +6,8 @@ import {
   Config,
 } from '#config/index';
 
+import { setSentryUser } from '#utils/sentry-instrument';
+
 import type {
   FastifyRequest,
   FastifyReply,
@@ -30,6 +32,8 @@ async function authenticateOnRequest(request: FastifyRequest, _reply: FastifyRep
   } = Config.authConfig();
 
   if (decodedToken.type !== accessTokenJwt) throw new UnauthorizedError('Incorrect authorization token type');
+
+  setSentryUser({ id: decodedToken.id, email: decodedToken.email });
 };
 
 export default authenticateOnRequest;

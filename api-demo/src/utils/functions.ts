@@ -1,4 +1,5 @@
 import path from 'path';
+
 import { Config } from '#config/index';
 import { localHost } from './constants.ts';
 import { withSpan } from './sentry-instrument.ts';
