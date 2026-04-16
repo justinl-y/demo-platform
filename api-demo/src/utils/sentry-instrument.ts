@@ -1,7 +1,6 @@
 import * as Sentry from '@sentry/node';
 
 import { Config } from '#config/index';
-import { createLogger } from '#utils/logger';
 import { buildInteractionData } from '../hooks/console-interaction-handler.ts';
 
 import type { FastifyError, FastifyReply, FastifyRequest, RouteHandlerMethod } from 'fastify';
@@ -19,7 +18,6 @@ type SentryAugmentedError = FastifyError & {
   interactionData?: InteractionData;
 };
 
-const logger = createLogger();
 const INTERACTION_BREADCRUMB_CATEGORY = 'interaction.last';
 const INTERACTION_BREADCRUMB_MESSAGE = 'Interaction details';
 const SENTRY_EXCLUDED_STATUS_CODES = [400, 401, 403, 404, 409, 418, 429];
@@ -28,7 +26,7 @@ async function initSentry() {
   const sentryDsn = Config.sentryConfig.getDsn();
 
   if (Config.apiEnv === 'TEST' || !sentryDsn) {
-    logger.info('... Sentry disabled');
+    console.info('... Sentry disabled');
     return;
   }
 
@@ -115,7 +113,7 @@ async function initSentry() {
     normalizeDepth: 5,
   });
 
-  logger.info(`... Sentry ${profilingStatusMessage}`);
+  console.info(`... Sentry ${profilingStatusMessage}`);
 }
 
 function withSpan(name: string, handler: RouteHandlerMethod): RouteHandlerMethod {
