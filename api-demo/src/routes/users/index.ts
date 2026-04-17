@@ -11,13 +11,13 @@ import getUsers from './get-users/index.ts';
 
 import type { FastifyInstance } from 'fastify';
 
-export type RouteKey = keyof typeof routes;
-
 const { GET } = HTTP_METHODS;
 
 const routes = {
   getUsers: routePropertiesCore(GET, '/users', getUsers),
 };
+
+export type RouteKey = keyof typeof routes;
 
 export default (instance: FastifyInstance) => {
   (Object.keys(routes) as Array<RouteKey>).forEach((key) => {
