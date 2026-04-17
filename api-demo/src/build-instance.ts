@@ -7,6 +7,7 @@ import {
   consoleInteractionHandler,
   globalErrorHandler,
   replyBodyOnErrorHandler,
+  swaggerStaticUrlRewrite,
 } from './hooks/index.ts';
 import {
   batchGetSecretValue,
@@ -57,6 +58,7 @@ async function buildInstance() {
   if (!Config.liveEnvironments.includes(Config.apiEnv)) {
     instance.register(swagger, baseInformation);
     instance.register(swaggerUi, Config.swaggerConfig);
+    instance.addHook('onRequest', swaggerStaticUrlRewrite);
   }
 
   // decorate instance with hooks

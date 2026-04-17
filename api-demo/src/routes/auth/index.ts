@@ -10,14 +10,14 @@ import postRefresh from './post-refresh/index.ts';
 
 import type { FastifyInstance } from 'fastify';
 
+export type RouteKey = keyof typeof routes;
+
 const { POST } = HTTP_METHODS;
 
 const routes = {
   postLogin: routePropertiesCore(POST, '/login', postLogin),
   postRefresh: routePropertiesCore(POST, '/refresh', postRefresh),
 };
-
-export type RouteKey = keyof typeof routes;
 
 export default (instance: FastifyInstance) => {
   (Object.keys(routes) as Array<RouteKey>).forEach((key) => {

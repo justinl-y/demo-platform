@@ -11,19 +11,32 @@ import type {
   RouteHandlerMethod,
 } from 'fastify';
 
-type RouteProperties<H extends RouteHandlerMethod = RouteHandlerMethod> = {
+interface RouteProperties<H extends RouteHandlerMethod = RouteHandlerMethod> {
   method: string;
   url: string;
   handler: H;
 };
 
-type OnRequestProperties = {
+interface OnRequestProperties {
   onRequest: onRequestHookHandler[];
 };
 
-type PreHandlerProperties = {
+interface PreHandlerProperties {
   preHandler: preHandlerHookHandler[];
 };
+
+interface RouteSchema {
+  route: object;
+  body?: object;
+  response: object;
+}
+
+interface SchemaProperties {
+  schema: {
+    body?: object;
+    [key: string]: unknown;
+  };
+}
 
 function getServerDetails(serverAddress: AddressInfo | string | null): string {
   // Use a type guard to safely check if it's an AddressInfo object
@@ -62,6 +75,21 @@ function routePropertiesPrehandler(preHandler: preHandlerHookHandler[]): PreHand
   };
 }
 
+function routeSchema({ route, body, response }: RouteSchema): SchemaProperties {
+  const schemaObject = {
+    schema: {
+      ...route,
+      response,
+    },
+  } as SchemaProperties;
+
+  // querystring
+  // params
+  if (body) schemaObject.schema.body = body;
+
+  return schemaObject;
+}
+
 function cwd(file: string, relativePath: string) {
   return path.resolve(relativePath, file);
 }
@@ -70,6 +98,7 @@ export {
   routePropertiesCore,
   routePropertiesOnRequest,
   routePropertiesPrehandler,
+  routeSchema,
   getServerDetails,
   cwd,
 };

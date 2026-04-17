@@ -1,3 +1,7 @@
+import {
+  routeSchema,
+} from '#utils/functions';
+
 const route = {
   tags: ['auth'],
   summary: 'User login',
@@ -67,10 +71,4 @@ const response = {
   },
 };
 
-export default {
-  schema: {
-    ...route,
-    body,
-    response,
-  },
-};
+export default routeSchema({ route, body, response });
