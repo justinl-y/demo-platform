@@ -1,5 +1,4 @@
 import { initSentry } from '#lib/sentry-instrument';
-import { createLogger } from '#lib/logger';
 
 import {
   authenticateOnRequest,
@@ -19,10 +18,7 @@ import {
   baseInformation,
 } from './api-docs/base-information.ts';
 
-import type {
-  FastifyPluginCallback,
-  FastifyBaseLogger,
-} from 'fastify';
+import type { FastifyPluginCallback } from 'fastify';
 
 async function buildInstance() {
   await batchGetSecretValue();
@@ -43,7 +39,7 @@ async function buildInstance() {
   const { default: plugins } = await import('./plugins/index.ts');
   const { default: routes } = await import('./routes/index.ts');
 
-  const instance = Fastify({ ...Config.fastifyConfig, loggerInstance: createLogger() as FastifyBaseLogger });
+  const instance = Fastify(Config.fastifyConfig);
 
   // register @fastify plugins
   instance.register(helmet, Config.helmetConfig);

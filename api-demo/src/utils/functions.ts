@@ -27,7 +27,7 @@ interface PreHandlerProperties {
 
 interface RouteSchema {
   route: Record<string, unknown>;
-  queryString?: Record<string, unknown>;
+  querystring?: Record<string, unknown>;
   params?: Record<string, unknown>;
   body?: Record<string, unknown>;
   response: Record<string, unknown>;
@@ -35,7 +35,7 @@ interface RouteSchema {
 
 interface SchemaProperties {
   schema: {
-    queryString?: Record<string, unknown>;
+    querystring?: Record<string, unknown>;
     params?: Record<string, unknown>;
     body?: Record<string, unknown>;
     [key: string]: unknown;
@@ -77,11 +77,11 @@ function routePropertiesPrehandler(preHandler: preHandlerHookHandler[]): PreHand
   };
 }
 
-function routeSchema({ route, queryString, params, body, response }: RouteSchema): SchemaProperties {
+function routeSchema({ route, querystring, params, body, response }: RouteSchema): SchemaProperties {
   return {
     schema: {
       ...route,
-      ...(queryString && { queryString }),
+      ...(querystring && { querystring }),
       ...(params && { params }),
       ...(body && { body }),
       response,

@@ -1,20 +1,15 @@
-import ajvFormats from 'ajv-formats';
-import customAjvFormatsPlugin from '../plugins/custom-ajv-formats.ts';
+import { createLogger } from '#lib/logger';
+import { ajvPlugins } from './ajv.ts';
 
 import type { IncomingMessage, ServerResponse } from 'http';
-import type { FastifyServerOptions } from 'fastify';
-import type { AjvPlugin } from '../types/ajv.ts';
-
-const ajvFormatsPlugin = ajvFormats as unknown as AjvPlugin;
+import type { FastifyBaseLogger, FastifyServerOptions } from 'fastify';
 
 const fastifyConfig: FastifyServerOptions = {
+  loggerInstance: createLogger() as FastifyBaseLogger,
   trustProxy: true,
   disableRequestLogging: true, // interaction hooks handle request/response logging
   ajv: {
-    plugins: [
-      [ajvFormatsPlugin, { mode: 'full' }],
-      customAjvFormatsPlugin as AjvPlugin,
-    ],
+    plugins: ajvPlugins,
     customOptions: {
       coerceTypes: false,
       strict: false, // Allow additional properties (eg. `example` for documentation)
