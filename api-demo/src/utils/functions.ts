@@ -27,12 +27,16 @@ interface PreHandlerProperties {
 
 interface RouteSchema {
   route: Record<string, unknown>;
+  queryString?: Record<string, unknown>;
+  params?: Record<string, unknown>;
   body?: Record<string, unknown>;
   response: Record<string, unknown>;
 }
 
 interface SchemaProperties {
   schema: {
+    queryString?: Record<string, unknown>;
+    params?: Record<string, unknown>;
     body?: Record<string, unknown>;
     [key: string]: unknown;
   };
@@ -73,19 +77,16 @@ function routePropertiesPrehandler(preHandler: preHandlerHookHandler[]): PreHand
   };
 }
 
-function routeSchema({ route, body, response }: RouteSchema): SchemaProperties {
-  const schemaObject = {
+function routeSchema({ route, queryString, params, body, response }: RouteSchema): SchemaProperties {
+  return {
     schema: {
       ...route,
+      ...(queryString && { queryString }),
+      ...(params && { params }),
+      ...(body && { body }),
       response,
     },
-  } as SchemaProperties;
-
-  // querystring
-  // params
-  if (body) schemaObject.schema.body = body;
-
-  return schemaObject;
+  };
 }
 
 function cwd(file: string, relativePath: string) {
