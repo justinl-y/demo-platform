@@ -57,8 +57,8 @@ async function buildInstance() {
   // Register Swagger and Swagger UI only in non-prod environments
   if (!Config.liveEnvironments.includes(Config.apiEnv)) {
     instance.register(swagger, baseInformation);
-    instance.register(swaggerUi, Config.swaggerConfig);
     instance.addHook('onRequest', swaggerStaticUrlRewrite);
+    instance.register(swaggerUi, Config.swaggerConfig);
   }
 
   // decorate instance with hooks

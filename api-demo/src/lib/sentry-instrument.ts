@@ -52,9 +52,8 @@ async function initSentry() {
     tracesSampleRate: Config.sentryConfig.tracesSampleRate[Config.apiEnv],
     environment: Config.apiEnv,
     ignoreTransactions: [
-      '/health_eb',
-      '/favicon.ico',
-      /^\/api-docs(?:\/.*)?$/,
+      /^GET \/health_eb$/,
+      /^GET \/api-docs(\/|$)/,
     ],
     beforeSend(event, hint) {
       const headers = event.request?.headers;
