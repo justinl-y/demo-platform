@@ -1,3 +1,7 @@
+import {
+  routeSchema,
+} from '#utils/functions';
+
 const route = {
   tags: ['auth'],
   summary: 'User refresh access token',
@@ -17,9 +21,4 @@ const response = {
   },
 };
 
-export default {
-  schema: {
-    ...route,
-    response,
-  },
-};
+export default routeSchema({ route, response });

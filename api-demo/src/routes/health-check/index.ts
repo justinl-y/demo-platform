@@ -1,5 +1,3 @@
-import type { FastifyInstance } from 'fastify';
-
 import {
   HTTP_METHODS,
 } from '#utils/constants';
@@ -9,6 +7,8 @@ import {
 import schema from './schema.ts';
 import getHealthDB from './get-health-db/index.ts';
 import getHealthEB from './get-health-eb/index.ts';
+
+import type { FastifyInstance } from 'fastify';
 
 const { GET } = HTTP_METHODS;
 

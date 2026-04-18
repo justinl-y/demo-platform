@@ -1,3 +1,7 @@
+import {
+  routeSchema,
+} from '#utils/functions';
+
 const route = {
   tags: ['health'],
   summary: 'Database health check endpoint',
@@ -25,9 +29,4 @@ const response = {
   },
 };
 
-export default {
-  schema: {
-    ...route,
-    response,
-  },
-};
+export default routeSchema({ route, response });

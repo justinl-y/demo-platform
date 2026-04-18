@@ -1,5 +1,3 @@
-import type { FastifyInstance } from 'fastify';
-
 import {
   HTTP_METHODS,
 } from '#utils/constants';
@@ -10,6 +8,8 @@ import schema from './schema.ts';
 import onRequest from './on-request.ts';
 import preHandlers from './pre-handlers.ts';
 import getUsers from './get-users/index.ts';
+
+import type { FastifyInstance } from 'fastify';
 
 const { GET } = HTTP_METHODS;
 
