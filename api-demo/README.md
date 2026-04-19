@@ -1,7 +1,7 @@
 # 🚀 API-Demo
 
 **API-Demo** is a **RESTful web API** that serves as the **primary data service** for a web application.
-It demonstrates modern **full-stack development practices**, including backend architecture, API design, database integration, and cloud deployment.
+It demonstrates modern **full-stack development practices**, including backend architecture, API design, database integration and cloud deployment.
 
 This project showcases how to build **scalable and maintainable web services** using **Node.js, TypeScript, Fastify, and PostgreSQL**, with automated workflows and a developer-friendly environment.
 
@@ -37,11 +37,11 @@ flowchart TB
     subgraph Test Environment
         E[Developer Machine]
 
-        E -->|Initiate Test Run| F[TEST Container]
+        E -->|1 - Initiate Test Run| F[TEST Container]
         E -->|User HTTP Requests - localhost:6663| H[API Container]
 
-        F -->|1 -Create and Seeds DB| G[Local Test DB Container]
-        F -->|2 - Execute Tests| H
+        F -->|2 -Create and Seed the DB| G[Local Test DB Container]
+        F -->|3 - Execute Tests| H
         H -->|Reads/Writes| G
     end
 
@@ -115,224 +115,161 @@ npm run ci-up test
 TEST_CASE=1 npm run ci-up test
 ```
 
-----
+## 🗄️ Database Library — `src/lib/database.ts`
 
-## Database Library - util/database.js
+API-Demo contains a bespoke database interaction library built on top of `node-postgres`. It exposes two methods on a `db` object decorated onto the Fastify instance by the Postgres plugin:
 
-API-Demo contains a bespoke database interaction library that significantly extends the capabilities of `node-postgres`. This library has two functions, db.query and db.transaction that are exposed as methods on a `db` object decorating the Fastify instance.
+- `db.query` — SQL data query language (DQL): `SELECT`
+- `db.transaction` — SQL data manipulation language (DML): `INSERT` / `UPDATE` / `DELETE`
 
-`db.query` is for SQL data querying language (DQL)
-`db.transaction` for SQL data manipulation language (DML)
+Both methods return promises and work with `async/await`. Each SQL file must contain a **single statement** — this keeps operations modular and reusable and avoids the prepared-statement limitation that prevents multiple DML commands in one call. Multiple operations within a single statement are supported via CTEs.
 
-These methods return promises and work with JS `async/await`.
-
-Because PG does not allow multiple commands (INSERT/UPDATE/DELETE) in a single prepared statement, the files you provide to `db.query` or `db.transaction` **must** contain a single SQL statement. This keeps the system as modular/normalized as possible and has side effects of DRY: a single, unambiguous, authoritative representation of some DB mutation in the entire system. The files become re-usable and prevent duplication. Multiple operations within a single SQL statement can be supported with Common Table Expressions (CTEs).
-
-Under the hood, the `database.js` library will interpolate named parameters into numerical ones using `node-pg-named`. Files are also passed through a templating system so `<%= some_var %>` will be substituted. However, this is **not** recommended in almost all cases. It does, however, enable one to target child node tables (say, `node.dcd`) using `node.<%= nodeType %>`, which would otherwise be impossible with Prepared Statements since character substitution cannot occur in the table name. Be sure that `nodeType` is sanitized if you choose to use the above method.
-
-### `db.query(fileName, params, outputFormat);`
-
-Calls to `db.query(...)` make use of PG Pooling under-the-hood.
-
-The `db.queryAsync` function is very simple. It simply reads a SQL template file, injects provided parameters, formats a response, and returns the database result.
-
-- `fileName`: the filename relative to the root directory that points at a SQL template file. The file extension is not required.
-- `params`: an object literal describing parameters to inject into the fileName SQL template`.
-- `outputFormat`: `collection` (defaulted) to return an array of objects or `one` for a single object.
+Named parameters (e.g. `$userId`) in SQL files are transparently interpolated into positional `$1, $2, ...` parameters before being sent to Postgres. Callers always use named parameters.
 
 ----
 
-#### Example of `db.query(...)` with `outputFormat` = `collection` (return an array of objects)
+### `db.query<TRow>(file, params, outputFormat?)`
+
+Acquires a connection from the PG pool, reads the SQL file, substitutes named parameters, runs the query, and returns the result. DML keywords (`INSERT`, `UPDATE`, `DELETE`) are **not** permitted in query files — use `db.transaction` instead.
+
+- `file` — absolute path to the SQL file **without** the `.sql` extension. The library appends `.sql` internally. Use the `cwd` utility to build the path relative to the route directory.
+- `params` — `Record<string, unknown>` of named parameters to substitute into the SQL.
+- `outputFormat` — `'collection'` (default) returns `TRow[] | null`; `'one'` returns `TRow | null`.
+- `TRow` — optional generic for the row shape. Use a pgtyped-generated type for compile-time safety.
+
+Returns `null` when `rowCount` is `0`, regardless of `outputFormat`.
+
+#### Example — `'collection'` (default)
 
 ```sql
---- routes/users/getUsers.sql:
-SELECT id, email, first_name, last_name, customer_id FROM public.users WHERE customer_id = $customerId;
+-- src/routes/users/get-users/get-users.sql
+SELECT id, email, full_name FROM public.users WHERE customer_id = $customerId;
 ```
 
-```javascript
-// yourRoute.js:
-const users = await this.db.query('routes/users/getUsers', { customerId: 12345 }, 'collection');
+```ts
+import type { IGetUsersResult } from './types/get-users.typed.queries.ts';
 
-// result - users will contain array of objects:
-[
-  {id: 1, email: 'frodo@semios.com', first_name: 'Frodo', last_name: 'Baggins', customer_id: 12345},
-  {id: 2, email: 'bilbo@semios.com', first_name: 'Bilbo', last_name: 'Baggins', customer_id: 12345},
-  ...
-]
+const getUsersQuery = cwd('get-users', import.meta.dirname);
+
+const users = await this.db.query<IGetUsersResult>(getUsersQuery, { customerId: 12345 });
+// users: IGetUsersResult[] | null
 ```
 
-----
-
-#### Example of `db.query(...)` with `outputFormat` = `one` (return a *single* object literal)
+#### Example — `'one'`
 
 ```sql
---- routes/users/getUser.sql:
-SELECT id, email, first_name, last_name, customer_id FROM public.users WHERE user_id = $userId;
+-- src/routes/auth/post-login/get-user.sql
+SELECT id, email, password_hash FROM public.users WHERE email = $email;
 ```
 
-```javascript
-// yourRoute.js:
-const user = await this.db.query('routes/users/getUser', { userid: 1 }, 'one');
+```ts
+import type { IGetUserResult } from './types/get-user.typed.queries.ts';
 
-// result - user will single object:
+const getUserQuery = cwd('get-user', import.meta.dirname);
 
-{id: 1, email: 'frodo@semios.com', first_name: 'Frodo', last_name: 'Baggins', customer_id: 12345},
-  
+const user = await this.db.query<IGetUserResult>(getUserQuery, { email }, 'one');
+// user: IGetUserResult | null
 ```
 
 ----
 
-### `db.transactionAsync(fnParamGroup, dryRun);`
+### `db.transaction(instructions, dryRun?)`
 
-The `db.transaction(...)` function enables you to execute a series of consecutive DML SQL statements as a transaction.  If at any point one of the SQL statements fail, the entire transaction is rolled back leaving the database in a consistent state. Arguments are as follows:
+Executes a series of DML SQL statements as a single atomic transaction. If any statement fails the entire transaction is rolled back, leaving the database in a consistent state.
 
-- `fnParamGroup`: An array of objects. Each object represents once set of operations in the SQL transaction and contains two properties (both arrays): `files` and `params`. i.e.
+Returns `Record<string, QueryRow[]>` — a map of file path → flattened result rows across all executions of that file.
 
-    ```JS
-    [
-      {
-        files: [],
-        params: []
-      },
-      {
-        files: [],
-        params: []
-      },
-      ...
-    ]
-    ```
+- `instructions` — a single instruction object or an array of them. Each instruction has:
+  - `files` — a file path string or an array of file path strings.
+  - `params` — a params object or an array of params objects (used for bulk operations — see below).
+- `dryRun` — if `true`, all statements execute but the transaction is rolled back and a `418` error is thrown. Useful for inspecting what would have run without committing. Default: `false`.
 
-    The `files` property is an array of file names relative to root (just like `db.query(...)`).
+For convenience, a single instruction can be passed directly instead of wrapping it in an array, and `files` / `params` can each be a plain string / object when there is only one.
 
-    The `params` object describes parameters to inject into the SQL template(s) identified in `files`. These parameters are passed through `lodash.template` first, and `node-postgres-named` second. Users of `db.transaction` are advised to understand the risks of using template-style variables in the SQL files.
+#### Typing results
 
-    In the case of only one file, or one parameter, Both `files` and `params` properties can be simplified to a string, and object respectively, instead of arrays.
-
-    Lastly, as a final simplification -- the `fnParamGroup` array can be a single object for cases when groups are not necessary:
-
-    ```JS
-    const statements = {
-      files:  [
-        'node/remove_schedules',
-        'node/remove_pheromones',
-        'node/remove_rescues',
-        'node/remove',
-        'node-share/new_history'],
-      params: paramsObject
-  }
-    ```
-
-- `dryRun`: a boolean. If true, will console.log the queries that will run in the transaction, but not execute them. Default is `false`.
-
-----
-
-#### Example of `db.transactionAsync(...)`
+Cast each result entry to its pgtyped-generated row type after the call:
 
 ```sql
---- routes/customers/removeCustomerUsers.sql
-DELETE FROM public.users WHERE customer_id = $customerId;
+-- src/routes/customers/remove-users.sql
+DELETE FROM public.users WHERE customer_id = $customerId RETURNING id;
 ```
 
 ```sql
---- routes/customers/removeCustomer.sql
-DELETE FROM public.customers WHERE id = $customerId;
+-- src/routes/customers/remove-customer.sql
+DELETE FROM public.customers WHERE id = $customerId RETURNING id;
 ```
 
-```javascript
-// yourRoute.js:
+```ts
+import type { IRemoveUsersResult } from './types/remove-users.typed.queries.ts';
+import type { IRemoveCustomerResult } from './types/remove-customer.typed.queries.ts';
 
+const removeUsersQuery = cwd('remove-users', import.meta.dirname);
+const removeCustomerQuery = cwd('remove-customer', import.meta.dirname);
+
+const result = await this.db.transaction([
+  {
+    files: [removeUsersQuery, removeCustomerQuery],
+    params: { customerId: 12345 },
+  },
+]);
+
+const removedUsers = result[removeUsersQuery] as IRemoveUsersResult[];
+const removedCustomer = result[removeCustomerQuery] as IRemoveCustomerResult[];
+```
+
+----
+
+#### Bulk operations with `VALUES`
+
+When `params` is an array, the library executes the SQL once per params object by default. To instead perform a single bulk INSERT/UPDATE, use the `<%= VALUES('col1', 'col2') %>` template syntax in the SQL file:
+
+```sql
+-- src/routes/data/insert-rows.sql
+INSERT INTO some_table (x_col, y_col) <%= VALUES('x', 'y') %>
+```
+
+```ts
 await this.db.transaction({
-  files: [
-    'routes/customers/removeCustomerUsers',
-    'routes/customers/removeCustomer'
-  ],
-  params: { customerID: 12345 }
-}, true);
-
-// inspecting log will show the queries since we passed true as dryRun.
-```
-
-----
-
-##### `db.transactionAsync's VALUES capability`
-
-Under the hood, the database library will attempt an individual INSERT/UPDATE for every single object inside the params arrays. To perform bulk operations use Postgres' multi-value INSERT/UPDATE capabilities and this will require the use of multiple value `VALUES` statement in the SQL files.
-
-First the JavaScript:
-
-```JS
-// yourRoute.js:
-
-await this.db.transactionAsync({
-  files: 'mydir/newdata',
+  files: insertRowsQuery,
   params: [
     { x: 1, y: 'a' },
-    { x: 2, y: 'b' }, 
-    ...,
-    { x: 1337, y: 'w' }
-  ]
+    { x: 2, y: 'b' },
+    { x: 3, y: 'c' },
+  ],
 });
 ```
 
-Given the above JS, it's suggested to use the following underscore syntax for INSERT/UPDATE when you need to mutate several rows:
+The library expands this into:
 
 ```sql
-// mydir/newdata.sql.
-INSERT INTO some_table (some_x_col, some_y_col) <%= VALUES('x', 'y') %>
+INSERT INTO some_table (x_col, y_col) VALUES ($x_0, $y_0), ($x_1, $y_1), ($x_2, $y_2);
 ```
 
-Note the Underscore function `VALUES` which must be all-caps. Its arguments are the same as if you had called out the $args in the same order without the underscore function.
-
-By using this format the database library will expand your query into:
-
-```sql
-INSERT INTO some_table (some_x_col, some_y_col) VALUES ($x_0, $y_0), ($x_1, $y_1), ... ($x_1336, $y_1336);
-```
-
-... and perform correct parameter substitution for the `$` variables.
+`VALUES` must be all-caps. Its arguments are the parameter key names in the same order as the columns.
 
 ----
 
-### Instance methods and the scope of *this*
+### 🔗 The `this` context and named functions
 
-When the API starts plugins are registered with the Fastify instance with the Postgres plugin being one of these. This plugin injects Postgres configuration to `node-postgres` (pg), creates and binds a PG pool to `database.query` & `database.transaction` and finally decorates the Fastify instance with a db object exposing `database.query` & `database.transaction` as methods available with `this.db.query/transaction`. This has the advantage of not requiring a `database.js` import wherever DB interaction is needed. The tradeoff is the need for a greater understanding of the value of *this* in terms of local value and propagation.  See <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/this> for details but in short in order for the instance value of *this* to be propagated *named functions* (not arrow/anonymous) are a requirement, with instance *this*  supplied to child functions with the use of `call()/apply()`.
+The Postgres plugin binds the PG pool to `db.query` and `db.transaction`, then decorates the Fastify instance with the result. Route handlers access `this.db` directly — no import needed.
 
-e.g.
+For `this` to resolve to the Fastify instance, **route handlers must be named `async function` declarations** — arrow functions do not bind `this`. When passing `this` to a helper, use `.call(this, args)`:
 
-```JS
-// routes/users/postLogin.js
-const authenticate = require(CWD('util/authenticate'));
+```ts
+// src/routes/auth/post-login/index.ts
+async function postLogin(this: FastifyInstance, request: FastifyRequest, reply: FastifyReply) {
+  const user = await this.db.query<IGetUserResult>(getUserQuery, { email }, 'one');
 
-async function postLogin(request, reply) {
-  const { email, password, level = 0 } = request.body;
-
-  try {
-    ...
-
-    // Calls function to authenticate the user. As this is a route handler local this contains the Fastify instance. Use of .call(this, args) sets the value of the called function this to that of the calling this, i.e. containing the decorated instance
-    const user = await authenticate.call(this, { email, password, level });
-
-    const customers = await this.db.query('routes/users/postLogin/getUserCustomers', { userId: user.id });
-    const groups = await this.db.query('routes/users/postLogin/getUserGroups', { userId: user.id });
-
-    ...
-  }
+  // Pass the Fastify instance through to a helper with .call(this, ...)
+  await someHelper.call(this, user.id);
 }
-
-module.exports = postLogin;
 ```
 
-```JS
-// util/authenticate.js
-async function authenticate({ email, password, level }) {
-  ...
-
-  // the value of this in this function is that of the calling function as .call(this, args) was used, otherwise it would be global this or {}
-  const user = await this.db.query('util/authenticate/getUser', { email: email.toLowerCase() }, 'one');
-
-  ...
-};
-
-module.exports = authenticate;
-
+```ts
+// src/lib/some-helper.ts
+async function someHelper(this: FastifyInstance, userId: number) {
+  // this.db is available here because the caller used .call(this, ...)
+  const rows = await this.db.query(someQuery, { userId });
+}
 ```

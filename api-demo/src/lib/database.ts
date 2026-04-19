@@ -5,9 +5,7 @@ import {
   ImaTeapotError,
 } from 'http-errors-enhanced';
 
-import {
-  pgPatch,
-} from './postgres-named.ts';
+import { pgPatch } from './postgres-named.ts';
 import { createLogger } from '#lib/logger';
 
 const logger = createLogger();
@@ -17,38 +15,58 @@ import type {
   PoolClient,
 } from 'pg';
 import type {
-  QueryOutputFormat,
-  QueryResult,
   QueryRow,
   SqlParams,
   TransactionInstruction,
+  QueryOutputFormat,
+  QueryResult,
+  TransactionResult,
 } from '../types/database.ts';
 
-type PatchedPgClient = PoolClient & {
+type PatchedPgClient = Omit<PoolClient, 'query'> & {
   query: (queryText: string, values?: SqlParams) => Promise<{
     rowCount: number | null;
     rows: QueryRow[];
   }>;
 };
 
-type FlattenedInstruction = {
+type TransactionResults = Record<string, QueryRow[][]>;
+
+interface FlattenedInstruction {
   file: string;
   params: SqlParams;
   query: string;
-};
+}
 
-type TransactionResults = Record<string, QueryRow[][]>;
-
-type KnownError = {
+interface KnownError {
   code?: string;
   message?: string;
   name?: string;
   path?: string;
   sqlFileName?: string;
-};
+}
 
 const wordsToSearch = ['INSERT', 'UPDATE', 'DELETE'];
 const regexPattern = wordsToSearch.map((word) => `\\b${word}\\b`).join('|');
+const dmlRegex = new RegExp(regexPattern, 'i');
+
+async function getBlob(file: string): Promise<string> {
+  const filePath = file.replace(/\.[^/.]+$/, '');
+  const qualifiedFile = `${filePath}.sql`;
+
+  const blob = await fs.readFile(qualifiedFile, 'utf-8');
+
+  return blob;
+}
+
+async function pgConnect(this: Pool): Promise<PatchedPgClient> {
+  const client = await this.connect();
+
+  // Patch the client with pgPatch for a named-parameter SQL interface. This allows for variable interpolation into SQL files. See src/lib/postgres-named.ts for implementation details.
+  pgPatch(client);
+
+  return client as PatchedPgClient;
+}
 
 function getErrorDetails(err: unknown): Required<Pick<KnownError, 'message' | 'name'>> & KnownError {
   if (err instanceof Error) {
@@ -73,37 +91,7 @@ function getErrorDetails(err: unknown): Required<Pick<KnownError, 'message' | 'n
     message: String(err),
     name: 'Error',
   };
-};
-
-async function getBlob(file: string): Promise<string> {
-  const filePath = file.replace(/\.[^/.]+$/, '');
-
-  const qualifiedFile = `${filePath}.sql`;
-
-  const blob = await fs.readFile(qualifiedFile, 'utf-8');
-
-  return blob;
-};
-
-/* async function templateBlob(file: string, params: SqlParams): Promise<string> {
-  const blob = await getBlob(file);
-
-  console.log(blob);
-
-  const templatedBlob = _.template(blob)(params);
-
-  return templatedBlob;
-}; */
-
-async function pgConnect(this: Pool): Promise<PatchedPgClient> {
-  const client = await this.connect();
-
-  // Patch the client with pgPatch for a named-parameter SQL interface.
-  // See src/lib/postgres-named.ts for implementation details.
-  pgPatch(client);
-
-  return client as PatchedPgClient;
-};
+}
 
 function errorsToHandle(err: unknown, code: string | undefined, file: string | undefined, message: string): never {
   let error;
@@ -187,7 +175,7 @@ function errorsToHandle(err: unknown, code: string | undefined, file: string | u
   }
 
   throw error;
-};
+}
 
 /*
    ██████╗ ██╗   ██╗███████╗██████╗ ██╗   ██╗
@@ -210,22 +198,17 @@ async function query<
   let pgClient: PatchedPgClient | undefined;
 
   try {
-    const templatedBlob = await getBlob(file);
-    // const templatedBlob = await templateBlob(file, params);
+    const blob = await getBlob(file);
 
-    const testRegex = new RegExp(regexPattern, 'i');
-
-    if (testRegex.test(templatedBlob)) throw new InternalServerError('INSERT|UPDATE|DELETE queries should use db.transaction');
+    if (dmlRegex.test(blob)) throw new InternalServerError('INSERT|UPDATE|DELETE queries should use db.transaction');
 
     pgClient = await pgConnect.call(this);
 
-    const result = await pgClient.query(templatedBlob, params);
-
+    const result = await pgClient.query(blob, params);
     const { rowCount } = result;
-    const resolvedOutputFormat = (outputFormat ?? 'collection') as QueryOutputFormat;
 
     if (rowCount === 0) return null as QueryResult<F, TRow>;
-    if (resolvedOutputFormat === 'one') return ((result.rows[0] as TRow | undefined) ?? null) as QueryResult<F, TRow>;
+    if (outputFormat === 'one') return ((result.rows[0] as TRow | undefined) ?? null) as QueryResult<F, TRow>;
 
     return result.rows as QueryResult<F, TRow>;
   }
@@ -283,17 +266,14 @@ function forgeVALUES(numParams: number) {
   };
 
   return func;
-};
+}
 
 async function flattenInstruction(files: string[], paramsGroup: SqlParams[]): Promise<FlattenedInstruction[]> {
   // both files and paramGroup are arrays, guaranteed by the caller!
   const results: FlattenedInstruction[] = [];
 
-  // we want to execute serial loops of async await - the linter hates it
-  for await (const file of files) {
-    const filename = `${file}.sql`;
-
-    const blob = await getBlob(filename);
+  for (const file of files) {
+    const blob = await getBlob(file);
 
     if (/<%= VALUES\(.*\) ?%>/.test(blob)) {
       // blob contains a underscore call to VALUES function. This implies we're doing a bulk INSERT or UPDATE.
@@ -313,16 +293,16 @@ async function flattenInstruction(files: string[], paramsGroup: SqlParams[]): Pr
         results.push({
           file,
           params,
-          query: blob, // _.template(blob)(params),
+          query: blob,
         });
       }
     }
   }
 
   return results;
-};
+}
 
-async function transaction(this: Pool, rawInstructions: TransactionInstruction | TransactionInstruction[], dryRun = false) {
+async function transaction(this: Pool, rawInstructions: TransactionInstruction | TransactionInstruction[], dryRun = false): Promise<TransactionResult> {
   let pgClient: PatchedPgClient | undefined;
 
   try {
@@ -342,9 +322,9 @@ async function transaction(this: Pool, rawInstructions: TransactionInstruction |
     const client = pgClient;
 
     // next
-    let todos: FlattenedInstruction[] = [];
+    const todos: FlattenedInstruction[] = [];
 
-    for await (const instruction of instructions) {
+    for (const instruction of instructions) {
       let { files, params } = instruction;
 
       // just as the instructions argument comment above ^... the files & params arrays may
@@ -362,7 +342,7 @@ async function transaction(this: Pool, rawInstructions: TransactionInstruction |
 
       const flatInstructions = await flattenInstruction(files, params);
 
-      todos = todos.concat(flatInstructions);
+      todos.push(...flatInstructions);
     }
 
     // define (but don't run!) the rollback function to possibly be used later.
@@ -397,7 +377,7 @@ async function transaction(this: Pool, rawInstructions: TransactionInstruction |
     const results: TransactionResults = {};
 
     // eachofseries will ensure the todos are done in order but also give us access to the file key.
-    for await (const todo of todos) {
+    for (const todo of todos) {
       const { file: fileName, query, params } = todo;
 
       if (!results[fileName]) results[fileName] = [];
@@ -437,9 +417,7 @@ async function transaction(this: Pool, rawInstructions: TransactionInstruction |
 
     const { message } = errorDetails;
     const sqlFileName = errorDetails.sqlFileName || errorDetails.path;
-    const handledError = errorsToHandle(err, code, sqlFileName, message);
-
-    throw handledError;
+    throw errorsToHandle(err, code, sqlFileName, message);
   }
   finally {
     if (pgClient) pgClient.release();
