@@ -78,18 +78,13 @@ async function postRefresh(this: FastifyInstance, request: FastifyRequest, reply
     token_refresh_hash: tokenRefreshHash,
   } = user;
 
-  const [
-    validRefreshToken,
-    newTokenAccess,
-    newTokenRefresh,
-  ] = await Promise.all([
-    bcryptCompare(tokenRefresh, tokenRefreshHash),
-    generateJwt(this, userId, userEmail, accessTokenJwt),
-    generateJwt(this, userId, userEmail, refreshTokenJwt),
-  ]);
-
   // compare tokenRefreshHash to incoming token - if not the same throw
+  const validRefreshToken = await bcryptCompare(tokenRefresh, tokenRefreshHash);
   if (!validRefreshToken) throw new UnauthorizedError('Authentication failed');
+
+  // generate new tokens
+  const newTokenAccess = generateJwt(this, userId, userEmail, accessTokenJwt);
+  const newTokenRefresh = generateJwt(this, userId, userEmail, refreshTokenJwt);
 
   // create and persist a fresh refresh token
   const newTokenRefreshHash = await bcryptHash(newTokenRefresh);

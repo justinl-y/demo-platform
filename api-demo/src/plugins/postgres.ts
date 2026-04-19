@@ -42,7 +42,7 @@ function postgresPlugin(fastify: FastifyInstance, options: FastifyPluginOptions)
   // bind configured pg pool to query and transaction functions as partial application
   const boundMethods = {
     query: query.bind(pool) as FastifyInstance['db']['query'],
-    transaction: transaction.bind(pool) as FastifyInstance['db']['transaction'],
+    transaction: transaction.bind(pool),
   };
 
   // decorate the fastify instance with a db object exposing these bound methods on the instance

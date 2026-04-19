@@ -30,10 +30,10 @@ interface DatabaseDecorator {
     ): Promise<QueryResult<'collection', TRow>>;
   };
 
-  transaction: <TResult extends TransactionResult = TransactionResult>(
+  transaction: (
     rawInstructions: TransactionInstruction | TransactionInstruction[],
     dryRun?: boolean,
-  ) => Promise<TResult>;
+  ) => Promise<TransactionResult>;
 }
 
 export type {

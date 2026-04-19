@@ -302,7 +302,7 @@ async function flattenInstruction(files: string[], paramsGroup: SqlParams[]): Pr
   return results;
 }
 
-async function transaction<TResult extends TransactionResult = TransactionResult>(this: Pool, rawInstructions: TransactionInstruction | TransactionInstruction[], dryRun = false): Promise<TResult> {
+async function transaction(this: Pool, rawInstructions: TransactionInstruction | TransactionInstruction[], dryRun = false): Promise<TransactionResult> {
   let pgClient: PatchedPgClient | undefined;
 
   try {
@@ -406,7 +406,7 @@ async function transaction<TResult extends TransactionResult = TransactionResult
     if (dryRun) await pgRollbackTransaction();
     else await pgTransaction('COMMIT');
 
-    return flatResults as unknown as TResult;
+    return flatResults;
   }
   catch (err) {
     const errorDetails = getErrorDetails(err);
