@@ -8,6 +8,7 @@ import {
 
 import {
   bcryptCompare,
+  bcryptHash,
   cookieOptions,
   generateJwt,
 } from '#lib/authentication';
@@ -30,6 +31,8 @@ import type {
 } from './types/get-user-with-refresh-token.typed.queries.ts';
 
 const relPath = import.meta.dirname;
+const getUserByTokenQuery = cwd('get-user-with-refresh-token', relPath);
+const setUserTokenQuery = cwd('set-user-token', relPath);
 
 async function postRefresh(this: FastifyInstance, request: FastifyRequest, reply: FastifyReply) {
   const {
@@ -38,6 +41,7 @@ async function postRefresh(this: FastifyInstance, request: FastifyRequest, reply
     accessTokenJwt,
     refreshTokenCookie,
     refreshTokenJwt,
+    refreshTokenCookieMaxAge,
   } = Config.authConfig();
 
   const {
@@ -67,7 +71,7 @@ async function postRefresh(this: FastifyInstance, request: FastifyRequest, reply
   if (tokenType !== refreshTokenJwt) throw new UnauthorizedError('Incorrect authorization token type');
 
   // get hashed refresh token if existing - if not throw
-  const user = await this.db.query<IAuthPostRefreshGetUserWithRefreshTokenResult>(cwd('get-user-with-refresh-token', relPath), { userId }, 'one');
+  const user = await this.db.query<IAuthPostRefreshGetUserWithRefreshTokenResult>(getUserByTokenQuery, { userId }, 'one');
   if (!user) throw new UnauthorizedError('Authentication failed');
 
   const {
@@ -85,8 +89,22 @@ async function postRefresh(this: FastifyInstance, request: FastifyRequest, reply
   // compare tokenRefreshHash to incoming token - if not the same throw
   if (!validRefreshToken) throw new UnauthorizedError('Authentication failed');
 
+  // create and persist a fresh refresh token
+  const hashedTokenRefresh = await bcryptHash(tokenRefresh);
+
+  // save hashedTokenRefresh to db
+  const statements = [
+    {
+      files: [setUserTokenQuery],
+      params: { hashedTokenRefresh, userId },
+    },
+  ];
+
+  await this.db.transaction(statements);
+
   // issue a new access token cookie
   reply.setCookie(accessTokenCookie, tokenAccess, { ...cookieOptions, maxAge: accessTokenCookieMaxAge });
+  reply.setCookie(refreshTokenCookie, tokenRefresh, { ...cookieOptions, maxAge: refreshTokenCookieMaxAge });
 
   reply
     .code(204)

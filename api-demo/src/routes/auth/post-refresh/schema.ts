@@ -4,8 +4,8 @@ import {
 
 const route = {
   tags: ['auth'],
-  summary: 'User refresh access token',
-  description: 'Refreshes the access token cookie using the refresh token cookie',
+  summary: 'User refresh tokens',
+  description: 'Refreshes the access token and refresh tokens and issues new cookies using the existing refresh token cookie',
 };
 
 const response = {
@@ -14,8 +14,9 @@ const response = {
     description: 'Access token cookie refreshed',
     headers: {
       'set-cookie': {
-        type: 'string',
-        description: 'Sets access_token as an HttpOnly cookie',
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Sets new access_token and refresh_tokens as HttpOnly cookies',
       },
     },
   },

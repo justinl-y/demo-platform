@@ -25,6 +25,8 @@ import type {
 } from './types/get-user.typed.queries.ts';
 
 const relPath = import.meta.dirname;
+const getUserQuery = cwd('get-user', relPath);
+const setUserTokenQuery = cwd('set-user-token', relPath);
 
 type Request = {
   body: {
@@ -42,7 +44,7 @@ async function postLogin(this: FastifyInstance, request: FastifyRequest, reply: 
   } = request as Request;
 
   // get email + hashed password from db - if nothing throw
-  const user = await this.db.query<IAuthPostLoginGetUserResult>(cwd('get-user', relPath), { email: userEmail }, 'one');
+  const user = await this.db.query<IAuthPostLoginGetUserResult>(getUserQuery, { email: userEmail }, 'one');
   if (!user) throw new UnauthorizedError('Authentication failed');
 
   const {
@@ -79,14 +81,17 @@ async function postLogin(this: FastifyInstance, request: FastifyRequest, reply: 
   // save hashedTokenRefresh to db and set last_login to now
   const statements = [
     {
-      files: [
-        cwd('set-user-token', relPath),
-      ],
+      files: [setUserTokenQuery],
       params: { hashedTokenRefresh, userId },
     },
   ];
 
   await this.db.transaction(statements);
+
+  /* An FYI for later
+    const [user] = result[getUserQuery] as IAuthPostLoginGetUserResult[];
+    const [token] = result[setUserTokenQuery] as ISetUserTokenResult[];
+  */
 
   reply.setCookie(accessTokenCookie, tokenAccess, { ...cookieOptions, maxAge: accessTokenCookieMaxAge });
   reply.setCookie(refreshTokenCookie, tokenRefresh, { ...cookieOptions, maxAge: refreshTokenCookieMaxAge });

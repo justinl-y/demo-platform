@@ -1,21 +1,21 @@
-export type SqlParams = Record<string, unknown>;
+type QueryRow = Record<string, unknown>;
 
-export type QueryRow = Record<string, unknown>;
+type SqlParams = Record<string, unknown>;
 
-export type QueryOutputFormat = 'collection' | 'one';
+interface TransactionInstruction {
+  files: string | string[];
+  params: SqlParams | SqlParams[];
+}
 
-export type QueryResult<F extends QueryOutputFormat, TRow extends object> = F extends 'one'
+type QueryOutputFormat = 'collection' | 'one';
+
+type QueryResult<F extends QueryOutputFormat, TRow extends object> = F extends 'one'
   ? TRow | null
   : TRow[] | null;
 
-export type TransactionInstruction = {
-  files: string | string[];
-  params: SqlParams | SqlParams[];
-};
+type TransactionResult = Record<string, QueryRow[]>;
 
-export type TransactionResult = Record<string, QueryRow[]>;
-
-export type DatabaseDecorator = {
+interface DatabaseDecorator {
   query: {
     <TRow extends object = QueryRow>(
       file: string,
@@ -30,8 +30,18 @@ export type DatabaseDecorator = {
     ): Promise<QueryResult<'collection', TRow>>;
   };
 
-  transaction: (
+  transaction: <TResult extends TransactionResult = TransactionResult>(
     rawInstructions: TransactionInstruction | TransactionInstruction[],
     dryRun?: boolean,
-  ) => Promise<TransactionResult>;
+  ) => Promise<TResult>;
+}
+
+export type {
+  QueryRow,
+  SqlParams,
+  TransactionInstruction,
+  QueryOutputFormat,
+  QueryResult,
+  TransactionResult,
+  DatabaseDecorator,
 };
