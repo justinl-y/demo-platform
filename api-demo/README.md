@@ -40,7 +40,7 @@ flowchart TB
         E -->|1 - Initiate Test Run| F[TEST Container]
         E -->|User HTTP Requests - localhost:6663| H[API Container]
 
-        F -->|2 -Create and Seeds DB| G[Local Test DB Container]
+        F -->|2 -Create and Seed the DB| G[Local Test DB Container]
         F -->|3 - Execute Tests| H
         H -->|Reads/Writes| G
     end
