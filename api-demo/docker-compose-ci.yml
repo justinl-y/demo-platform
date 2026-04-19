@@ -42,8 +42,10 @@ services:
       - '6663:8000'
     tty: true
     volumes:
-      - .:/srv/api
-      - node-modules:/srv/api/node_modules/
+      - ./src:/srv/api/src
+      - ./pm2:/srv/api/pm2
+      - ./package.json:/srv/api/package.json
+      - ./tsconfig.json:/srv/api/tsconfig.json
     healthcheck:
       test: ["CMD-SHELL", "node -e \"require('net').createConnection({host:'127.0.0.1', port:8000}).on('connect',()=>process.exit(0)).on('error',()=>process.exit(1));\""]
       interval: 2s
@@ -67,12 +69,7 @@ services:
     tty: true
     volumes:
       - ./test/container-test:/usr/app
-      - test-node-modules:/usr/app/node_modules/
 
 secrets:
   npm_token:
     environment: NPM_TOKEN
-
-volumes:
-  node-modules:
-  test-node-modules:

@@ -33,9 +33,9 @@ creds=$(aws configure export-credentials --profile "${PROFILE}" --format env) ||
   exit 1
 }
 
-AWS_ACCESS_KEY_ID=$(echo "$creds" | grep AWS_ACCESS_KEY_ID | cut -d= -f2)
-AWS_SECRET_ACCESS_KEY=$(echo "$creds" | grep AWS_SECRET_ACCESS_KEY | cut -d= -f2)
-AWS_SESSION_TOKEN=$(echo "$creds" | grep AWS_SESSION_TOKEN | cut -d= -f2 || echo "")
+AWS_ACCESS_KEY_ID=$(echo "$creds" | grep AWS_ACCESS_KEY_ID | cut -d= -f2-)
+AWS_SECRET_ACCESS_KEY=$(echo "$creds" | grep AWS_SECRET_ACCESS_KEY | cut -d= -f2-)
+AWS_SESSION_TOKEN=$(echo "$creds" | grep AWS_SESSION_TOKEN | cut -d= -f2- || echo "")
 
 : "${AWS_ACCESS_KEY_ID:?Missing AWS_ACCESS_KEY_ID from SSO profile}"
 : "${AWS_SECRET_ACCESS_KEY:?Missing AWS_SECRET_ACCESS_KEY from SSO profile}"

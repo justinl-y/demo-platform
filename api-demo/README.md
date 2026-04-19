@@ -132,7 +132,7 @@ Named parameters (e.g. `$userId`) in SQL files are transparently interpolated in
 
 Acquires a connection from the PG pool, reads the SQL file, substitutes named parameters, runs the query, and returns the result. DML keywords (`INSERT`, `UPDATE`, `DELETE`) are **not** permitted in query files — use `db.transaction` instead.
 
-- `file` — absolute path to a `.sql` file (without extension). Use the `cwd` utility to build the path relative to the route directory.
+- `file` — absolute path to the SQL file **without** the `.sql` extension. The library appends `.sql` internally. Use the `cwd` utility to build the path relative to the route directory.
 - `params` — `Record<string, unknown>` of named parameters to substitute into the SQL.
 - `outputFormat` — `'collection'` (default) returns `TRow[] | null`; `'one'` returns `TRow | null`.
 - `TRow` — optional generic for the row shape. Use a pgtyped-generated type for compile-time safety.

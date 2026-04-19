@@ -16,7 +16,7 @@ const response = {
       'set-cookie': {
         type: 'array',
         items: { type: 'string' },
-        description: 'Sets new access_token and refresh_tokens as HttpOnly cookies',
+        description: 'Sets new access_token and refresh_token as HttpOnly cookies',
       },
     },
   },

@@ -80,31 +80,33 @@ async function postRefresh(this: FastifyInstance, request: FastifyRequest, reply
 
   const [
     validRefreshToken,
-    tokenAccess,
+    newTokenAccess,
+    newTokenRefresh,
   ] = await Promise.all([
     bcryptCompare(tokenRefresh, tokenRefreshHash),
     generateJwt(this, userId, userEmail, accessTokenJwt),
+    generateJwt(this, userId, userEmail, refreshTokenJwt),
   ]);
 
   // compare tokenRefreshHash to incoming token - if not the same throw
   if (!validRefreshToken) throw new UnauthorizedError('Authentication failed');
 
   // create and persist a fresh refresh token
-  const hashedTokenRefresh = await bcryptHash(tokenRefresh);
+  const newTokenRefreshHash = await bcryptHash(newTokenRefresh);
 
-  // save hashedTokenRefresh to db
+  // save new hashedTokenRefresh to db
   const statements = [
     {
       files: [setUserTokenQuery],
-      params: { hashedTokenRefresh, userId },
+      params: { newTokenRefreshHash, userId },
     },
   ];
 
   await this.db.transaction(statements);
 
   // issue a new access token cookie
-  reply.setCookie(accessTokenCookie, tokenAccess, { ...cookieOptions, maxAge: accessTokenCookieMaxAge });
-  reply.setCookie(refreshTokenCookie, tokenRefresh, { ...cookieOptions, maxAge: refreshTokenCookieMaxAge });
+  reply.setCookie(accessTokenCookie, newTokenAccess, { ...cookieOptions, maxAge: accessTokenCookieMaxAge });
+  reply.setCookie(refreshTokenCookie, newTokenRefresh, { ...cookieOptions, maxAge: refreshTokenCookieMaxAge });
 
   reply
     .code(204)

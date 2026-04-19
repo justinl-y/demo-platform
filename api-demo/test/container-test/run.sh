@@ -1,8 +1,8 @@
 #!/bin/bash
 
-set -e
+set -euo pipefail
 
-[[ -z "${TEST_CASE}" ]] && testfile="" || testfile=`printf "%04.0f" ${TEST_CASE}`
+[[ -z "${TEST_CASE}" ]] && testfile="" || testfile=$(printf "%04.0f" "${TEST_CASE}")
 
 psql -v ON_ERROR_STOP=1 -h db -U "$PGUSER" -d test_template <<-EOSQL
   SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '$PGDATABASE';
@@ -10,17 +10,13 @@ psql -v ON_ERROR_STOP=1 -h db -U "$PGUSER" -d test_template <<-EOSQL
   CREATE DATABASE $PGDATABASE TEMPLATE test_template;
 EOSQL
 
-for f in refresh/*;
-do
-  echo $f
-  if [[ $f == *.sql ]]
-  then
+for f in refresh/*; do
+  echo "$f"
+  if [[ "$f" == *.sql ]]; then
     PGOPTIONS='--client-min-messages=warning' \
-    PGPASSWORD=$PGPASSWORD \
-    psql -d $PGDATABASE -U $PGUSER -h db -f "$f"
-  elif [[ $f == *.js ]]
-  then
-    nodejs $f
+    psql -d "$PGDATABASE" -U "$PGUSER" -h db -f "$f"
+  elif [[ "$f" == *.js ]]; then
+    node "$f"
   fi
 done
 

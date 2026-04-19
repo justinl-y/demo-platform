@@ -20,6 +20,7 @@ import type {
   TransactionInstruction,
   QueryOutputFormat,
   QueryResult,
+  TransactionResult,
 } from '../types/database.ts';
 
 type PatchedPgClient = Omit<PoolClient, 'query'> & {
@@ -301,7 +302,7 @@ async function flattenInstruction(files: string[], paramsGroup: SqlParams[]): Pr
   return results;
 }
 
-async function transaction<TResult extends TransactionResults = TransactionResults>(this: Pool, rawInstructions: TransactionInstruction | TransactionInstruction[], dryRun = false): Promise<TResult> {
+async function transaction<TResult extends TransactionResult = TransactionResult>(this: Pool, rawInstructions: TransactionInstruction | TransactionInstruction[], dryRun = false): Promise<TResult> {
   let pgClient: PatchedPgClient | undefined;
 
   try {

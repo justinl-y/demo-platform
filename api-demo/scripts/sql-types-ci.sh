@@ -13,9 +13,7 @@ cleanup() {
 trap cleanup EXIT
 
 # Check if container is already running
-if "${compose_cmd[@]}" ps db 2>/dev/null | grep -q "Up"; then
-  :
-else
+if ! "${compose_cmd[@]}" ps db 2>/dev/null | grep -q "Up"; then
   STARTED_CONTAINER="true"
   "${compose_cmd[@]}" up -d --wait db
 fi
