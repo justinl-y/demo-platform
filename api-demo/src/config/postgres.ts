@@ -23,9 +23,9 @@ function postgresConfig() {
           ca: secretValues.PG_SSL_CERT,
           rejectUnauthorized: true,
         },
-    min: 2,
+    min: apiEnv === 'TEST' ? 0 : 2,
     max: maxPoolSize,
-    idleTimeoutMillis: 30000,
+    idleTimeoutMillis: apiEnv === 'TEST' ? 1000 : 30000,
     connectionTimeoutMillis: 3000,
   };
 }

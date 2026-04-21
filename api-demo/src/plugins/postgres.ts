@@ -47,6 +47,8 @@ function postgresPlugin(fastify: FastifyInstance, options: FastifyPluginOptions)
 
   // decorate the fastify instance with a db object exposing these bound methods on the instance
   fastify.decorate('db', boundMethods);
+
+  fastify.addHook('onClose', () => pool.end());
 }
 
 export default fp(postgresPlugin);

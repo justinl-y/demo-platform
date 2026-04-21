@@ -28,7 +28,7 @@ pool.on('error', (err, client) => {
 const query = async <TRow = Record<string, unknown>>(
   sql: string,
   params?: readonly unknown[],
-): Promise<TRow[] | undefined> => {
+): Promise<TRow[]> => {
   const client = await pool.connect();
 
   try {
@@ -37,10 +37,6 @@ const query = async <TRow = Record<string, unknown>>(
       : await client.query(sql, [...params]);
 
     return result.rows as TRow[];
-  }
-  catch (err) {
-    console.error(err);
-    return undefined;
   }
   finally {
     client.release();

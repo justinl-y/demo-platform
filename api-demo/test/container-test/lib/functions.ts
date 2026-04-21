@@ -9,6 +9,13 @@ const getFileNumber = (relativePath: string) => {
   return fileNumber;
 };
 
+const setCookies = (headers: Record<string, string>) => {
+  const raw = headers['set-cookie'] as string[] | string | undefined;
+
+  return Array.isArray(raw) ? raw : (raw ? [raw] : []);
+};
+
 export {
   getFileNumber,
+  setCookies,
 };
