@@ -21,7 +21,7 @@ import type { RequestBody } from '../types/request-types.ts';
 const fileNumber = getFileNumber(import.meta.url);
 
 describe(`${fileNumber} - Auth`, () => {
-  describe('POST /login', async () => {
+  describe('POST /login', () => {
     const getResponse = (reqBody: any) => noAuthAPI.post('/login', reqBody);
 
     const validRequestBody = {
@@ -70,7 +70,7 @@ describe(`${fileNumber} - Auth`, () => {
         expect(res.body.message).toBe(`body/password must be string`);
       });
 
-      test('Incorrect body "email" returns 400', async () => {
+      test('Incorrect body "email" returns 401', async () => {
         const reqBody = _.cloneDeep(validRequestBody);
         reqBody.email = 'wrong-user@email.com';
 
@@ -80,7 +80,7 @@ describe(`${fileNumber} - Auth`, () => {
         expect(res.body.message).toBe('Authentication failed');
       });
 
-      test('Incorrect body "password" returns 400', async () => {
+      test('Incorrect body "password" returns 401', async () => {
         const reqBody = _.cloneDeep(validRequestBody);
         reqBody.password = 'wrong-password';
 
@@ -91,7 +91,7 @@ describe(`${fileNumber} - Auth`, () => {
       });
     });
 
-    describe('Request Success', async () => {
+    describe('Request Success', () => {
       interface DbUserTokenHash {
         token_refresh_hash: string;
         last_login: Date;
@@ -185,7 +185,7 @@ describe(`${fileNumber} - Auth`, () => {
     });
   });
 
-  describe('POST /refresh', async () => {
+  describe('POST /refresh', () => {
     const userEmail = 'user.super@email.com';
 
     const getResponse = (cookieString?: string) =>
@@ -241,7 +241,7 @@ describe(`${fileNumber} - Auth`, () => {
       });
     });
 
-    describe('Request Success', async () => {
+    describe('Request Success', () => {
       interface DbUserRefreshHash {
         token_refresh_hash: string;
       }
@@ -329,8 +329,8 @@ describe(`${fileNumber} - Auth`, () => {
       });
     });
   });
-  describe.skip('PUT /logout', async () => {});
-  // describe.skip('PUT /passwordRecovery', async () => {});
-  describe.skip('PUT /passwordReset', async () => {});
-  describe.skip('POST /invite', async () => {});
+  describe.skip('PUT /logout', () => {});
+  // describe.skip('PUT /passwordRecovery', () => {});
+  describe.skip('PUT /passwordReset', () => {});
+  describe.skip('POST /invite', () => {});
 });

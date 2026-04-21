@@ -1,9 +1,10 @@
 import { fileURLToPath } from 'url';
 import path from 'path';
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 
 type TokenType = 'access' | 'refresh';
 
+// Must match AUTH_SECRET in src/lib/secrets-manager.ts (TEST env initializer)
 const TEST_JWT_SECRET = '7EK4IwwNr0bPre30jAzLztWfQiIwhP8m';
 
 const TOKEN_EXPIRY_SECONDS = {
