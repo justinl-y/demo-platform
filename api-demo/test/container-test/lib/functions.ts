@@ -5,6 +5,8 @@ import { faker } from '@faker-js/faker/locale/en';
 
 import { query } from './db.ts';
 
+import type Supertest from 'supertest';
+
 type TokenType = 'access' | 'refresh';
 
 // Must match AUTH_SECRET in src/lib/secrets-manager.ts (TEST env initializer)
@@ -60,8 +62,8 @@ function getFileNumber(relativePath: string) {
   return fileNumber;
 }
 
-function setCookies(headers: Record<string, string>) {
-  const raw = headers['set-cookie'] as string[] | string | undefined;
+function setCookies(headers: Supertest.Response['headers']) {
+  const raw = headers['set-cookie'];
 
   return Array.isArray(raw) ? raw : (raw ? [raw] : []);
 }

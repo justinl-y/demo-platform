@@ -16,6 +16,7 @@ const pool = new Pool({
   port: PG_ENV.PG_PORT,
   user: PG_ENV.PG_USER,
   password: PG_ENV.PG_PASSWORD,
+  allowExitOnIdle: true,
 });
 
 // the pool will emit an error on behalf of any idle clients
