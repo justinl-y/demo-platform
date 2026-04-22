@@ -1,3 +1,1 @@
-export interface RequestBody {
-  [key: string]: string | number;
-}
+export type RequestBody = Partial<Record<string, string | number>>;

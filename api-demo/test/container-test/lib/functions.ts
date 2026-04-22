@@ -24,7 +24,7 @@ function removeSingleQuotes(originalString: string) {
   return originalString.replace(/'/g, '');
 }
 
-async function createRandomUser({ isActive = true }) {
+async function createRandomUser({ isActive = true } = {}) {
   const firstName = removeSingleQuotes(faker.person.firstName());
   const lastName = removeSingleQuotes(faker.person.lastName());
   const email = removeSingleQuotes(faker.internet.email({ firstName, lastName }).toLowerCase());
