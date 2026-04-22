@@ -13,7 +13,6 @@
     "rootDir": ".",
     "types": [
       "node",
-      "vitest/globals"
     ],
   },
   "include": [

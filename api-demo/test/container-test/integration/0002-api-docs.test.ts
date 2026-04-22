@@ -1,35 +1,58 @@
 import {
+  beforeAll,
   describe,
   expect,
   test,
 } from 'vitest';
-import request from 'supertest';
 
-import { BASE_REQUEST } from '../lib/constants.ts';
+import { noAuthAPI } from '../lib/api.ts';
 import { getFileNumber } from '../lib/functions.ts';
+
+import type Supertest from 'supertest';
 
 const fileNumber = getFileNumber(import.meta.url);
 
 describe(`${fileNumber} - API Docs`, () => {
-  test('GET /api-docs returns Swagger UI HTML', async () => {
-    const rep = await request(BASE_REQUEST)
-      .get('/api-docs')
-      .set('Accept', 'text/html');
+  describe('GET /api-docs', () => {
+    const getResponse = () => noAuthAPI.get('/api-docs');
 
-    expect(rep.statusCode).toBe(200);
-    expect(rep.headers['content-type']).toMatch(/text\/html/i);
-    expect(rep.text).toContain('Swagger UI');
+    describe('Request Success', () => {
+      let rep: Supertest.Response;
+
+      beforeAll(async () => {
+        rep = await getResponse();
+      });
+
+      test('returns 200 with Swagger UI HTML', () => {
+        expect(rep.statusCode).toBe(200);
+        expect(rep.headers['content-type']).toMatch(/text\/html/i);
+        expect(rep.text).toContain('Swagger UI');
+      });
+    });
   });
 
-  test('GET /api-docs/json returns OpenAPI specification', async () => {
-    const rep = await request(BASE_REQUEST)
-      .get('/api-docs/json')
-      .set('Accept', 'application/json');
+  describe('GET /api-docs/json', () => {
+    const getResponse = () => noAuthAPI.get('/api-docs/json');
 
-    expect(rep.statusCode).toBe(200);
-    expect(rep.headers['content-type']).toMatch(/application\/json/i);
-    expect(rep.body).toBeTypeOf('object');
-    expect(rep.body).toHaveProperty('openapi');
-    expect(rep.body).toHaveProperty('info.title');
+    describe('Request Success', () => {
+      let rep: Supertest.Response;
+      let responseData: Supertest.Response['body'];
+
+      beforeAll(async () => {
+        rep = await getResponse();
+        ({ body: responseData } = rep);
+      });
+
+      test('Success response returns 200', () => {
+        expect(rep.statusCode).toBe(200);
+      });
+
+      test('Response returns OpenAPI specification', () => {
+        expect(rep.headers['content-type']).toMatch(/application\/json/i);
+        expect(responseData).toBeTypeOf('object');
+        expect(responseData).toHaveProperty('openapi');
+        expect(responseData).toHaveProperty('info.title');
+      });
+    });
   });
 });
