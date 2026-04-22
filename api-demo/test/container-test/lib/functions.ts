@@ -1,6 +1,9 @@
 import { fileURLToPath } from 'url';
 import path from 'path';
 import crypto from 'node:crypto';
+import { faker } from '@faker-js/faker/locale/en';
+
+import { query } from './db.ts';
 
 type TokenType = 'access' | 'refresh';
 
@@ -17,26 +20,53 @@ const TOKEN_COOKIE_NAMES = {
   refresh: 'refresh_token',
 } as const;
 
-const toBase64Url = (input: string | Buffer): string =>
-  Buffer.isBuffer(input)
+function removeSingleQuotes(originalString: string) {
+  return originalString.replace(/'/g, '');
+}
+
+async function createRandomUser({ isActive = true }) {
+  const firstName = removeSingleQuotes(faker.person.firstName());
+  const lastName = removeSingleQuotes(faker.person.lastName());
+  const email = removeSingleQuotes(faker.internet.email({ firstName, lastName }).toLowerCase());
+  const knownAs = removeSingleQuotes(faker.person.firstName());
+
+  const fullName = `${firstName} ${lastName}`;
+
+  const addUserSQL = `SELECT public.add_user(
+      '${email}'
+      ,NULL
+      ,'${fullName}'
+      ,'${knownAs}'
+      ,${isActive}
+    );`
+  ;
+
+  const [{ add_user: userId }] = await query<{ add_user: string }>(addUserSQL);
+
+  return { userId, email };
+}
+
+function toBase64Url(input: string | Buffer): string {
+  return Buffer.isBuffer(input)
     ? input.toString('base64url')
     : Buffer.from(input).toString('base64url');
+}
 
-const getFileNumber = (relativePath: string) => {
+function getFileNumber(relativePath: string) {
   const fileName = path.basename(fileURLToPath(relativePath));
 
   const fileNumber = fileName.split('-')[0];
 
   return fileNumber;
-};
+}
 
-const setCookies = (headers: Record<string, string>) => {
+function setCookies(headers: Record<string, string>) {
   const raw = headers['set-cookie'] as string[] | string | undefined;
 
   return Array.isArray(raw) ? raw : (raw ? [raw] : []);
-};
+}
 
-const generateTestCookie = (tokenType: TokenType, userId: string, userEmail: string): string => {
+function generateTestCookie(tokenType: TokenType, userId: string, userEmail: string): string {
   const header = toBase64Url(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
   const now = Math.floor(Date.now() / 1000);
   const payload = toBase64Url(JSON.stringify({
@@ -52,9 +82,10 @@ const generateTestCookie = (tokenType: TokenType, userId: string, userEmail: str
   );
 
   return `${TOKEN_COOKIE_NAMES[tokenType]}=${signingInput}.${signature}`;
-};
+}
 
 export {
+  createRandomUser,
   generateTestCookie,
   getFileNumber,
   setCookies,

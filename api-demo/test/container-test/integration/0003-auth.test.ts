@@ -10,6 +10,7 @@ import bcrypt from 'bcryptjs';
 import { query } from '../lib/db.ts';
 import { noAuthAPI } from '../lib/api.ts';
 import {
+  createRandomUser,
   generateTestCookie,
   getFileNumber,
   setCookies,
@@ -21,13 +22,21 @@ import type { RequestBody } from '../types/request-types.ts';
 const fileNumber = getFileNumber(import.meta.url);
 
 describe(`${fileNumber} - Auth`, () => {
+  let userId: string;
+  let userEmail: string;
+
+  beforeAll(async () => {
+    ({ userId, email: userEmail } = await createRandomUser({ isActive: true }));
+  });
+
   describe('POST /login', () => {
     const getResponse = (reqBody: any) => noAuthAPI.post('/login', reqBody);
 
-    const validRequestBody = {
-      email: 'user.super@email.com',
-      password: 'user.super@email.com',
-    } as RequestBody;
+    let validRequestBody = {} as RequestBody;
+
+    beforeAll(() => {
+      validRequestBody = { email: userEmail, password: userEmail } as RequestBody;
+    });
 
     describe('Request Failure', () => {
       test('Absent required body "email" returns 400', async () => {
@@ -116,7 +125,7 @@ describe(`${fileNumber} - Auth`, () => {
           WHERE
             u.email = $1;`;
 
-        const [result] = await query<DbUserTokenHash>(getUserTokenHashSql, [validRequestBody.email]);
+        const [result] = await query<DbUserTokenHash>(getUserTokenHashSql, [userEmail]);
 
         ({ token_refresh_hash: tokenRefreshHash, last_login: lastLogin } = result);
       });
@@ -186,8 +195,6 @@ describe(`${fileNumber} - Auth`, () => {
   });
 
   describe('POST /refresh', () => {
-    const userEmail = 'user.super@email.com';
-
     const getResponse = (cookieString?: string) =>
       noAuthAPI.post('/refresh', {}, cookieString ? { Cookie: cookieString } : {});
 
@@ -196,13 +203,6 @@ describe(`${fileNumber} - Auth`, () => {
       let accessTokenValue: string;
 
       beforeAll(async () => {
-        const getUserIdByEmailSql = 'SELECT u.id FROM public.users AS u WHERE u.email = $1';
-
-        const [{ id: userId }] = await query<{ id: string }>(
-          getUserIdByEmailSql,
-          [userEmail],
-        );
-
         refreshTokenCookie = generateTestCookie('refresh', userId, userEmail);
         accessTokenValue = generateTestCookie('access', userId, userEmail).replace('access_token=', '');
 
@@ -251,9 +251,6 @@ describe(`${fileNumber} - Auth`, () => {
       let tokenRefreshHash: string;
 
       beforeAll(async () => {
-        const getUserIdByEmailSql = 'SELECT u.id FROM public.users AS u WHERE u.email = $1';
-        const [{ id: userId }] = await query<{ id: string }>(getUserIdByEmailSql, [userEmail]);
-
         const freshRefreshTokenCookie = generateTestCookie('refresh', userId, userEmail);
         const freshRefreshToken = freshRefreshTokenCookie.replace('refresh_token=', '');
 
@@ -266,8 +263,8 @@ describe(`${fileNumber} - Auth`, () => {
         rep = await getResponse(freshRefreshTokenCookie);
         cookies = setCookies(rep.headers);
 
-        const getUsertokenRefreshHashSql = 'SELECT u.token_refresh_hash FROM public.users AS u WHERE u.email = $1';
-        const [result] = await query<DbUserRefreshHash>(getUsertokenRefreshHashSql, [userEmail]);
+        const getTokenRefreshHashSql = 'SELECT u.token_refresh_hash FROM public.users AS u WHERE u.id = $1';
+        const [result] = await query<DbUserRefreshHash>(getTokenRefreshHashSql, [userId]);
 
         ({ token_refresh_hash: tokenRefreshHash } = result);
       });
