@@ -29,4 +29,24 @@ sleep 4
 # run the test files
 echo "DB Rebuilt - Test run commencing..."
 
-vitest --run ./integration/${testfile}*
+vitest_exit=0
+vitest --run ./integration/${testfile}* || vitest_exit=$?
+
+if [[ "${COVERAGE:-0}" == "1" ]]; then
+  rm -f /coverage/*.json
+
+  curl -sf -o /dev/null -m 5 -X POST http://api:8000/_dev/coverage \
+    && echo "Coverage flushed" \
+    || echo "Coverage flush failed (non-fatal)"
+
+  # --allow-external is required: API source lives outside the test container's cwd (/usr/app)
+  c8 report \
+    --temp-directory /coverage \
+    --allow-external \
+    --include '/srv/api/src/**/*.ts' \
+    --exclude '**/*.typed.*' \
+    --reporter text \
+    || echo "Coverage report failed (non-fatal)"
+fi
+
+exit $vitest_exit

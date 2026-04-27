@@ -45,7 +45,7 @@
     "api-down": "docker compose -p api -f docker-compose-local.yml down -v",
     "ci-build-service": "docker compose -p ci -f docker-compose-ci.yml build",
     "ci-build": "printf \"api test\" | tr ' ' '\n' | xargs -n1 -P2 -I{} npm run ci-build-service {}",
-    "ci-up": "TEST_CASE=${TEST_CASE} docker compose -p ci -f docker-compose-ci.yml up",
+    "ci-up": "bash scripts/ci-up.sh",
     "ci-down": "docker compose -p ci -f docker-compose-ci.yml down -v",
     "lint": "eslint --config eslint.config.ts",
     "lint-fix": "eslint --fix \"**/*.{ts}\"",

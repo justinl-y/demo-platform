@@ -115,6 +115,16 @@ npm run ci-up test
 TEST_CASE=1 npm run ci-up test
 ```
 
+- To run with a V8 coverage report, use the `-c` flag or set `COVERAGE=1`:
+
+```bash
+npm run ci-up -- test -c
+# or
+COVERAGE=1 npm run ci-up test
+```
+
+Coverage is collected via Node.js V8 instrumentation and reported using **c8**, scoped to `src/**/*.ts`. The report is printed to stdout at the end of the test run.
+
 ## 🗄️ Database Library — `src/lib/database.ts`
 
 API-Demo contains a bespoke database interaction library built on top of `node-postgres`. It exposes two methods on a `db` object decorated onto the Fastify instance by the Postgres plugin:

@@ -3,6 +3,7 @@ FROM node:25-alpine
 
 RUN apk add --no-cache \
   bash \
+  curl \
   netcat-openbsd \
   postgresql18-contrib
 
