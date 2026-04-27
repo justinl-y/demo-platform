@@ -71,7 +71,7 @@ async function buildInstance() {
   plugins.forEach((plugin) => instance.register(plugin));
   routes.forEach((route) => instance.register(route));
 
-  if (Config.apiEnv === 'TEST') {
+  if (Config.apiEnv === 'TEST' && process.env.NODE_V8_COVERAGE) {
     const { default: devRoutes } = await import('./routes/dev/index.ts');
     instance.register(devRoutes);
   }
