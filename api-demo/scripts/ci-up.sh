@@ -15,4 +15,5 @@ for arg in "$@"; do
   fi
 done
 
-COVERAGE=$coverage TEST_CASE=${TEST_CASE:-} docker compose -p ci -f docker-compose-ci.yml up "${passthrough[@]}"
+node_v8_coverage=$([[ "$coverage" == "1" ]] && echo "/coverage" || echo "")
+NODE_V8_COVERAGE=$node_v8_coverage COVERAGE=$coverage TEST_CASE=${TEST_CASE:-} docker compose -p ci -f docker-compose-ci.yml up "${passthrough[@]}"

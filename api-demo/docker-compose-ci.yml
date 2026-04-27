@@ -38,7 +38,7 @@ services:
       - AWS_ACCESS_KEY_ID=${API_DEMO_AWS_ACCESS_KEY_ID:-}
       - AWS_SECRET_ACCESS_KEY=${API_DEMO_AWS_SECRET_ACCESS_KEY:-}
       - NODE_ENV=production
-      - NODE_V8_COVERAGE=/coverage
+      - NODE_V8_COVERAGE
     ports:
       - '6663:8000'
     tty: true
