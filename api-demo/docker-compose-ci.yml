@@ -38,6 +38,7 @@ services:
       - AWS_ACCESS_KEY_ID=${API_DEMO_AWS_ACCESS_KEY_ID:-}
       - AWS_SECRET_ACCESS_KEY=${API_DEMO_AWS_SECRET_ACCESS_KEY:-}
       - NODE_ENV=production
+      - NODE_V8_COVERAGE=/coverage
     ports:
       - '6663:8000'
     tty: true
@@ -46,6 +47,7 @@ services:
       - ./pm2:/srv/api/pm2
       - ./package.json:/srv/api/package.json
       - ./tsconfig.json:/srv/api/tsconfig.json
+      - coverage:/coverage
     healthcheck:
       test: ["CMD-SHELL", "node -e \"require('net').createConnection({host:'127.0.0.1', port:8000}).on('connect',()=>process.exit(0)).on('error',()=>process.exit(1));\""]
       interval: 2s
@@ -65,10 +67,16 @@ services:
       - PGUSER=test
       - PGPASSWORD=test
       - TEST_CASE
+      - COVERAGE
     restart: "no"
     tty: true
     volumes:
       - ./test/container-test:/usr/app
+      - ./src:/srv/api/src:ro
+      - coverage:/coverage
+
+volumes:
+  coverage:
 
 secrets:
   npm_token:
