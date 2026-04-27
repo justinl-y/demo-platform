@@ -15,6 +15,7 @@ All commands run from `api-demo/`:
 | `npm run ci-build` | Build CI Docker images (api + test in parallel) |
 | `npm run ci-up api` | Start DB + API containers for testing (localhost:6663) |
 | `npm run ci-up test` | Seed DB and run integration tests |
+| `npm run ci-up -- test -c` | Seed DB, run integration tests, and print V8 coverage report |
 | `npm run lint` | Run ESLint |
 | `npm run lint-fix` | Auto-fix lint issues |
 | `npm run typecheck` | TypeScript type check (no emit) |
@@ -35,6 +36,7 @@ All commands run from `api-demo/`:
 - Terminal 1: `npm run ci-down && npm run ci-build && npm run ci-up api`
 - Terminal 2: `npm run ci-up test`
 - Run a specific test file: `TEST_CASE=<integer-prefix> npm run ci-up test`
+- Run with V8 coverage report: `npm run ci-up -- test -c` (or `COVERAGE=1 npm run ci-up test`)
 
 ## Tech Stack
 

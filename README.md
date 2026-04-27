@@ -73,7 +73,7 @@ flowchart TD
 ### 🧪 Developer Experience
 
 - 🔧 Configurable API environments (local -> remote and test)
-- ✅ Integration testing with **Vitest**
+- ✅ Integration testing with **Vitest** + V8 coverage via **c8**
 - 👁️ Observability: Sentry errors + tracing
 - 🤖 GitHub action CI/CD
 
