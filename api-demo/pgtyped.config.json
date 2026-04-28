@@ -5,7 +5,7 @@
   "transforms": [
     {
       "mode": "sql",
-      "include": "routes/**/types/*.typed.sql",
+      "include": "{routes,repositories}/**/types/*.typed.sql",
       "emitTemplate": "{{dir}}/{{name}}.queries.ts"
     }
   ]

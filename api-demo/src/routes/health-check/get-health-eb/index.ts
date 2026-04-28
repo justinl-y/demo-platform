@@ -1,15 +1,9 @@
-import type {
-  FastifyRequest,
-  FastifyReply,
-} from 'fastify';
+import { checkEb } from '#services/health/health.service';
 
-function getHealthEB(request: FastifyRequest, reply: FastifyReply) {
-  const healthEB = {
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-  };
+import type { FastifyRequest, FastifyReply } from 'fastify';
 
-  reply.send(healthEB);
+function getHealthEB(_request: FastifyRequest, reply: FastifyReply) {
+  reply.send(checkEb());
 }
 
 export default getHealthEB;

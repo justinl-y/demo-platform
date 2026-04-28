@@ -26,7 +26,9 @@ describe(`${fileNumber} - Auth`, () => {
   let userEmail: string;
 
   beforeAll(async () => {
-    ({ userId, email: userEmail } = await createRandomUser({ isActive: true }));
+    ({
+      userId, email: userEmail,
+    } = await createRandomUser({ isActive: true }));
   });
 
   describe('POST /login', () => {
@@ -35,7 +37,10 @@ describe(`${fileNumber} - Auth`, () => {
     let validRequestBody = {} as RequestBody;
 
     beforeAll(() => {
-      validRequestBody = { email: userEmail, password: userEmail } as RequestBody;
+      validRequestBody = {
+        email: userEmail,
+        password: userEmail,
+      } as RequestBody;
     });
 
     describe('Request Failure', () => {
@@ -127,7 +132,9 @@ describe(`${fileNumber} - Auth`, () => {
 
         const [result] = await query<DbUserTokenHash>(getUserTokenHashSql, [userEmail]);
 
-        ({ token_refresh_hash: tokenRefreshHash, last_login: lastLogin } = result);
+        ({
+          token_refresh_hash: tokenRefreshHash, last_login: lastLogin,
+        } = result);
       });
 
       test('Success response returns 200', () => {

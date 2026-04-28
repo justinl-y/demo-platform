@@ -13,7 +13,10 @@ function wrapWithActiveSpan<This, Args extends unknown[], Return>(
   fn: (this: This, ...args: Args) => Return,
 ): (this: This, ...args: Args) => Return {
   const wrapped = function (this: This, ...args: Args): Return {
-    return Sentry.startSpan({ name, op: 'function' }, () => fn.call(this, ...args));
+    return Sentry.startSpan({
+      name,
+      op: 'function',
+    }, () => fn.call(this, ...args));
   };
 
   Object.defineProperty(wrapped, 'name', { value: name });
@@ -33,7 +36,10 @@ function wrapWithInactiveSpan<This, Args extends unknown[], Return>(
   fn: (this: This, ...args: Args) => Return,
 ): (this: This, ...args: Args) => Return {
   const wrapped = function (this: This, ...args: Args): Return {
-    const span = Sentry.startInactiveSpan({ name, op: 'function' });
+    const span = Sentry.startInactiveSpan({
+      name,
+      op: 'function',
+    });
     let result: Return;
 
     try {

@@ -48,9 +48,7 @@ function extractInteractionFields(request: FastifyRequest, reply: FastifyReply):
   const reqBody = request.body;
   const route = request.routeOptions?.url;
   const {
-    raw: {
-      statusMessage: repStatusMessage,
-    },
+    raw: { statusMessage: repStatusMessage },
     statusCode: repStatusCode,
     elapsedTime,
     error: repErrBody,
@@ -84,7 +82,9 @@ function buildInteractionMessage(request: FastifyRequest, reply: FastifyReply): 
 
   if (!fields) return null;
 
-  const { reqRoute, requestLine, userEmail, requestOn, repStatusCode, repStatusMessage, elapsedMs, repErrBody, resErrBodyJson } = fields;
+  const {
+    reqRoute, requestLine, userEmail, requestOn, repStatusCode, repStatusMessage, elapsedMs, repErrBody, resErrBodyJson,
+  } = fields;
 
   const resMessage = `Response: ${repStatusCode} ${repStatusMessage}`.trim();
   const resReturn = repErrBody ? `${resMessage}\nResponse Body: ${resErrBodyJson}` : resMessage;
@@ -104,7 +104,9 @@ function buildInteractionData(request: FastifyRequest, reply: FastifyReply): Int
 
   if (!fields) return null;
 
-  const { reqRoute, requestLine, userEmail, requestOn, repStatusCode, repStatusMessage, elapsedMs, repErrBody, resErrBodyJson } = fields;
+  const {
+    reqRoute, requestLine, userEmail, requestOn, repStatusCode, repStatusMessage, elapsedMs, repErrBody, resErrBodyJson,
+  } = fields;
 
   const data: InteractionData = {
     route: redact(reqRoute),

@@ -1,13 +1,53 @@
 # 🚀 API-Demo
 
-**API-Demo** is a **RESTful web API** that serves as the **primary data service** for a web application.
-It demonstrates modern **full-stack development practices**, including backend architecture, API design, database integration and cloud deployment.
+**API-Demo** is a **web API** that serves as the **primary data service** for a web application.
 
-This project showcases how to build **scalable and maintainable web services** using **Node.js, TypeScript, Fastify, and PostgreSQL**, with automated workflows and a developer-friendly environment.
+It demonstrates modern **back-end development practices**, including **REST and repository API architecture**, database and external services integration and cloud deployment.
+
+This project showcases how to build a **scalable and maintainable back-end web service** using **Docker, Node.js, TypeScript, Fastify and PostgreSQL**, with automated workflows and developer-friendly development environments.
+
+## 🏛️ Architecture
+
+API-Demo uses a three-layer architecture — route handlers, services and repositories — to separate HTTP concerns, business logic and database access.
+
+```mermaid
+flowchart TD
+  Client(["Client"])
+  Routes["Routes<br/>(http layer)"]
+  Services["Services<br/>(business logic)"]
+  Repositories["Repositories<br/>(db access)"]
+  DB[("PostgreSQL")]
+  SEC["Secrets Manager"]
+  SENTRY["Sentry"]
+
+  Client <-->|HTTPS/HTTP| Routes
+  Routes <--> Services
+  Services <--> Repositories
+  Repositories <-->|SQL| DB
+
+  Routes <-.->|startup| SEC
+  Services -.->|errors + traces| SENTRY
+
+  classDef layer fill:#1e3a5f,stroke:#4a90d9,color:#fff
+  classDef ext   fill:#2c2c2c,stroke:#888,color:#fff
+
+  class Routes,Services,Repositories layer
+  class DB,SEC,SENTRY ext
+```
+
+| Layer | Location | Responsibility |
+| --- | --- | --- |
+| **Routes** | `src/routes/<resource>/<action>/index.ts` | Route handlers: Parse request, call service, set cookies, send response |
+| **Services** | `src/services/<resource>/<resource>.service.ts` | Business logic: orchestration, validation, error decisions |
+| **Repository** | `src/repositories/<resource>/<resource>.repository.ts` | DB access only: SQL files, pgtyped types, `db.query` / `db.transaction` |
+
+Services and repositories are plain functions — no Fastify dependency. The `db` object and `jwt` are passed from the handler as parameters.
+
+----
 
 ## 🐳 Dockerized Environments
 
-API-Demo uses Docker containers for hosting development and test environments.
+API-Demo uses Docker containers for hosting production, development and test environments.
 
 It supports:
 
@@ -125,6 +165,8 @@ COVERAGE=1 npm run ci-up test
 
 Coverage is collected via Node.js V8 instrumentation and reported using **c8**, scoped to `src/**/*.ts`. The report is printed to stdout at the end of the test run.
 
+----
+
 ## 🗄️ Database Library — `src/lib/database.ts`
 
 API-Demo contains a bespoke database interaction library built on top of `node-postgres`. It exposes two methods on a `db` object decorated onto the Fastify instance by the Postgres plugin:
@@ -136,13 +178,15 @@ Both methods return promises and work with `async/await`. Each SQL file must con
 
 Named parameters (e.g. `$userId`) in SQL files are transparently interpolated into positional `$1, $2, ...` parameters before being sent to Postgres. Callers always use named parameters.
 
+SQL files and their pgtyped types live in `src/repositories/<resource>/`. Run `npm run sql:types` after adding or editing any `.sql` file to regenerate types.
+
 ----
 
 ### `db.query<TRow>(file, params, outputFormat?)`
 
 Acquires a connection from the PG pool, reads the SQL file, substitutes named parameters, runs the query, and returns the result. DML keywords (`INSERT`, `UPDATE`, `DELETE`) are **not** permitted in query files — use `db.transaction` instead.
 
-- `file` — absolute path to the SQL file **without** the `.sql` extension. The library appends `.sql` internally. Use the `cwd` utility to build the path relative to the route directory.
+- `file` — absolute path to the SQL file **without** the `.sql` extension. The library appends `.sql` internally. Use the `cwd` utility to build the path relative to the repository directory.
 - `params` — `Record<string, unknown>` of named parameters to substitute into the SQL.
 - `outputFormat` — `'collection'` (default) returns `TRow[] | null`; `'one'` returns `TRow | null`.
 - `TRow` — optional generic for the row shape. Use a pgtyped-generated type for compile-time safety.
@@ -152,33 +196,39 @@ Returns `null` when `rowCount` is `0`, regardless of `outputFormat`.
 #### Example — `'collection'` (default)
 
 ```sql
--- src/routes/users/get-users/get-users.sql
+-- src/repositories/users/get-users.sql
 SELECT id, email, full_name FROM public.users WHERE customer_id = $customerId;
 ```
 
 ```ts
+// src/repositories/users/users.repository.ts
 import type { IGetUsersResult } from './types/get-users.typed.queries.ts';
 
 const getUsersQuery = cwd('get-users', import.meta.dirname);
 
-const users = await this.db.query<IGetUsersResult>(getUsersQuery, { customerId: 12345 });
-// users: IGetUsersResult[] | null
+async function getUsersByCustomer(db: DatabaseDecorator, customerId: number) {
+  return db.query<IGetUsersResult>(getUsersQuery, { customerId });
+  // returns IGetUsersResult[] | null
+}
 ```
 
 #### Example — `'one'`
 
 ```sql
--- src/routes/auth/post-login/get-user.sql
+-- src/repositories/auth/get-user.sql
 SELECT id, email, password_hash FROM public.users WHERE email = $email;
 ```
 
 ```ts
+// src/repositories/auth/auth.repository.ts
 import type { IGetUserResult } from './types/get-user.typed.queries.ts';
 
 const getUserQuery = cwd('get-user', import.meta.dirname);
 
-const user = await this.db.query<IGetUserResult>(getUserQuery, { email }, 'one');
-// user: IGetUserResult | null
+async function getUserByEmail(db: DatabaseDecorator, email: string) {
+  return db.query<IGetUserResult>(getUserQuery, { email }, 'one');
+  // returns IGetUserResult | null
+}
 ```
 
 ----
@@ -201,31 +251,36 @@ For convenience, a single instruction can be passed directly instead of wrapping
 Cast each result entry to its pgtyped-generated row type after the call:
 
 ```sql
--- src/routes/customers/remove-users.sql
+-- src/repositories/customers/remove-users.sql
 DELETE FROM public.users WHERE customer_id = $customerId RETURNING id;
 ```
 
 ```sql
--- src/routes/customers/remove-customer.sql
+-- src/repositories/customers/remove-customer.sql
 DELETE FROM public.customers WHERE id = $customerId RETURNING id;
 ```
 
 ```ts
+// src/repositories/customers/customers.repository.ts
 import type { IRemoveUsersResult } from './types/remove-users.typed.queries.ts';
 import type { IRemoveCustomerResult } from './types/remove-customer.typed.queries.ts';
 
 const removeUsersQuery = cwd('remove-users', import.meta.dirname);
 const removeCustomerQuery = cwd('remove-customer', import.meta.dirname);
 
-const result = await this.db.transaction([
-  {
-    files: [removeUsersQuery, removeCustomerQuery],
-    params: { customerId: 12345 },
-  },
-]);
+async function removeCustomer(db: DatabaseDecorator, customerId: number) {
+  const result = await db.transaction([
+    {
+      files: [removeUsersQuery, removeCustomerQuery],
+      params: { customerId },
+    },
+  ]);
 
-const removedUsers = result[removeUsersQuery] as IRemoveUsersResult[];
-const removedCustomer = result[removeCustomerQuery] as IRemoveCustomerResult[];
+  const removedUsers = result[removeUsersQuery] as IRemoveUsersResult[];
+  const removedCustomer = result[removeCustomerQuery] as IRemoveCustomerResult[];
+
+  return { removedUsers, removedCustomer };
+}
 ```
 
 ----
@@ -235,12 +290,12 @@ const removedCustomer = result[removeCustomerQuery] as IRemoveCustomerResult[];
 When `params` is an array, the library executes the SQL once per params object by default. To instead perform a single bulk INSERT/UPDATE, use the `<%= VALUES('col1', 'col2') %>` template syntax in the SQL file:
 
 ```sql
--- src/routes/data/insert-rows.sql
+-- src/repositories/data/insert-rows.sql
 INSERT INTO some_table (x_col, y_col) <%= VALUES('x', 'y') %>
 ```
 
 ```ts
-await this.db.transaction({
+await db.transaction({
   files: insertRowsQuery,
   params: [
     { x: 1, y: 'a' },
@@ -262,24 +317,34 @@ INSERT INTO some_table (x_col, y_col) VALUES ($x_0, $y_0), ($x_1, $y_1), ($x_2, 
 
 ### 🔗 The `this` context and named functions
 
-The Postgres plugin binds the PG pool to `db.query` and `db.transaction`, then decorates the Fastify instance with the result. Route handlers access `this.db` directly — no import needed.
+The Postgres plugin binds the PG pool to `db.query` and `db.transaction`, then decorates the Fastify instance with the result. Route handlers access `this.db` and `this.jwt` directly and pass them as arguments to service functions.
 
-For `this` to resolve to the Fastify instance, **route handlers must be named `async function` declarations** — arrow functions do not bind `this`. When passing `this` to a helper, use `.call(this, args)`:
+**Route handlers must be named `async function` declarations** — arrow functions do not bind `this`. Services and repositories do not use `this`; they receive `db` and `jwt` as plain parameters.
 
 ```ts
 // src/routes/auth/post-login/index.ts
 async function postLogin(this: FastifyInstance, request: FastifyRequest, reply: FastifyReply) {
-  const user = await this.db.query<IGetUserResult>(getUserQuery, { email }, 'one');
+  const { email, password } = (request as Request).body;
 
-  // Pass the Fastify instance through to a helper with .call(this, ...)
-  await someHelper.call(this, user.id);
+  // Pass this.db and this.jwt to the service — no direct DB access in the handler
+  const result = await login(this.db, this.jwt, email, password);
+
+  reply.setCookie(...).send(result.user);
 }
 ```
 
 ```ts
-// src/lib/some-helper.ts
-async function someHelper(this: FastifyInstance, userId: number) {
-  // this.db is available here because the caller used .call(this, ...)
-  const rows = await this.db.query(someQuery, { userId });
+// src/services/auth/auth.service.ts
+async function login(db: DatabaseDecorator, jwt: JWT, email: string, password: string) {
+  // Service calls repository — db passed as a parameter, no Fastify coupling
+  const user = await getUserByEmail(db, email);
+  ...
+}
+```
+
+```ts
+// src/repositories/auth/auth.repository.ts
+async function getUserByEmail(db: DatabaseDecorator, email: string) {
+  return db.query<IAuthPostLoginGetUserResult>(getUserQuery, { email }, 'one');
 }
 ```

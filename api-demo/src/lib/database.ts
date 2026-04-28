@@ -286,7 +286,11 @@ async function flattenInstruction(files: string[], paramsGroup: SqlParams[]): Pr
         return Object.assign(masterObject, idified);
       }, {});
 
-      results.push({ file, params: reducedParams, query: _.template(blob)(injectVars) });
+      results.push({
+        file,
+        params: reducedParams,
+        query: _.template(blob)(injectVars),
+      });
     }
     else {
       for (const params of paramsGroup) {
@@ -325,7 +329,9 @@ async function transaction(this: Pool, rawInstructions: TransactionInstruction |
     const todos: FlattenedInstruction[] = [];
 
     for (const instruction of instructions) {
-      let { files, params } = instruction;
+      let {
+        files, params,
+      } = instruction;
 
       // just as the instructions argument comment above ^... the files & params arrays may
       // also be shorted for Caller convenience. If so... standardize: wrap in array.
@@ -378,7 +384,9 @@ async function transaction(this: Pool, rawInstructions: TransactionInstruction |
 
     // eachofseries will ensure the todos are done in order but also give us access to the file key.
     for (const todo of todos) {
-      const { file: fileName, query, params } = todo;
+      const {
+        file: fileName, query, params,
+      } = todo;
 
       if (!results[fileName]) results[fileName] = [];
 

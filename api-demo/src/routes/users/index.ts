@@ -23,6 +23,11 @@ export default (instance: FastifyInstance) => {
   (Object.keys(routes) as Array<RouteKey>).forEach((key) => {
     const value = routes[key];
 
-    instance.route({ ...value, ...schema[key], ...onRequest.call(instance, key), ...preHandlers.call(instance, key) });
+    instance.route({
+      ...value,
+      ...schema[key],
+      ...onRequest.call(instance, key),
+      ...preHandlers.call(instance, key),
+    });
   });
 };
