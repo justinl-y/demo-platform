@@ -31,6 +31,16 @@
       "types": "./src/decorators/*.ts",
       "tsx": "./src/decorators/*.ts",
       "default": "./dist/decorators/*.js"
+    },
+    "#repositories/*": {
+      "types": "./src/repositories/*.ts",
+      "tsx": "./src/repositories/*.ts",
+      "default": "./dist/repositories/*.js"
+    },
+    "#services/*": {
+      "types": "./src/services/*.ts",
+      "tsx": "./src/services/*.ts",
+      "default": "./dist/services/*.js"
     }
   },
   "scripts": {

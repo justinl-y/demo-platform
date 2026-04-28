@@ -27,13 +27,14 @@ async function authenticateOnRequest(request: FastifyRequest, _reply: FastifyRep
     throw new UnauthorizedError('Authentication failed');
   }
 
-  const {
-    accessTokenJwt,
-  } = Config.authConfig();
+  const { accessTokenJwt } = Config.authConfig();
 
   if (decodedToken.type !== accessTokenJwt) throw new UnauthorizedError('Incorrect authorization token type');
 
-  setSentryUser({ id: decodedToken.id, email: decodedToken.email });
-};
+  setSentryUser({
+    id: decodedToken.id,
+    email: decodedToken.email,
+  });
+}
 
 export default authenticateOnRequest;

@@ -22,4 +22,7 @@ const response = {
   },
 };
 
-export default routeSchema({ route, response });
+export default routeSchema({
+  route,
+  response,
+});

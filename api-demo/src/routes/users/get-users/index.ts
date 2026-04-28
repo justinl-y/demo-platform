@@ -1,15 +1,11 @@
-import type {
-  FastifyRequest,
-  FastifyReply,
-} from 'fastify';
+import { getUsers } from '#services/users/users.service';
 
-function getUsers(request: FastifyRequest, reply: FastifyReply) {
-  const defaultResponse = {
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-  };
+import type { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 
-  reply.send(defaultResponse);
+async function getUsers_(this: FastifyInstance, request: FastifyRequest, reply: FastifyReply) {
+  const result = await getUsers(this.db);
+
+  reply.send(result);
 }
 
-export default getUsers;
+export default getUsers_;

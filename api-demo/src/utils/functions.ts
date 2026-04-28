@@ -15,15 +15,15 @@ interface RouteProperties<H extends RouteHandlerMethod = RouteHandlerMethod> {
   method: string;
   url: string;
   handler: H;
-};
+}
 
 interface OnRequestProperties {
   onRequest: onRequestHookHandler[];
-};
+}
 
 interface PreHandlerProperties {
   preHandler: preHandlerHookHandler[];
-};
+}
 
 interface RouteSchema {
   route: Record<string, unknown>;
@@ -63,13 +63,13 @@ function routePropertiesCore(method: string, url: string, handler: RouteHandlerM
     url,
     handler: setWithSpan(handler.name, handler),
   };
-};
+}
 
 function routePropertiesOnRequest(onRequest: onRequestHookHandler[]): OnRequestProperties {
   return {
     onRequest,
   };
-};
+}
 
 function routePropertiesPrehandler(preHandler: preHandlerHookHandler[]): PreHandlerProperties {
   return {
@@ -77,7 +77,9 @@ function routePropertiesPrehandler(preHandler: preHandlerHookHandler[]): PreHand
   };
 }
 
-function routeSchema({ route, querystring, params, body, response }: RouteSchema): SchemaProperties {
+function routeSchema({
+  route, querystring, params, body, response,
+}: RouteSchema): SchemaProperties {
   return {
     schema: {
       ...route,

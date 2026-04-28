@@ -23,6 +23,9 @@ export default (instance: FastifyInstance) => {
   (Object.keys(routes) as Array<HealthCheckRouteKey>).forEach((key) => {
     const value = routes[key];
 
-    instance.route({ ...value, ...schema[key] });
+    instance.route({
+      ...value,
+      ...schema[key],
+    });
   });
 };

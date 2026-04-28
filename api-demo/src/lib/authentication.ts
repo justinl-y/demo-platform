@@ -10,11 +10,7 @@ import {
   SetWithSpan,
 } from '#decorators/with-span';
 
-import '@fastify/jwt';
-
-import type {
-  FastifyInstance,
-} from 'fastify';
+import type { JWT } from '@fastify/jwt';
 
 import type {
   JwtUser,
@@ -42,7 +38,7 @@ class AuthUtils {
   }
 
   @SetWithSpan()
-  static generateJwt(fastify: FastifyInstance, userId: string, userEmail: string, jwtType: TokenTypes): string {
+  static generateJwt(jwt: JWT, userId: string, userEmail: string, jwtType: TokenTypes): string {
     const payload = {
       id: userId,
       email: userEmail,
@@ -64,7 +60,7 @@ class AuthUtils {
     else if (jwtType === refreshTokenJwt) options.expiresIn = refreshTokenJwtExpiration;
     else throw new UnauthorizedError('Invalid token type');
 
-    return fastify.jwt.sign(payload, options);
+    return jwt.sign(payload, options);
   }
 }
 

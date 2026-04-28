@@ -2,7 +2,11 @@ import fs from 'fs/promises';
 import path from 'path';
 
 const ROOT = process.cwd();
-const ROUTES_DIR = path.join(ROOT, 'src', 'routes');
+const SRC_DIR = path.join(ROOT, 'src');
+const SOURCE_DIRS = [
+  path.join(SRC_DIR, 'routes'),
+  path.join(SRC_DIR, 'repositories'),
+];
 
 function escapeRegex(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -111,17 +115,28 @@ async function refineGeneratedFile(sourceSqlPath: string): Promise<boolean> {
   return true;
 }
 
-async function main(): Promise<void> {
-  const sourceSqlFiles = await walk(ROUTES_DIR);
-  const refinedFiles: string[] = [];
+async function processDir(sourceDir: string, refinedFiles: string[]): Promise<void> {
+  const dirExists = await fs.access(sourceDir).then(() => true).catch(() => false);
+
+  if (!dirExists) return;
+
+  const sourceSqlFiles = await walk(sourceDir);
 
   for (const sourceSqlPath of sourceSqlFiles) {
     if (await refineGeneratedFile(sourceSqlPath)) {
-      const sourceDir = path.dirname(sourceSqlPath);
+      const fileDir = path.dirname(sourceSqlPath);
       const fileName = path.basename(sourceSqlPath);
-      const generatedPath = path.join(sourceDir, 'types', fileName.replace(/\.sql$/i, '.typed.queries.ts'));
+      const generatedPath = path.join(fileDir, 'types', fileName.replace(/\.sql$/i, '.typed.queries.ts'));
       refinedFiles.push(path.relative(ROOT, generatedPath).split(path.sep).join('/'));
     }
+  }
+}
+
+async function main(): Promise<void> {
+  const refinedFiles: string[] = [];
+
+  for (const sourceDir of SOURCE_DIRS) {
+    await processDir(sourceDir, refinedFiles);
   }
 
   console.log(`Refined ${refinedFiles.length} generated query type file(s).`);

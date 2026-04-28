@@ -2,7 +2,11 @@ import fs from 'fs/promises';
 import path from 'path';
 
 const ROOT = process.cwd();
-const ROUTES_DIR = path.join(ROOT, 'src', 'routes');
+const SRC_DIR = path.join(ROOT, 'src');
+const SOURCE_DIRS = [
+  path.join(SRC_DIR, 'routes'),
+  path.join(SRC_DIR, 'repositories'),
+];
 
 function toPosix(inputPath: string): string {
   return inputPath.split(path.sep).join('/');
@@ -16,8 +20,8 @@ function toPascalCase(value: string): string {
     .join('');
 }
 
-function queryNameFromSqlPath(sqlPath: string): string {
-  const relative = path.relative(ROUTES_DIR, sqlPath);
+function queryNameFromSqlPath(sqlPath: string, sourceDir: string): string {
+  const relative = path.relative(sourceDir, sqlPath);
   const withoutExt = relative.replace(/\.sql$/i, '');
 
   return toPascalCase(withoutExt);
@@ -68,55 +72,57 @@ async function walk(dirPath: string): Promise<string[]> {
   return results;
 }
 
+async function walkTypedSql(dirPath: string): Promise<string[]> {
+  const entries = await fs.readdir(dirPath, { withFileTypes: true });
+  const results: string[] = [];
+
+  for (const entry of entries) {
+    const absolutePath = path.join(dirPath, entry.name);
+
+    if (entry.isDirectory()) {
+      results.push(...await walkTypedSql(absolutePath));
+      continue;
+    }
+
+    if (!entry.isFile()) continue;
+    if (!entry.name.endsWith('.typed.sql')) continue;
+
+    results.push(absolutePath);
+  }
+
+  return results;
+}
+
 async function ensureDir(filePath: string): Promise<void> {
   await fs.mkdir(path.dirname(filePath), { recursive: true });
 }
 
-async function main(): Promise<void> {
-  const sourceSqlFiles = await walk(ROUTES_DIR);
-  const generatedSet = new Set<string>();
+async function processDir(sourceDir: string, generatedSet: Set<string>): Promise<void> {
+  const dirExists = await fs.access(sourceDir).then(() => true).catch(() => false);
+
+  if (!dirExists) return;
+
+  const sourceSqlFiles = await walk(sourceDir);
 
   for (const sourceFile of sourceSqlFiles) {
     const sql = await fs.readFile(sourceFile, 'utf8');
 
     if (!shouldGenerate(sql)) continue;
 
-    const queryName = queryNameFromSqlPath(sourceFile);
+    const queryName = queryNameFromSqlPath(sourceFile, sourceDir);
     const typedSql = toTypedSql(sql, queryName);
-    const sourceDir = path.dirname(sourceFile);
+    const fileDir = path.dirname(sourceFile);
     const fileName = path.basename(sourceFile);
-    const typedFile = path.join(sourceDir, 'types', fileName.replace(/\.sql$/i, '.typed.sql'));
+    const typedFile = path.join(fileDir, 'types', fileName.replace(/\.sql$/i, '.typed.sql'));
 
     generatedSet.add(typedFile);
     await ensureDir(typedFile);
     await fs.writeFile(typedFile, typedSql, 'utf8');
   }
 
-  // Gather all existing .typed.sql files from types directories
-  async function walkTypedSql(dirPath: string): Promise<string[]> {
-    const entries = await fs.readdir(dirPath, { withFileTypes: true });
-    const results: string[] = [];
-
-    for (const entry of entries) {
-      const absolutePath = path.join(dirPath, entry.name);
-
-      if (entry.isDirectory()) {
-        results.push(...await walkTypedSql(absolutePath));
-        continue;
-      }
-
-      if (!entry.isFile()) continue;
-      if (!entry.name.endsWith('.typed.sql')) continue;
-
-      results.push(absolutePath);
-    }
-
-    return results;
-  }
-
-  const existingTypedSql = await walkTypedSql(ROUTES_DIR);
-
   // Remove stale generated files so source .sql remains the single source of truth.
+  const existingTypedSql = await walkTypedSql(sourceDir);
+
   for (const typedFile of existingTypedSql) {
     if (generatedSet.has(typedFile)) continue;
 
@@ -125,6 +131,14 @@ async function main(): Promise<void> {
     if (!blob.includes('AUTO-GENERATED FROM SOURCE .sql')) continue;
 
     await fs.rm(typedFile, { force: true });
+  }
+}
+
+async function main(): Promise<void> {
+  const generatedSet = new Set<string>();
+
+  for (const sourceDir of SOURCE_DIRS) {
+    await processDir(sourceDir, generatedSet);
   }
 
   const generatedList = [...generatedSet]

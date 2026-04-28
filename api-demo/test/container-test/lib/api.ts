@@ -39,7 +39,7 @@ async function userLogin() {
   }
 
   return accessTokenCookie.split(';')[0];
-};
+}
 
 const accessTokenCookie = await userLogin();
 

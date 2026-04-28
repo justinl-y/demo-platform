@@ -18,7 +18,9 @@
       "#utils/*": ["./src/utils/*.ts"],
       "#config/*": ["./src/config/*.ts"],
       "#lib/*": ["./src/lib/*.ts"],
-      "#decorators/*": ["./src/decorators/*.ts"]
+      "#decorators/*": ["./src/decorators/*.ts"],
+      "#repositories/*": ["./src/repositories/*.ts"],
+      "#services/*": ["./src/services/*.ts"]
     },
   },
   "include": [

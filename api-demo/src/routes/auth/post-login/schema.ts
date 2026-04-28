@@ -71,4 +71,8 @@ const response = {
   },
 };
 
-export default routeSchema({ route, body, response });
+export default routeSchema({
+  route,
+  body,
+  response,
+});

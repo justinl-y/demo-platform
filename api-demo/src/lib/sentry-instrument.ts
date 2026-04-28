@@ -81,7 +81,10 @@ async function initSentry() {
       }
 
       if (stack) {
-        event.extra = { ...event.extra, stackTrace: stack };
+        event.extra = {
+          ...event.extra,
+          stackTrace: stack,
+        };
       }
 
       return event;
@@ -115,7 +118,10 @@ async function initSentry() {
   console.info(`... Sentry ${profilingStatusMessage}`);
 }
 
-function setSentryUser(user: { id: string; email: string }): void {
+function setSentryUser(user: {
+  id: string;
+  email: string;
+}): void {
   if (Config.apiEnv === 'TEST') return;
   Sentry.getIsolationScope().setUser(user);
 }

@@ -1,107 +1,32 @@
-import {
-  UnauthorizedError,
-} from 'http-errors-enhanced';
+import { UnauthorizedError } from 'http-errors-enhanced';
+import { cookieOptions } from '#lib/authentication';
+import { Config } from '#config/index';
+import { refresh } from '#services/auth/auth.service';
 
-import {
-  cwd,
-} from '#utils/functions';
-
-import {
-  bcryptCompare,
-  bcryptHash,
-  cookieOptions,
-  generateJwt,
-} from '#lib/authentication';
-import {
-  Config,
-} from '#config/index';
-
-import type {
-  FastifyRequest,
-  FastifyReply,
-  FastifyInstance,
-} from 'fastify';
-
-import type {
-  JwtUser,
-} from '../../../types/jwt.ts';
-
-import type {
-  IAuthPostRefreshGetUserWithRefreshTokenResult,
-} from './types/get-user-with-refresh-token.typed.queries.ts';
-
-const relPath = import.meta.dirname;
-const getUserByTokenQuery = cwd('get-user-with-refresh-token', relPath);
-const setUserTokenQuery = cwd('set-user-token', relPath);
+import type { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 
 async function postRefresh(this: FastifyInstance, request: FastifyRequest, reply: FastifyReply) {
   const {
-    accessTokenCookie,
-    accessTokenCookieMaxAge,
-    accessTokenJwt,
-    refreshTokenCookie,
-    refreshTokenJwt,
-    refreshTokenCookieMaxAge,
+    accessTokenCookie, accessTokenCookieMaxAge, refreshTokenCookie, refreshTokenCookieMaxAge,
   } = Config.authConfig();
 
-  const {
-    cookies: { [refreshTokenCookie]: tokenRefresh },
-  } = request;
+  const { cookies: { [refreshTokenCookie]: tokenRefresh } } = request;
 
   if (!tokenRefresh) throw new UnauthorizedError('Authentication failed');
 
-  let decodedToken: JwtUser;
+  const result = await refresh(this.db, this.jwt, tokenRefresh);
 
-  try {
-    // check for valid token and token type - if not throw
-    decodedToken = this.jwt.verify(tokenRefresh);
-  }
-  catch (err) {
-    request.log.error(err instanceof Error ? (err.stack ?? err.message) : String(err));
+  // access cookie
+  reply.setCookie(accessTokenCookie, result.accessToken, {
+    ...cookieOptions,
+    maxAge: accessTokenCookieMaxAge,
+  });
 
-    throw new UnauthorizedError('Authentication failed');
-  }
-
-  const {
-    id: userId,
-    email: userEmail,
-    type: tokenType,
-  } = decodedToken;
-
-  if (tokenType !== refreshTokenJwt) throw new UnauthorizedError('Incorrect authorization token type');
-
-  // get hashed refresh token if existing - if not throw
-  const user = await this.db.query<IAuthPostRefreshGetUserWithRefreshTokenResult>(getUserByTokenQuery, { userId }, 'one');
-  if (!user) throw new UnauthorizedError('Authentication failed');
-
-  const {
-    token_refresh_hash: tokenRefreshHash,
-  } = user;
-
-  // compare tokenRefreshHash to incoming token - if not the same throw
-  const validRefreshToken = await bcryptCompare(tokenRefresh, tokenRefreshHash);
-  if (!validRefreshToken) throw new UnauthorizedError('Authentication failed');
-
-  // generate new tokens
-  const newTokenAccess = generateJwt(this, userId, userEmail, accessTokenJwt);
-  const newTokenRefresh = generateJwt(this, userId, userEmail, refreshTokenJwt);
-
-  // create and persist a fresh refresh token
-  const newTokenRefreshHash = await bcryptHash(newTokenRefresh);
-
-  // save new hashedTokenRefresh to db
-  const statements = [
-    {
-      files: [setUserTokenQuery],
-      params: { newTokenRefreshHash, userId },
-    },
-  ];
-
-  await this.db.transaction(statements);
-
-  // issue a new access token cookie
-  reply.setCookie(accessTokenCookie, newTokenAccess, { ...cookieOptions, maxAge: accessTokenCookieMaxAge });
-  reply.setCookie(refreshTokenCookie, newTokenRefresh, { ...cookieOptions, maxAge: refreshTokenCookieMaxAge });
+  // refresh cookie
+  reply.setCookie(refreshTokenCookie, result.refreshToken, {
+    ...cookieOptions,
+    maxAge: refreshTokenCookieMaxAge,
+  });
 
   reply
     .code(204)

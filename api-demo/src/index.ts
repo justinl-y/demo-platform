@@ -32,6 +32,6 @@ async function startServer() {
 
     process.exit(1);
   }
-};
+}
 
 await startServer();

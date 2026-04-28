@@ -29,7 +29,10 @@ function removeSingleQuotes(originalString: string) {
 async function createRandomUser({ isActive = true } = {}) {
   const firstName = removeSingleQuotes(faker.person.firstName());
   const lastName = removeSingleQuotes(faker.person.lastName());
-  const email = removeSingleQuotes(faker.internet.email({ firstName, lastName }).toLowerCase());
+  const email = removeSingleQuotes(faker.internet.email({
+    firstName,
+    lastName,
+  }).toLowerCase());
   const knownAs = removeSingleQuotes(faker.person.firstName());
 
   const fullName = `${firstName} ${lastName}`;
@@ -45,7 +48,10 @@ async function createRandomUser({ isActive = true } = {}) {
 
   const [{ add_user: userId }] = await query<{ add_user: string }>(addUserSQL);
 
-  return { userId, email };
+  return {
+    userId,
+    email,
+  };
 }
 
 function toBase64Url(input: string | Buffer): string {
@@ -69,7 +75,10 @@ function setCookies(headers: Supertest.Response['headers']) {
 }
 
 function generateTestCookie(tokenType: TokenType, userId: string, userEmail: string): string {
-  const header = toBase64Url(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+  const header = toBase64Url(JSON.stringify({
+    alg: 'HS256',
+    typ: 'JWT',
+  }));
   const now = Math.floor(Date.now() / 1000);
   const payload = toBase64Url(JSON.stringify({
     id: userId,

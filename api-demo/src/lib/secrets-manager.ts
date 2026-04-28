@@ -34,7 +34,7 @@ function updateSecretValues(secretsManagerValues: SecretValueEntry[], values: Se
 
     if (key && key in values) values[key as keyof SecretValues] = secret; // Update the secretValues object. Optionally process.env[key] = secret;
   });
-};
+}
 
 async function batchGetSecretValue() {
   try {
@@ -88,7 +88,7 @@ async function batchGetSecretValue() {
 
     if (Config.liveEnvironments.includes(Config.apiEnv)) process.exit(1);
   }
-};
+}
 
 export {
   secretValues,

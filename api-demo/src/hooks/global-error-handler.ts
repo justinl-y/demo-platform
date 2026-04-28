@@ -19,6 +19,6 @@ function globalErrorHandler(error: FastifyError, request: FastifyRequest, reply:
   processSentryError(statusCode, error, request, reply);
 
   return reply.send(responseBody);
-};
+}
 
 export default globalErrorHandler;

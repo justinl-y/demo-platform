@@ -11,6 +11,7 @@ export default [
   ...neostandard({
     ignores: [
       '**/node_modules/**',
+      '**/dist/**',
       '**/*.typed.queries.ts',
     ],
     ts: true,
@@ -20,6 +21,13 @@ export default [
     rules: {
       ...stylistic.rules,
       '@stylistic/no-extra-semi': 'error',
+      '@stylistic/object-property-newline': ['error', { allowAllPropertiesOnSameLine: false }],
+      '@stylistic/object-curly-newline': ['error', {
+        ObjectPattern: {
+          multiline: true,
+          minProperties: 2,
+        },
+      }],
     },
   },
 ];
