@@ -6,7 +6,6 @@ import {
   consoleInteractionHandler,
   globalErrorHandler,
   replyBodyOnErrorHandler,
-  swaggerStaticUrlRewrite,
 } from './hooks/index.ts';
 import {
   batchGetSecretValue,
@@ -53,7 +52,6 @@ async function buildInstance() {
   // Register Swagger and Swagger UI only in non-prod environments
   if (!Config.liveEnvironments.includes(Config.apiEnv)) {
     instance.register(swagger, baseInformation);
-    instance.addHook('onRequest', swaggerStaticUrlRewrite);
     instance.register(swaggerUi, Config.swaggerConfig);
   }
 

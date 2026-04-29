@@ -7,14 +7,18 @@ import {
 import schema from './schema.ts';
 import postLogin from './post-login/index.ts';
 import postRefresh from './post-refresh/index.ts';
+import putLogout from './put-logout/index.ts';
 
 import type { FastifyInstance } from 'fastify';
 
-const { POST } = HTTP_METHODS;
+const {
+  POST, PUT,
+} = HTTP_METHODS;
 
 const routes = {
   postLogin: routePropertiesCore(POST, '/login', postLogin),
   postRefresh: routePropertiesCore(POST, '/refresh', postRefresh),
+  putLogout: routePropertiesCore(PUT, '/logout/:userId', putLogout),
 };
 
 export type RouteKey = keyof typeof routes;

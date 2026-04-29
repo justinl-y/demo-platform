@@ -3,7 +3,6 @@ import consoleErrorHandler from './console-error-handler.ts';
 import consoleInteractionHandler from './console-interaction-handler.ts';
 import globalErrorHandler from './global-error-handler.ts';
 import replyBodyOnErrorHandler from './reply-body-on-error.ts';
-import swaggerStaticUrlRewrite from './swagger-static-url-rewrite.ts';
 
 export {
   authenticateOnRequest,
@@ -11,5 +10,4 @@ export {
   consoleInteractionHandler,
   globalErrorHandler,
   replyBodyOnErrorHandler,
-  swaggerStaticUrlRewrite,
 };
