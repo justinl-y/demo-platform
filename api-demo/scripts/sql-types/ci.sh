@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-compose_cmd=(docker compose -p ci -f docker-compose-ci.yml)
+compose_cmd=(docker compose -p ci -f "$(cd "$(dirname "$0")/../.." && pwd)/docker-compose-ci.yml")
 STARTED_CONTAINER="false"
 
 cleanup() {
@@ -13,7 +13,7 @@ cleanup() {
 trap cleanup EXIT
 
 # Check if container is already running
-if ! "${compose_cmd[@]}" ps db 2>/dev/null | grep -q "Up"; then
+if ! "${compose_cmd[@]}" ps db 2>/dev/null | grep -qE "Up|running"; then
   STARTED_CONTAINER="true"
   "${compose_cmd[@]}" up -d --wait db
 fi
