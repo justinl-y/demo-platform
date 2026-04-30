@@ -36,7 +36,7 @@ async function postLogin(this: FastifyInstance, request: FastifyRequest, reply: 
     maxAge: refreshTokenCookieMaxAge,
   });
 
-  reply.send(result.user);
+  return reply.send(result.user);
 }
 
 export default postLogin;

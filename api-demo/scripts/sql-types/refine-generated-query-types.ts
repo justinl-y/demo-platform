@@ -1,49 +1,13 @@
 import fs from 'fs/promises';
 import path from 'path';
 
-const ROOT = process.cwd();
-const SRC_DIR = path.join(ROOT, 'src');
-const SOURCE_DIRS = [
-  path.join(SRC_DIR, 'routes'),
-  path.join(SRC_DIR, 'repositories'),
-];
-
-function escapeRegex(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function shouldGenerate(sql: string): boolean {
-  if (/<%=/.test(sql)) return false;
-
-  return /\b(SELECT|WITH)\b/i.test(sql);
-}
-
-async function walk(dirPath: string): Promise<string[]> {
-  const entries = await fs.readdir(dirPath, { withFileTypes: true });
-  const results: string[] = [];
-
-  for (const entry of entries) {
-    const absolutePath = path.join(dirPath, entry.name);
-
-    if (entry.isDirectory()) {
-      results.push(...await walk(absolutePath));
-      continue;
-    }
-
-    if (!entry.isFile()) continue;
-    if (!entry.name.endsWith('.sql')) continue;
-    if (entry.name.endsWith('.typed.sql')) continue;
-
-    results.push(absolutePath);
-  }
-
-  return results;
-}
+import { ROOT, SOURCE_DIRS, escapeRegex, shouldGenerate, walk } from './shared.ts';
 
 function getSelectBlock(sql: string): string {
-  const match = sql.match(/\bSELECT\b([\s\S]*?)\bFROM\b/i);
+  // Match the last SELECT…FROM to get the outer SELECT in CTEs, not an inner one.
+  const matches = [...sql.matchAll(/\bSELECT\b([\s\S]*?)\bFROM\b/gi)];
 
-  return match?.[1] ?? '';
+  return matches.at(-1)?.[1] ?? '';
 }
 
 function getSelectedColumnMap(sql: string): Map<string, string> {

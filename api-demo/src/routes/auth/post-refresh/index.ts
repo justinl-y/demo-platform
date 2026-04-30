@@ -28,7 +28,7 @@ async function postRefresh(this: FastifyInstance, request: FastifyRequest, reply
     maxAge: refreshTokenCookieMaxAge,
   });
 
-  reply
+  return reply
     .code(204)
     .send()
   ;

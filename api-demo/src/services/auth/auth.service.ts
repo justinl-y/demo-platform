@@ -11,6 +11,7 @@ import {
   getUserWithRefreshToken,
   setUserTokenOnLogin,
   setUserTokenOnRefresh,
+  // removeUserRefreshToken,
 } from '#repositories/auth/auth.repository';
 
 import type { JWT } from '@fastify/jwt';
@@ -111,7 +112,12 @@ async function refresh(db: DatabaseDecorator, jwt: JWT, tokenRefresh: string): P
   };
 }
 
+async function logout(db: DatabaseDecorator, userId: string) {
+
+}
+
 export {
   login,
   refresh,
+  logout,
 };
