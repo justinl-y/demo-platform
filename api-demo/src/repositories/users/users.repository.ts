@@ -7,7 +7,7 @@ const relPath = import.meta.dirname;
 const getUsersQuery = cwd('get-users', relPath);
 
 async function getUsers(db: DatabaseDecorator, userId: string | null) {
-  return db.query<IUsersGetUsersResult>(getUsersQuery, { userId });
+  return db.query<IUsersGetUsersResult>(getUsersQuery, { userId }, 'one');
 }
 
 export {

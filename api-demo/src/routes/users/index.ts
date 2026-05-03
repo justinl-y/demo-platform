@@ -11,7 +11,9 @@ import getUsers from './get-users/index.ts';
 
 import type { FastifyInstance } from 'fastify';
 
-const { GET } = HTTP_METHODS;
+const {
+  GET,
+} = HTTP_METHODS;
 
 const routes = {
   getUsers: routePropertiesCore(GET, '/users', getUsers),

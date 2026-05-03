@@ -58,7 +58,7 @@
     "ci-up": "bash scripts/ci-up.sh",
     "ci-down": "docker compose -p ci -f docker-compose-ci.yml down -v",
     "lint": "eslint --config eslint.config.ts",
-    "lint-fix": "eslint --fix \"**/*.{ts}\"",
+    "lint-fix": "eslint --fix --config eslint.config.ts",
     "prepare": "command -v git >/dev/null 2>&1 && git config core.hooksPath .githooks || true"
   },
   "lint-staged": {

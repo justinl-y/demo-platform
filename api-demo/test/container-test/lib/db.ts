@@ -1,6 +1,8 @@
 import pg from 'pg';
 
-const { Pool } = pg;
+const {
+  Pool,
+} = pg;
 
 const PG_ENV = {
   PG_HOST: 'db',

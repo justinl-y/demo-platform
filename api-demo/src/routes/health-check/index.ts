@@ -10,7 +10,9 @@ import getHealthEB from './get-health-eb/index.ts';
 
 import type { FastifyInstance } from 'fastify';
 
-const { GET } = HTTP_METHODS;
+const {
+  GET,
+} = HTTP_METHODS;
 
 const routes = {
   getHealthDB: routePropertiesCore(GET, '/health_db', getHealthDB),

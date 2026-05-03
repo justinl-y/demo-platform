@@ -14,6 +14,7 @@ const querystring = {
   properties: {
     user_id: {
       type: 'string',
+      format: 'uuid',
       description: 'User id for fetch one',
     },
   },

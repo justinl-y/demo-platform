@@ -30,8 +30,9 @@ export function escapeRegex(s: string): string {
 
 export function shouldGenerate(sql: string): boolean {
   if (/<%=/.test(sql)) return false;
+  if (/\b(SELECT|WITH)\b/i.test(sql)) return true;
 
-  return /\b(SELECT|WITH)\b/i.test(sql);
+  return /\b(INSERT|UPDATE|DELETE)\b/i.test(sql) && /\bRETURNING\b/i.test(sql);
 }
 
 export async function walk(dirPath: string): Promise<string[]> {

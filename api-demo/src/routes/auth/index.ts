@@ -18,7 +18,7 @@ const {
 const routes = {
   postLogin: routePropertiesCore(POST, '/login', postLogin),
   postRefresh: routePropertiesCore(POST, '/refresh', postRefresh),
-  putLogout: routePropertiesCore(PUT, '/logout/:userId', putLogout),
+  putLogout: routePropertiesCore(PUT, '/logout', putLogout),
 };
 
 export type RouteKey = keyof typeof routes;

@@ -35,8 +35,12 @@ async function buildInstance() {
   const swaggerUi = (await import('@fastify/swagger-ui')).default;
   const replyValidation = (await import('@fastify/response-validation')).default;
 
-  const { default: plugins } = await import('./plugins/index.ts');
-  const { default: routes } = await import('./routes/index.ts');
+  const {
+    default: plugins,
+  } = await import('./plugins/index.ts');
+  const {
+    default: routes,
+  } = await import('./routes/index.ts');
 
   const instance = Fastify(Config.fastifyConfig);
 
@@ -70,7 +74,9 @@ async function buildInstance() {
   routes.forEach((route) => instance.register(route));
 
   if (Config.apiEnv === 'TEST' && process.env.NODE_V8_COVERAGE) {
-    const { default: devRoutes } = await import('./routes/dev/index.ts');
+    const {
+      default: devRoutes,
+    } = await import('./routes/dev/index.ts');
     instance.register(devRoutes);
   }
 

@@ -1,20 +1,19 @@
 import { getUsers as getUsersFromDb } from '#repositories/users/users.repository';
 
-import type { JWT } from '@fastify/jwt';
 import type { DatabaseDecorator } from '../../types/database.ts';
 
-type UsersResult = {
+interface Users {
   [id: string]: {
     email: string;
     full_name: string;
-    known_as: string;
+    known_as: string | null;
   };
-} | null;
+}
 
-async function getUsers(db: DatabaseDecorator, jwt: JWT, userId: string | null): Promise<UsersResult> {
+async function getUsers(db: DatabaseDecorator, userId: string | null): Promise<Users> {
   const result = await getUsersFromDb(db, userId);
 
-  return (result?.[0]?.users ?? null) as UsersResult;
+  return (result?.users ?? {}) as Users;
 }
 
 export {

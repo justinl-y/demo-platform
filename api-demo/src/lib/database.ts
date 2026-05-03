@@ -205,7 +205,9 @@ async function query<
     pgClient = await pgConnect.call(this);
 
     const result = await pgClient.query(blob, params);
-    const { rowCount } = result;
+    const {
+      rowCount,
+    } = result;
 
     if (rowCount === 0) return null as QueryResult<F, TRow>;
     if (outputFormat === 'one') return ((result.rows[0] as TRow | undefined) ?? null) as QueryResult<F, TRow>;
@@ -306,7 +308,7 @@ async function flattenInstruction(files: string[], paramsGroup: SqlParams[]): Pr
   return results;
 }
 
-async function transaction(this: Pool, rawInstructions: TransactionInstruction | TransactionInstruction[], dryRun = false): Promise<TransactionResult> {
+async function executeTransaction(this: Pool, rawInstructions: TransactionInstruction | TransactionInstruction[], dryRun = false): Promise<TransactionResult> {
   let pgClient: PatchedPgClient | undefined;
 
   try {
@@ -423,13 +425,40 @@ async function transaction(this: Pool, rawInstructions: TransactionInstruction |
     if (errorDetails.message.includes('Missing Parameters')) code = 'ReferenceError';
     else code = errorDetails.code || errorDetails.name;
 
-    const { message } = errorDetails;
+    const {
+      message,
+    } = errorDetails;
     const sqlFileName = errorDetails.sqlFileName || errorDetails.path;
     throw errorsToHandle(err, code, sqlFileName, message);
   }
   finally {
     if (pgClient) pgClient.release();
   }
+}
+
+type ExecFn = (instructions: TransactionInstruction[], dryRun?: boolean) => Promise<TransactionResult>;
+
+class TransactionBuilder<TResults extends object[][] = []> {
+  private readonly instructions: TransactionInstruction[] = [];
+  private readonly fileKeys: string[] = [];
+
+  constructor(private readonly exec: ExecFn) {}
+
+  add<TRow extends object = QueryRow>(instruction: TransactionInstruction): TransactionBuilder<[...TResults, TRow[]]> {
+    this.instructions.push(instruction);
+    const primaryFile = Array.isArray(instruction.files) ? instruction.files[0] : instruction.files;
+    this.fileKeys.push(primaryFile);
+    return this as unknown as TransactionBuilder<[...TResults, TRow[]]>;
+  }
+
+  async execute(dryRun?: boolean): Promise<TResults> {
+    const result = await this.exec(this.instructions, dryRun);
+    return this.fileKeys.map((key) => result[key] ?? []) as unknown as TResults;
+  }
+}
+
+function transaction(this: Pool): TransactionBuilder {
+  return new TransactionBuilder(executeTransaction.bind(this));
 }
 
 export {

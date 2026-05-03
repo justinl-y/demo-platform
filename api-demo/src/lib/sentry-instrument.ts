@@ -35,7 +35,9 @@ async function initSentry() {
   let profilingStatusMessage = 'disabled: integration not initialized';
 
   try {
-    const { nodeProfilingIntegration } = await import('@sentry/profiling-node') as NodeProfilingIntegration;
+    const {
+      nodeProfilingIntegration,
+    } = await import('@sentry/profiling-node') as NodeProfilingIntegration;
 
     profilingIntegration = nodeProfilingIntegration();
     profilesSampleRate = Config.sentryConfig.profilesSampleRate[Config.apiEnv];

@@ -25,7 +25,7 @@ export default [
       '@stylistic/object-curly-newline': ['error', {
         ObjectPattern: {
           multiline: true,
-          minProperties: 2,
+          minProperties: 1,
         },
       }],
     },

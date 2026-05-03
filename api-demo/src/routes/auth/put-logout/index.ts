@@ -1,20 +1,25 @@
-// import { UnauthorizedError } from 'http-errors-enhanced';
-// import { Config } from '#config/index';
-// import { refresh } from '#services/auth/auth.service';
+import { BadRequestError } from 'http-errors-enhanced';
+import { Config } from '#config/index';
+import { logout } from '#services/auth/auth.service';
 
 import type { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 
-interface Request {
-  params: {
-    userId: string;
-  };
-}
-
 async function putLogout(this: FastifyInstance, request: FastifyRequest, reply: FastifyReply) {
-  const { params: { userId } } = request as Request;
+  const {
+    refreshTokenCookie,
+  } = Config.authConfig();
 
-  console.log(userId);
+  const {
+    cookies: {
+      [refreshTokenCookie]: tokenRefresh,
+    },
+  } = request;
 
+  if (!tokenRefresh) throw new BadRequestError('Access token required');
+
+  await logout(this.db, this.jwt, tokenRefresh);
+
+  // return 204 irrespective of an actual user or not
   return reply
     .code(204)
     .send()
