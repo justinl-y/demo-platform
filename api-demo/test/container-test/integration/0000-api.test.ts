@@ -22,7 +22,9 @@ describe(`${fileNumber} - API`, () => {
 
       beforeAll(async () => {
         rep = await getResponse();
-        ({ body: responseData } = rep);
+        ({
+          body: responseData,
+        } = rep);
       });
 
       test('Success response returns 200', () => {
@@ -45,7 +47,9 @@ describe(`${fileNumber} - API`, () => {
 
       beforeAll(async () => {
         rep = await getResponse();
-        ({ body: responseData } = rep);
+        ({
+          body: responseData,
+        } = rep);
       });
 
       test('Success response returns 200', () => {

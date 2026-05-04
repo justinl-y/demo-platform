@@ -48,7 +48,9 @@ function extractInteractionFields(request: FastifyRequest, reply: FastifyReply):
   const reqBody = request.body;
   const route = request.routeOptions?.url;
   const {
-    raw: { statusMessage: repStatusMessage },
+    raw: {
+      statusMessage: repStatusMessage,
+    },
     statusCode: repStatusCode,
     elapsedTime,
     error: repErrBody,
@@ -58,7 +60,11 @@ function extractInteractionFields(request: FastifyRequest, reply: FastifyReply):
   const isMutating = _.includes(['POST', 'PUT', 'PATCH', 'DELETE'], reqMethodUpper);
 
   let userEmail = 'Not Set';
-  if (_.has(reqUser, 'email')) ({ email: userEmail } = reqUser);
+  if (_.has(reqUser, 'email')) {
+    ({
+      email: userEmail,
+    } = reqUser);
+  }
 
   return {
     reqMethodUpper,

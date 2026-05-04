@@ -10,7 +10,11 @@ async function postRefresh(this: FastifyInstance, request: FastifyRequest, reply
     accessTokenCookie, accessTokenCookieMaxAge, refreshTokenCookie, refreshTokenCookieMaxAge,
   } = Config.authConfig();
 
-  const { cookies: { [refreshTokenCookie]: tokenRefresh } } = request;
+  const {
+    cookies: {
+      [refreshTokenCookie]: tokenRefresh,
+    },
+  } = request;
 
   if (!tokenRefresh) throw new UnauthorizedError('Authentication failed');
 
@@ -28,7 +32,7 @@ async function postRefresh(this: FastifyInstance, request: FastifyRequest, reply
     maxAge: refreshTokenCookieMaxAge,
   });
 
-  reply
+  return reply
     .code(204)
     .send()
   ;

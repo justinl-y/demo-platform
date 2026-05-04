@@ -1,4 +1,7 @@
-import { UnauthorizedError } from 'http-errors-enhanced';
+import {
+  BadRequestError,
+  UnauthorizedError,
+} from 'http-errors-enhanced';
 
 import {
   bcryptCompare,
@@ -9,8 +12,9 @@ import { Config } from '#config/index';
 import {
   getUserByEmail,
   getUserWithRefreshToken,
-  setUserTokenOnLogin,
+  setUserRefreshTokenOnLogin,
   setUserTokenOnRefresh,
+  removeUserRefreshToken,
 } from '#repositories/auth/auth.repository';
 
 import type { JWT } from '@fastify/jwt';
@@ -52,7 +56,7 @@ async function login(db: DatabaseDecorator, jwt: JWT, email: string, password: s
 
   const hashedTokenRefresh = await bcryptHash(refreshToken);
 
-  await setUserTokenOnLogin(db, userId, hashedTokenRefresh);
+  await setUserRefreshTokenOnLogin(db, userId, hashedTokenRefresh);
 
   return {
     accessToken,
@@ -111,7 +115,53 @@ async function refresh(db: DatabaseDecorator, jwt: JWT, tokenRefresh: string): P
   };
 }
 
+interface LogoutResult {
+  returnedUserId: string | null;
+}
+
+async function logout(db: DatabaseDecorator, jwt: JWT, tokenRefresh: string): Promise<LogoutResult> {
+  const {
+    refreshTokenJwt,
+  } = Config.authConfig();
+
+  let decodedToken: JwtUser;
+
+  try {
+    decodedToken = jwt.verify(tokenRefresh);
+  }
+  catch {
+    throw new BadRequestError('Invalid token');
+  }
+
+  const {
+    id: userId, type: tokenType,
+  } = decodedToken;
+
+  if (tokenType !== refreshTokenJwt) throw new BadRequestError('Incorrect authorization token type');
+
+  const nullReturnedUserId = {
+    returnedUserId: null,
+  };
+
+  const user = await getUserWithRefreshToken(db, userId);
+  if (!user) return nullReturnedUserId;
+
+  // ensure the presented refresh token matches the persisted hash before clearing it (potential DoS)
+  const validRefreshToken = await bcryptCompare(tokenRefresh, user.token_refresh_hash);
+  if (!validRefreshToken) return nullReturnedUserId;
+
+  // delete refresh token
+  const {
+    user: removedUser,
+  } = await removeUserRefreshToken(db, userId);
+
+  return {
+    returnedUserId: removedUser?.id ?? null,
+  };
+}
+
 export {
   login,
   refresh,
+  logout,
 };

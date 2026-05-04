@@ -12,7 +12,9 @@ function createMsgStream(): Writable {
 
       if (line) {
         try {
-          const { msg } = JSON.parse(line) as { msg?: unknown };
+          const {
+            msg,
+          } = JSON.parse(line) as { msg?: unknown };
 
           if (msg !== undefined && !String(msg).startsWith('Server listening at')) {
             const output = String(msg);

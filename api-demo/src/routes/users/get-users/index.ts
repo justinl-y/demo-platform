@@ -2,10 +2,22 @@ import { getUsers as getUsersService } from '#services/users/users.service';
 
 import type { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 
-async function getUsers(this: FastifyInstance, request: FastifyRequest, reply: FastifyReply) {
-  const result = await getUsersService(this.db);
+interface Request {
+  Querystring: {
+    user_id?: string;
+  };
+}
 
-  reply.send(result);
+async function getUsers(this: FastifyInstance, request: FastifyRequest<Request>, reply: FastifyReply) {
+  const {
+    query: {
+      user_id: userId = null,
+    },
+  } = request;
+
+  const result = await getUsersService(this.db, userId);
+
+  return reply.send(result);
 }
 
 export default getUsers;

@@ -8,7 +8,7 @@ This project showcases how to build a **scalable and maintainable back-end web s
 
 ## 🏛️ Architecture
 
-API-Demo uses a three-layer architecture — route handlers, services and repositories — to separate HTTP concerns, business logic and database access.
+API-Demo follows **REST principles** and a three-layer **repository architecture** — route handlers, services, and repositories — to separate HTTP concerns, business logic and database access.
 
 ```mermaid
 flowchart TD

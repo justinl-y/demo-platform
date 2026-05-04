@@ -5,4 +5,5 @@ SET
   , last_login = CURRENT_TIMESTAMP
 WHERE
   id = $userId
+  AND is_active = TRUE
 ;

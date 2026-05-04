@@ -273,7 +273,9 @@ describe(`${fileNumber} - Auth`, () => {
         const getTokenRefreshHashSql = 'SELECT u.token_refresh_hash FROM public.users AS u WHERE u.id = $1';
         const [result] = await query<DbUserRefreshHash>(getTokenRefreshHashSql, [userId]);
 
-        ({ token_refresh_hash: tokenRefreshHash } = result);
+        ({
+          token_refresh_hash: tokenRefreshHash,
+        } = result);
       });
 
       test('Success response returns 204', () => {
@@ -333,7 +335,110 @@ describe(`${fileNumber} - Auth`, () => {
       });
     });
   });
-  describe.skip('PUT /logout', () => {});
+
+  describe('PUT /logout', () => {
+    let logoutUserId: string;
+    let logoutUserEmail: string;
+
+    beforeAll(async () => {
+      ({
+        userId: logoutUserId, email: logoutUserEmail,
+      } = await createRandomUser({ isActive: true }));
+    });
+
+    const getResponse = (cookieString?: string) =>
+      noAuthAPI.put('/logout', {}, cookieString ? { Cookie: cookieString } : {});
+
+    describe('Request Failure', () => {
+      let accessTokenValue: string;
+
+      beforeAll(() => {
+        accessTokenValue = generateTestCookie('access', logoutUserId, logoutUserEmail).replace('access_token=', '');
+      });
+
+      test('Absent "refresh_token" cookie returns 400', async () => {
+        const res = await getResponse();
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Refresh token required');
+      });
+
+      test('Malformed "refresh_token" cookie value returns 400', async () => {
+        const res = await getResponse('refresh_token=not-a-valid-jwt');
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid token');
+      });
+
+      test('Access token sent as "refresh_token" cookie returns 400', async () => {
+        const res = await getResponse(`refresh_token=${accessTokenValue}`);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Incorrect authorization token type');
+      });
+    });
+
+    describe('Request Success', () => {
+      interface DbUserRefreshHash {
+        token_refresh_hash: string | null;
+      }
+
+      let rep: Supertest.Response;
+      let cookies: string[];
+      let refreshTokenCookie: string;
+      let tokenRefreshHash: string | null;
+
+      beforeAll(async () => {
+        refreshTokenCookie = generateTestCookie('refresh', logoutUserId, logoutUserEmail);
+        const refreshToken = refreshTokenCookie.replace('refresh_token=', '');
+
+        const salt = await bcrypt.genSalt(10);
+        const hash = await bcrypt.hash(refreshToken, salt);
+
+        await query('UPDATE public.users SET token_refresh_hash = $1 WHERE id = $2', [hash, logoutUserId]);
+
+        rep = await getResponse(refreshTokenCookie);
+        cookies = setCookies(rep.headers);
+
+        const getTokenRefreshHashSql = 'SELECT u.token_refresh_hash FROM public.users AS u WHERE u.id = $1';
+        const [result] = await query<DbUserRefreshHash>(getTokenRefreshHashSql, [logoutUserId]);
+
+        ({
+          token_refresh_hash: tokenRefreshHash,
+        } = result);
+      });
+
+      test('Success response returns 204', () => {
+        expect(rep.statusCode).toBe(204);
+      });
+
+      test('User "token_refresh_hash" is NULL in db after logout', () => {
+        expect(tokenRefreshHash).toBeNull();
+      });
+
+      test('Response clears "access_token" cookie', () => {
+        const cookie = cookies.find((c) => c.startsWith('access_token='));
+
+        expect(cookie).toBeDefined();
+        expect(cookie).toContain('Max-Age=0');
+        expect(cookie).toContain('Path=/');
+      });
+
+      test('Response clears "refresh_token" cookie', () => {
+        const cookie = cookies.find((c) => c.startsWith('refresh_token='));
+
+        expect(cookie).toBeDefined();
+        expect(cookie).toContain('Max-Age=0');
+        expect(cookie).toContain('Path=/');
+      });
+
+      test('Subsequent logout with same token returns 204', async () => {
+        const res = await getResponse(refreshTokenCookie);
+
+        expect(res.statusCode).toBe(204);
+      });
+    });
+  });
   // describe.skip('PUT /passwordRecovery', () => {});
   describe.skip('PUT /passwordReset', () => {});
   describe.skip('POST /invite', () => {});

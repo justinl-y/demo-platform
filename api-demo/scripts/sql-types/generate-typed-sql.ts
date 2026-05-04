@@ -1,12 +1,8 @@
 import fs from 'fs/promises';
 import path from 'path';
 
-const ROOT = process.cwd();
-const SRC_DIR = path.join(ROOT, 'src');
-const SOURCE_DIRS = [
-  path.join(SRC_DIR, 'routes'),
-  path.join(SRC_DIR, 'repositories'),
-];
+import type { Manifest } from './shared.ts';
+import { MANIFEST_PATH, ROOT, SOURCE_DIRS, shouldGenerate, walk } from './shared.ts';
 
 function toPosix(inputPath: string): string {
   return inputPath.split(path.sep).join('/');
@@ -38,40 +34,6 @@ function toTypedSql(sql: string, queryName: string): string {
   ].join('\n');
 }
 
-function shouldGenerate(sql: string): boolean {
-  if (/<%=/.test(sql)) return false;
-
-  // Limit generation to read queries where return types are useful and stable.
-  const hasReadQuery = /\b(SELECT|WITH)\b/i.test(sql);
-
-  if (!hasReadQuery) return false;
-
-  return true;
-}
-
-async function walk(dirPath: string): Promise<string[]> {
-  const entries = await fs.readdir(dirPath, { withFileTypes: true });
-  const results: string[] = [];
-
-  for (const entry of entries) {
-    const absolutePath = path.join(dirPath, entry.name);
-
-    if (entry.isDirectory()) {
-      const nested = await walk(absolutePath);
-      results.push(...nested);
-      continue;
-    }
-
-    if (!entry.isFile()) continue;
-    if (!entry.name.endsWith('.sql')) continue;
-    if (entry.name.endsWith('.typed.sql')) continue;
-
-    results.push(absolutePath);
-  }
-
-  return results;
-}
-
 async function walkTypedSql(dirPath: string): Promise<string[]> {
   const entries = await fs.readdir(dirPath, { withFileTypes: true });
   const results: string[] = [];
@@ -97,7 +59,18 @@ async function ensureDir(filePath: string): Promise<void> {
   await fs.mkdir(path.dirname(filePath), { recursive: true });
 }
 
-async function processDir(sourceDir: string, generatedSet: Set<string>): Promise<void> {
+/** Extracts exported identifier names from a .typed.queries.ts file. */
+async function readExports(queriesPath: string): Promise<string[]> {
+  const content = await fs.readFile(queriesPath, 'utf8').catch(() => '');
+  if (!content) return [];
+  const regex = /^export\s+(?:interface|const|type)\s+([A-Za-z_][A-Za-z0-9_]*)/gm;
+  const names: string[] = [];
+  let m;
+  while ((m = regex.exec(content)) !== null) names.push(m[1]);
+  return names;
+}
+
+async function processDir(sourceDir: string, generatedSet: Set<string>, manifest: Manifest): Promise<void> {
   const dirExists = await fs.access(sourceDir).then(() => true).catch(() => false);
 
   if (!dirExists) return;
@@ -115,9 +88,25 @@ async function processDir(sourceDir: string, generatedSet: Set<string>): Promise
     const fileName = path.basename(sourceFile);
     const typedFile = path.join(fileDir, 'types', fileName.replace(/\.sql$/i, '.typed.sql'));
 
+    const typedQueriesPath = typedFile.replace(/\.typed\.sql$/i, '.typed.queries.ts');
+    const isNew = !(await fs.access(typedQueriesPath).then(() => true).catch(() => false));
+
     generatedSet.add(typedFile);
+
+    if (isNew) {
+      manifest.created.push({
+        typedSqlPath: typedFile,
+        typedQueriesPath,
+        queryName,
+        exports: [],
+      });
+    }
+
     await ensureDir(typedFile);
-    await fs.writeFile(typedFile, typedSql, 'utf8');
+    const existing = await fs.readFile(typedFile, 'utf8').catch(() => '');
+    if (existing !== typedSql) {
+      await fs.writeFile(typedFile, typedSql, 'utf8');
+    }
   }
 
   // Remove stale generated files so source .sql remains the single source of truth.
@@ -130,22 +119,45 @@ async function processDir(sourceDir: string, generatedSet: Set<string>): Promise
 
     if (!blob.includes('AUTO-GENERATED FROM SOURCE .sql')) continue;
 
+    // Extract the query name from the @name marker before deleting.
+    const nameMatch = blob.match(/\/\* @name (\w+) \*\//);
+    const queryName = nameMatch?.[1] ?? '';
+
+    const typedQueriesPath = typedFile.replace(/\.typed\.sql$/i, '.typed.queries.ts');
+    const exports = await readExports(typedQueriesPath);
+
+    manifest.deleted.push({
+      typedSqlPath: typedFile,
+      typedQueriesPath,
+      queryName,
+      exports,
+    });
+
     await fs.rm(typedFile, { force: true });
+    await fs.rm(typedQueriesPath, { force: true });
   }
 }
 
 async function main(): Promise<void> {
   const generatedSet = new Set<string>();
+  const manifest: Manifest = {
+    deleted: [],
+    created: [],
+  };
 
   for (const sourceDir of SOURCE_DIRS) {
-    await processDir(sourceDir, generatedSet);
+    await processDir(sourceDir, generatedSet, manifest);
+  }
+
+  if (manifest.deleted.length > 0 || manifest.created.length > 0) {
+    await fs.writeFile(MANIFEST_PATH, JSON.stringify(manifest, null, 2), 'utf8');
   }
 
   const generatedList = [...generatedSet]
     .map((item) => toPosix(path.relative(ROOT, item)))
     .sort();
 
-  console.log(`Generated ${generatedList.length} typed SQL file(s).`);
+  console.log(`Tracking ${generatedList.length} typed SQL file(s).`);
   for (const item of generatedList) console.log(item);
 }
 

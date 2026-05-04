@@ -13,7 +13,12 @@ type QueryResult<F extends QueryOutputFormat, TRow extends object> = F extends '
   ? TRow | null
   : TRow[] | null;
 
-type TransactionResult = Record<string, QueryRow[]>;
+type TransactionResult = QueryRow[][];
+
+interface ITransactionBuilder<TResults extends object[][] = []> {
+  add<TRow extends object = QueryRow>(instruction: TransactionInstruction): ITransactionBuilder<[...TResults, TRow[]]>;
+  execute(dryRun?: boolean): Promise<TResults>;
+}
 
 interface DatabaseDecorator {
   query: {
@@ -30,10 +35,7 @@ interface DatabaseDecorator {
     ): Promise<QueryResult<'collection', TRow>>;
   };
 
-  transaction: (
-    rawInstructions: TransactionInstruction | TransactionInstruction[],
-    dryRun?: boolean,
-  ) => Promise<TransactionResult>;
+  transaction: () => ITransactionBuilder;
 }
 
 export type {
@@ -43,5 +45,6 @@ export type {
   QueryOutputFormat,
   QueryResult,
   TransactionResult,
+  ITransactionBuilder,
   DatabaseDecorator,
 };
