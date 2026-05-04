@@ -233,22 +233,22 @@ async function getUserByEmail(db: DatabaseDecorator, email: string) {
 
 ----
 
-### `db.transaction(instructions, dryRun?)`
+### `db.transaction()`
 
-Executes a series of DML SQL statements as a single atomic transaction. If any statement fails the entire transaction is rolled back, leaving the database in a consistent state.
+Returns a `TransactionBuilder` for executing a series of DML SQL statements as a single atomic transaction. If any statement fails the entire transaction is rolled back, leaving the database in a consistent state.
 
-Returns `Record<string, QueryRow[]>` — a map of file path → flattened result rows across all executions of that file.
+Chain `.add<TRow>(instruction)` for each statement group, then call `.execute(dryRun?)` to run. Results are returned as a positional tuple of row arrays matching the order of `.add()` calls.
 
-- `instructions` — a single instruction object or an array of them. Each instruction has:
+- `.add<TRow>(instruction)` — adds one instruction to the transaction. Each instruction has:
   - `files` — a file path string or an array of file path strings.
   - `params` — a params object or an array of params objects (used for bulk operations — see below).
-- `dryRun` — if `true`, all statements execute but the transaction is rolled back and a `418` error is thrown. Useful for inspecting what would have run without committing. Default: `false`.
+- `.execute(dryRun?)` — runs the transaction. If `dryRun` is `true`, all statements execute but the transaction is rolled back and a `418` error is thrown. Default: `false`.
 
-For convenience, a single instruction can be passed directly instead of wrapping it in an array, and `files` / `params` can each be a plain string / object when there is only one.
+`files` / `params` can each be a plain string / object when there is only one.
 
 #### Typing results
 
-Cast each result entry to its pgtyped-generated row type after the call:
+The generic on `.add<TRow>()` types that position in the result tuple:
 
 ```sql
 -- src/repositories/customers/remove-users.sql
@@ -269,15 +269,10 @@ const removeUsersQuery = cwd('remove-users', import.meta.dirname);
 const removeCustomerQuery = cwd('remove-customer', import.meta.dirname);
 
 async function removeCustomer(db: DatabaseDecorator, customerId: number) {
-  const result = await db.transaction([
-    {
-      files: [removeUsersQuery, removeCustomerQuery],
-      params: { customerId },
-    },
-  ]);
-
-  const removedUsers = result[removeUsersQuery] as IRemoveUsersResult[];
-  const removedCustomer = result[removeCustomerQuery] as IRemoveCustomerResult[];
+  const [removedUsers, removedCustomer] = await db.transaction()
+    .add<IRemoveUsersResult>({ files: removeUsersQuery, params: { customerId } })
+    .add<IRemoveCustomerResult>({ files: removeCustomerQuery, params: { customerId } })
+    .execute();
 
   return { removedUsers, removedCustomer };
 }
@@ -295,14 +290,13 @@ INSERT INTO some_table (x_col, y_col) <%= VALUES('x', 'y') %>
 ```
 
 ```ts
-await db.transaction({
-  files: insertRowsQuery,
-  params: [
+await db.transaction()
+  .add({ files: insertRowsQuery, params: [
     { x: 1, y: 'a' },
     { x: 2, y: 'b' },
     { x: 3, y: 'c' },
-  ],
-});
+  ] })
+  .execute();
 ```
 
 The library expands this into:
