@@ -146,7 +146,7 @@ async function logout(db: DatabaseDecorator, jwt: JWT, tokenRefresh: string): Pr
   const user = await getUserWithRefreshToken(db, userId);
   if (!user) return nullReturnedUserId;
 
-  // check for matching persisted token to prevent potential DoS with expired token
+  // ensure the presented refresh token matches the persisted hash before clearing it (potential DoS)
   const validRefreshToken = await bcryptCompare(tokenRefresh, user.token_refresh_hash);
   if (!validRefreshToken) return nullReturnedUserId;
 

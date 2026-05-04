@@ -4,8 +4,8 @@ import {
 
 const route = {
   tags: ['users'],
-  summary: 'Get single or group of users',
-  description: 'Returns a single or group of active users',
+  summary: 'Get one or more users',
+  description: 'Returns one or more active users',
   security: [{ cookieAuth: [] }],
 };
 
@@ -15,7 +15,7 @@ const querystring = {
     user_id: {
       type: 'string',
       format: 'uuid',
-      description: 'User id for fetch one',
+      description: 'Optional user id to fetch a single user',
     },
   },
 };
