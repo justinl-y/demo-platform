@@ -5,7 +5,6 @@ SET
 WHERE
   id = $userId
   AND token_refresh_hash IS NOT NULL
-  AND is_active = TRUE
 RETURNING
   id
 ;

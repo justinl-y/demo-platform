@@ -139,12 +139,16 @@ async function logout(db: DatabaseDecorator, jwt: JWT, tokenRefresh: string): Pr
 
   if (tokenType !== refreshTokenJwt) throw new BadRequestError('Incorrect authorization token type');
 
+  const nullReturnedUserId = {
+    returnedUserId: null,
+  };
+
   const user = await getUserWithRefreshToken(db, userId);
-  if (!user) {
-    return {
-      returnedUserId: null,
-    };
-  }
+  if (!user) return nullReturnedUserId;
+
+  // check for matching persisted token to prevent potential DoS with expired token
+  const validRefreshToken = await bcryptCompare(tokenRefresh, user.token_refresh_hash);
+  if (!validRefreshToken) return nullReturnedUserId;
 
   // delete refresh token
   const {
