@@ -10,7 +10,7 @@
     "verbatimModuleSyntax": true,
     "rewriteRelativeImportExtensions": true,
     "moduleDetection": "force",
-    "rootDir": ".",
+    "rootDir": "../..",
     "types": [
       "node",
     ],
