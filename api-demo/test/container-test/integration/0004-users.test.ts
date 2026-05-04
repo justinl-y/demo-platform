@@ -22,7 +22,7 @@ import type Supertest from 'supertest';
 const fileNumber = getFileNumber(import.meta.url);
 
 describe(`${fileNumber} - Users`, () => {
-  describe('GET /users - all', async () => {
+  describe('GET /users - all', () => {
     let activeUserId: string;
     let activeUserEmail: string;
     let inactiveUserId: string;
@@ -75,7 +75,7 @@ describe(`${fileNumber} - Users`, () => {
     });
   });
 
-  describe('GET /users - single', async () => {
+  describe('GET /users - single', () => {
     let activeUserId: string;
     let activeUserEmail: string;
     let inactiveUserId: string;
@@ -159,6 +159,6 @@ describe(`${fileNumber} - Users`, () => {
     });
   });
 
-  describe.skip('POST /users', async () => {});
-  describe.skip('PUT /users/:userID', async () => {});
+  describe.skip('POST /users', () => {});
+  describe.skip('PUT /users/:userID', () => {});
 });

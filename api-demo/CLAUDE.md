@@ -58,15 +58,15 @@ src/
   plugins/              # Fastify plugins (postgres, jwt, custom-ajv-formats)
   hooks/                # Fastify lifecycle hooks (auth, error handling, Sentry)
   routes/               # Thin HTTP handlers — parse request, call service, send response
-    auth/               # post-login, post-refresh
+    auth/               # post-login, post-refresh, put-logout
     users/              # get-users
     health-check/       # get-health-db, get-health-eb
   services/             # Business logic — no HTTP, no SQL
-    auth/               # login(), refresh()
+    auth/               # login(), refresh(), logout()
     health/             # checkDb(), checkEb()
     users/              # getUsers()
   repositories/         # DB access only — SQL files, pgtyped types, query functions
-    auth/               # getUserByEmail, getUserWithRefreshToken, setUserTokenOnLogin, setUserTokenOnRefresh
+    auth/               # getUserByEmail, getUserWithRefreshToken, setUserRefreshTokenOnLogin, setUserTokenOnRefresh, removeUserRefreshToken
     health/             # getPgVersion
     users/              # getUsers
   lib/                  # Framework-level utilities (database, authentication, logger, sentry)
@@ -108,5 +108,14 @@ Each feature spans three layers. Keep logic in its correct layer:
 **Named functions required for route handlers**: Arrow functions lose the Fastify `this` context. Use named `async function` declarations. Services and repositories do not use `this` — they receive dependencies as plain function parameters.
 
 **Database access**: `this.db` is available on the Fastify instance (decorated by the postgres plugin). Handlers pass `this.db` to service functions; services pass it to repository functions. Do not call `this.db` directly from services or import the database module directly.
+
+- `db.query<TRow>(file, params, format?)` — single SQL statement, returns rows directly.
+- `db.transaction()` — returns a `TransactionBuilder`. Chain `.add<TRow>(instruction)` for each statement, then call `.execute(dryRun?)`. Results are returned as a positional tuple of row arrays matching the order of `.add()` calls:
+
+```ts
+const [userRows] = await db.transaction()
+  .add<IMyQueryResult>({ files: [sqlFile], params: { id } })
+  .execute();
+```
 
 **TypeScript**: Strict mode (`noImplicitAny`, `verbatimModuleSyntax`). Stage 3 (TC39) decorators are supported natively — no tsconfig flag required; do not use `experimentalDecorators`. Uses Node 24 tsconfig base. Local/CI: source runs directly via tsx (hot reload via pm2 watch). Production: compiled to `dist/` via `npm run build` (`tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json`). Type errors reported in local/CI by `tsc --noEmit --watch` running alongside the server.

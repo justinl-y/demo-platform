@@ -2,21 +2,25 @@ import { cookieOptions } from '#lib/authentication';
 import { Config } from '#config/index';
 import { login } from '#services/auth/auth.service';
 
-import type { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
+import type {
+  FastifyRequest,
+  FastifyReply,
+  FastifyInstance,
+} from 'fastify';
 
 type Request = {
-  body: {
+  Body: {
     email: string;
     password: string;
   };
 };
 
-async function postLogin(this: FastifyInstance, request: FastifyRequest, reply: FastifyReply) {
+async function postLogin(this: FastifyInstance, request: FastifyRequest<Request>, reply: FastifyReply) {
   const {
     body: {
       email, password,
     },
-  } = request as Request;
+  } = request;
 
   const {
     accessTokenCookie, accessTokenCookieMaxAge, refreshTokenCookie, refreshTokenCookieMaxAge,

@@ -4,14 +4,21 @@ import {
 
 const route = {
   tags: ['auth'],
-  summary: 'Logout user',
-  description: 'Logs out user by deletion of access token',
+  summary: 'User logout',
+  description: 'Logs out user',
 };
 
 const response = {
   204: {
     type: 'null',
-    description: 'User access token deleted',
+    description: 'User refresh token deleted from DB and both refresh and access cookies cleared',
+    headers: {
+      'set-cookie': {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Clears access_token and refresh_token HttpOnly cookies',
+      },
+    },
   },
 };
 

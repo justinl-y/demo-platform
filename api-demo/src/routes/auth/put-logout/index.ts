@@ -6,6 +6,7 @@ import type { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 
 async function putLogout(this: FastifyInstance, request: FastifyRequest, reply: FastifyReply) {
   const {
+    accessTokenCookie,
     refreshTokenCookie,
   } = Config.authConfig();
 
@@ -15,12 +16,14 @@ async function putLogout(this: FastifyInstance, request: FastifyRequest, reply: 
     },
   } = request;
 
-  if (!tokenRefresh) throw new BadRequestError('Access token required');
+  if (!tokenRefresh) throw new BadRequestError('Refresh token required');
 
   await logout(this.db, this.jwt, tokenRefresh);
 
   // return 204 irrespective of an actual user or not
   return reply
+    .clearCookie(accessTokenCookie, { path: '/' })
+    .clearCookie(refreshTokenCookie, { path: '/' })
     .code(204)
     .send()
   ;

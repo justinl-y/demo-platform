@@ -30,8 +30,6 @@ type PatchedPgClient = Omit<PoolClient, 'query'> & {
   }>;
 };
 
-type TransactionResults = Record<string, QueryRow[][]>;
-
 interface FlattenedInstruction {
   file: string;
   params: SqlParams;
@@ -327,31 +325,20 @@ async function executeTransaction(this: Pool, rawInstructions: TransactionInstru
 
     const client = pgClient;
 
-    // next
-    const todos: FlattenedInstruction[] = [];
+    const instructionTodos: FlattenedInstruction[][] = [];
 
     for (const instruction of instructions) {
       let {
         files, params,
       } = instruction;
 
-      // just as the instructions argument comment above ^... the files & params arrays may
-      // also be shorted for Caller convenience. If so... standardize: wrap in array.
       files = Array.isArray(files) ? files : [files];
       params = Array.isArray(params) ? params : [params];
 
-      /*
-      output coming back (flatInstructions) will be...
-        {
-          file1: [{ query: 'SELECT * from face;', params: {p1, p2, pN} }, { query: 'SELECT 8 from face;', params: {x1, x2, xN} }],
-          file2: [{ query: 'SELECT * from toes;', params: {y1, y2, yN} }],
-        }
-      */
-
-      const flatInstructions = await flattenInstruction(files, params);
-
-      todos.push(...flatInstructions);
+      instructionTodos.push(await flattenInstruction(files, params));
     }
+
+    const todos = instructionTodos.flat();
 
     // define (but don't run!) the rollback function to possibly be used later.
     const pgRollbackTransaction = async (error?: unknown): Promise<never> => {
@@ -381,42 +368,35 @@ async function executeTransaction(this: Pool, rawInstructions: TransactionInstru
     // begin the transaction
     await pgTransaction('BEGIN');
 
-    // next
-    const results: TransactionResults = {};
+    const results: TransactionResult = instructionTodos.map(() => []);
 
-    // eachofseries will ensure the todos are done in order but also give us access to the file key.
-    for (const todo of todos) {
-      const {
-        file: fileName, query, params,
-      } = todo;
+    for (let i = 0; i < instructionTodos.length; i++) {
+      for (const todo of instructionTodos[i]) {
+        const {
+          file: fileName, query, params,
+        } = todo;
 
-      if (!results[fileName]) results[fileName] = [];
+        // keep in mind pgClient was augmented/patched by the local pgPatch implementation!
+        try {
+          const result = await pgClient.query(query, params);
 
-      // keep in mind pgClient was augmented/patched by the local pgPatch implementation!
-      try {
-        const result = await pgClient.query(query, params);
+          results[i].push(...result.rows);
+        }
+        catch (err) {
+          const errWithContext = Object.assign(
+            err instanceof Error ? err : new Error(String(err)),
+            { sqlFileName: fileName },
+          );
 
-        results[fileName].push(result.rows);
-      }
-      catch (err) {
-        const errWithContext = Object.assign(
-          err instanceof Error ? err : new Error(String(err)),
-          { sqlFileName: fileName },
-        );
-
-        await pgRollbackTransaction(errWithContext);
+          await pgRollbackTransaction(errWithContext);
+        }
       }
     }
-
-    // next
-
-    // If we make it into this function, no errors occurred & we can safely COMMIT, or display attempted queries if DryRun was enabled...
-    const flatResults = _.mapValues(results, (r) => _.flatten(r));
 
     if (dryRun) await pgRollbackTransaction();
     else await pgTransaction('COMMIT');
 
-    return flatResults;
+    return results;
   }
   catch (err) {
     const errorDetails = getErrorDetails(err);
@@ -440,20 +420,17 @@ type ExecFn = (instructions: TransactionInstruction[], dryRun?: boolean) => Prom
 
 class TransactionBuilder<TResults extends object[][] = []> {
   private readonly instructions: TransactionInstruction[] = [];
-  private readonly fileKeys: string[] = [];
 
   constructor(private readonly exec: ExecFn) {}
 
   add<TRow extends object = QueryRow>(instruction: TransactionInstruction): TransactionBuilder<[...TResults, TRow[]]> {
     this.instructions.push(instruction);
-    const primaryFile = Array.isArray(instruction.files) ? instruction.files[0] : instruction.files;
-    this.fileKeys.push(primaryFile);
     return this as unknown as TransactionBuilder<[...TResults, TRow[]]>;
   }
 
   async execute(dryRun?: boolean): Promise<TResults> {
-    const result = await this.exec(this.instructions, dryRun);
-    return this.fileKeys.map((key) => result[key] ?? []) as unknown as TResults;
+    const results = await this.exec(this.instructions, dryRun);
+    return results as unknown as TResults;
   }
 }
 

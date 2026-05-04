@@ -9,14 +9,17 @@ import onRequest from './on-request.ts';
 import preHandlers from './pre-handlers.ts';
 import getUsers from './get-users/index.ts';
 
-import type { FastifyInstance } from 'fastify';
+import type {
+  FastifyInstance,
+  RouteHandlerMethod,
+} from 'fastify';
 
 const {
   GET,
 } = HTTP_METHODS;
 
 const routes = {
-  getUsers: routePropertiesCore(GET, '/users', getUsers),
+  getUsers: routePropertiesCore(GET, '/users', getUsers as RouteHandlerMethod),
 };
 
 export type RouteKey = keyof typeof routes;

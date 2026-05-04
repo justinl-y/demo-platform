@@ -3,17 +3,17 @@ import { getUsers as getUsersService } from '#services/users/users.service';
 import type { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 
 interface Request {
-  query: {
-    user_id: string | null;
+  Querystring: {
+    user_id?: string;
   };
 }
 
-async function getUsers(this: FastifyInstance, request: FastifyRequest, reply: FastifyReply) {
+async function getUsers(this: FastifyInstance, request: FastifyRequest<Request>, reply: FastifyReply) {
   const {
     query: {
       user_id: userId = null,
     },
-  } = request as Request;
+  } = request;
 
   const result = await getUsersService(this.db, userId);
 

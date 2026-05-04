@@ -360,7 +360,7 @@ describe(`${fileNumber} - Auth`, () => {
         const res = await getResponse();
 
         expect(res.statusCode).toBe(400);
-        expect(res.body.message).toBe('Access token required');
+        expect(res.body.message).toBe('Refresh token required');
       });
 
       test('Malformed "refresh_token" cookie value returns 400', async () => {
@@ -384,6 +384,7 @@ describe(`${fileNumber} - Auth`, () => {
       }
 
       let rep: Supertest.Response;
+      let cookies: string[];
       let refreshTokenCookie: string;
       let tokenRefreshHash: string | null;
 
@@ -397,6 +398,7 @@ describe(`${fileNumber} - Auth`, () => {
         await query('UPDATE public.users SET token_refresh_hash = $1 WHERE id = $2', [hash, logoutUserId]);
 
         rep = await getResponse(refreshTokenCookie);
+        cookies = setCookies(rep.headers);
 
         const getTokenRefreshHashSql = 'SELECT u.token_refresh_hash FROM public.users AS u WHERE u.id = $1';
         const [result] = await query<DbUserRefreshHash>(getTokenRefreshHashSql, [logoutUserId]);
@@ -412,6 +414,22 @@ describe(`${fileNumber} - Auth`, () => {
 
       test('User "token_refresh_hash" is NULL in db after logout', () => {
         expect(tokenRefreshHash).toBeNull();
+      });
+
+      test('Response clears "access_token" cookie', () => {
+        const cookie = cookies.find((c) => c.startsWith('access_token='));
+
+        expect(cookie).toBeDefined();
+        expect(cookie).toContain('Max-Age=0');
+        expect(cookie).toContain('Path=/');
+      });
+
+      test('Response clears "refresh_token" cookie', () => {
+        const cookie = cookies.find((c) => c.startsWith('refresh_token='));
+
+        expect(cookie).toBeDefined();
+        expect(cookie).toContain('Max-Age=0');
+        expect(cookie).toContain('Path=/');
       });
 
       test('Subsequent logout with same token returns 204', async () => {
