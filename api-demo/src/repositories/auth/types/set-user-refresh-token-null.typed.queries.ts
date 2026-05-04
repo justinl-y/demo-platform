@@ -17,7 +17,7 @@ export interface IAuthSetUserRefreshTokenNullQuery {
   result: IAuthSetUserRefreshTokenNullResult;
 }
 
-const authSetUserRefreshTokenNullIR: any = {"usedParamSet":{"userId":true},"params":[{"name":"userId","required":false,"transform":{"type":"scalar"},"locs":[{"a":129,"b":135}]}],"statement":"                                                             \nUPDATE\n  public.users\nSET\n  token_refresh_hash = NULL\nWHERE\n  id = :userId\n  AND token_refresh_hash IS NOT NULL\n  AND is_active = TRUE\nRETURNING\n  id"};
+const authSetUserRefreshTokenNullIR: any = {"usedParamSet":{"userId":true},"params":[{"name":"userId","required":false,"transform":{"type":"scalar"},"locs":[{"a":129,"b":135}]}],"statement":"                                                             \nUPDATE\n  public.users\nSET\n  token_refresh_hash = NULL\nWHERE\n  id = :userId\n  AND token_refresh_hash IS NOT NULL\nRETURNING\n  id"};
 
 /**
  * Query generated from SQL:
@@ -30,7 +30,6 @@ const authSetUserRefreshTokenNullIR: any = {"usedParamSet":{"userId":true},"para
  * WHERE
  *   id = :userId
  *   AND token_refresh_hash IS NOT NULL
- *   AND is_active = TRUE
  * RETURNING
  *   id
  * ```
