@@ -9,6 +9,10 @@ import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
 function repositoriesPlugin(fastify: FastifyInstance, _options: FastifyPluginOptions): void {
   // Bind db into each repository factory so services receive a plain object with no db dependency.
   // Requires postgresPlugin to be registered first so fastify.db is available.
+  if (!fastify.hasDecorator('db')) {
+    throw new Error('repositoriesPlugin requires fastify.db. Ensure postgres-plugin is registered before repositories-plugin.');
+  }
+
   fastify.decorate('repositories', {
     auth: createAuthRepository(fastify.db),
     health: createHealthRepository(fastify.db),
@@ -17,4 +21,10 @@ function repositoriesPlugin(fastify: FastifyInstance, _options: FastifyPluginOpt
 }
 
 // fp() breaks Fastify's encapsulation so this.repositories is visible across all scopes.
-export default fp(repositoriesPlugin);
+export default fp(repositoriesPlugin, {
+  name: 'repositories-plugin',
+  dependencies: ['postgres-plugin'],
+  decorators: {
+    fastify: ['db'],
+  },
+});

@@ -9,7 +9,7 @@ const relPath = import.meta.dirname;
 const getUserQuery = cwd('get-user-by-email', relPath);
 const getUserWithRefreshHashQuery = cwd('get-user-refresh-hash', relPath);
 const setUserRefreshHashOnLoginQuery = cwd('set-user-refresh-hash-on-login', relPath);
-const setUserHashOnRefreshQuery = cwd('set-user-refresh-hash-on-refresh', relPath);
+const setUserRefreshHashOnRefreshQuery = cwd('set-user-refresh-hash-on-refresh', relPath);
 const setUserRefreshHashNullQuery = cwd('set-user-refresh-hash-null', relPath);
 
 interface GetUserByEmail {
@@ -46,11 +46,11 @@ function createAuthRepository(db: DatabaseDecorator) {
     }: GetUserWithRefreshToken) =>
       db.query<IAuthGetUserRefreshHashResult>(getUserWithRefreshHashQuery, { userId }, 'one'),
 
-    setUserRefreshTokenOnLogin: ({
+    setUserRefreshTokenOnLogin: async ({
       userId,
       hashedTokenRefresh,
-    }: SetUserRefreshTokenOnLogin) =>
-      db.transaction()
+    }: SetUserRefreshTokenOnLogin): Promise<void> => {
+      await db.transaction()
         .add({
           files: [setUserRefreshHashOnLoginQuery],
           params: {
@@ -58,21 +58,23 @@ function createAuthRepository(db: DatabaseDecorator) {
             hashedTokenRefresh,
           },
         })
-        .execute(),
+        .execute();
+    },
 
-    setUserTokenOnRefresh: ({
+    setUserTokenOnRefresh: async ({
       userId,
       newTokenRefreshHash,
-    }: SetUserTokenOnRefresh) =>
-      db.transaction()
+    }: SetUserTokenOnRefresh): Promise<void> => {
+      await db.transaction()
         .add({
-          files: [setUserHashOnRefreshQuery],
+          files: [setUserRefreshHashOnRefreshQuery],
           params: {
             userId,
             newTokenRefreshHash,
           },
         })
-        .execute(),
+        .execute();
+    },
 
     removeUserRefreshToken: async ({
       userId,

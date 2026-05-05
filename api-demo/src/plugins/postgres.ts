@@ -51,4 +51,6 @@ function postgresPlugin(fastify: FastifyInstance, options: FastifyPluginOptions)
   fastify.addHook('onClose', () => pool.end());
 }
 
-export default fp(postgresPlugin);
+export default fp(postgresPlugin, {
+  name: 'postgres-plugin',
+});
