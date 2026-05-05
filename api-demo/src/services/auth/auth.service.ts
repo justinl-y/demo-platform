@@ -40,7 +40,7 @@ async function login(repository: AuthRepository, jwt: JWT, params: LoginParams):
     password,
   } = params;
 
-  const user = await repository.getUserByEmail(email);
+  const user = await repository.getUserByEmail({ email });
   if (!user) throw new UnauthorizedError('Authentication failed');
 
   const {
@@ -58,7 +58,12 @@ async function login(repository: AuthRepository, jwt: JWT, params: LoginParams):
 
   const hashedTokenRefresh = await bcryptHash(refreshToken);
 
-  await repository.setUserRefreshTokenOnLogin(userId, hashedTokenRefresh);
+  const setUserRefreshTokenOnLoginParams = {
+    userId,
+    hashedTokenRefresh,
+  };
+
+  await repository.setUserRefreshTokenOnLogin(setUserRefreshTokenOnLoginParams);
 
   return {
     accessToken,
@@ -106,7 +111,7 @@ async function refresh(repository: AuthRepository, jwt: JWT, params: RefreshPara
 
   if (tokenType !== refreshTokenJwt) throw new UnauthorizedError('Incorrect authorization token type');
 
-  const user = await repository.getUserWithRefreshToken(userId);
+  const user = await repository.getUserWithRefreshToken({ userId });
   if (!user) throw new UnauthorizedError('Authentication failed');
 
   const validRefreshToken = await bcryptCompare(tokenRefresh, user.token_refresh_hash);
@@ -117,7 +122,12 @@ async function refresh(repository: AuthRepository, jwt: JWT, params: RefreshPara
 
   const newTokenRefreshHash = await bcryptHash(newRefreshToken);
 
-  await repository.setUserTokenOnRefresh(userId, newTokenRefreshHash);
+  const setUserTokenOnRefreshParams = {
+    userId,
+    newTokenRefreshHash,
+  };
+
+  await repository.setUserTokenOnRefresh(setUserTokenOnRefreshParams);
 
   return {
     accessToken: newAccessToken,
@@ -161,7 +171,7 @@ async function logout(repository: AuthRepository, jwt: JWT, params: LogoutParams
     returnedUserId: null,
   };
 
-  const user = await repository.getUserWithRefreshToken(userId);
+  const user = await repository.getUserWithRefreshToken({ userId });
   if (!user) return nullReturnedUserId;
 
   // ensure the presented refresh token matches the persisted hash before clearing it (potential DoS)
@@ -171,7 +181,7 @@ async function logout(repository: AuthRepository, jwt: JWT, params: LogoutParams
   // delete refresh token
   const {
     user: removedUser,
-  } = await repository.removeUserRefreshToken(userId);
+  } = await repository.removeUserRefreshToken({ userId });
 
   return {
     returnedUserId: removedUser?.id ?? null,

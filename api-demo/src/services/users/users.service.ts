@@ -17,7 +17,7 @@ async function getUsers(repository: UsersRepository, params: GetUsersParams): Pr
     userId,
   } = params;
 
-  const result = await repository.getUsers(userId);
+  const result = await repository.getUsers({ userId });
 
   return (result?.users ?? {}) as Users;
 }

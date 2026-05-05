@@ -7,45 +7,79 @@ import type { IAuthSetUserRefreshHashNullResult } from './types/set-user-refresh
 
 const relPath = import.meta.dirname;
 const getUserQuery = cwd('get-user-by-email', relPath);
-const getUserWithRefreshTokenQuery = cwd('get-user-refresh-hash', relPath);
-const setUserRefreshTokenOnLoginQuery = cwd('set-user-refresh-hash-on-login', relPath);
-const setUserTokenOnRefreshQuery = cwd('set-user-refresh-hash-on-refresh', relPath);
-const setUserTokenNullQuery = cwd('set-user-refresh-hash-null', relPath);
+const getUserWithRefreshHashQuery = cwd('get-user-refresh-hash', relPath);
+const setUserRefreshHashOnLoginQuery = cwd('set-user-refresh-hash-on-login', relPath);
+const setUserHashOnRefreshQuery = cwd('set-user-refresh-hash-on-refresh', relPath);
+const setUserRefreshHashNullQuery = cwd('set-user-refresh-hash-null', relPath);
+
+interface GetUserByEmail {
+  email: string;
+}
+
+interface GetUserWithRefreshToken {
+  userId: string;
+}
+
+interface SetUserRefreshTokenOnLogin {
+  userId: string;
+  hashedTokenRefresh: string;
+}
+
+interface SetUserTokenOnRefresh {
+  userId: string;
+  newTokenRefreshHash: string;
+}
+
+interface RemoveUserRefreshToken {
+  userId: string;
+}
 
 function createAuthRepository(db: DatabaseDecorator) {
   return {
-    getUserByEmail: (email: string) =>
+    getUserByEmail: ({
+      email,
+    }: GetUserByEmail) =>
       db.query<IAuthGetUserByEmailResult>(getUserQuery, { email }, 'one'),
 
-    getUserWithRefreshToken: (userId: string) =>
-      db.query<IAuthGetUserRefreshHashResult>(getUserWithRefreshTokenQuery, { userId }, 'one'),
+    getUserWithRefreshToken: ({
+      userId,
+    }: GetUserWithRefreshToken) =>
+      db.query<IAuthGetUserRefreshHashResult>(getUserWithRefreshHashQuery, { userId }, 'one'),
 
-    setUserRefreshTokenOnLogin: (userId: string, hashedTokenRefresh: string) =>
+    setUserRefreshTokenOnLogin: ({
+      userId,
+      hashedTokenRefresh,
+    }: SetUserRefreshTokenOnLogin) =>
       db.transaction()
         .add({
-          files: [setUserRefreshTokenOnLoginQuery],
+          files: [setUserRefreshHashOnLoginQuery],
           params: {
+            userId,
             hashedTokenRefresh,
-            userId,
           },
         })
         .execute(),
 
-    setUserTokenOnRefresh: (userId: string, newTokenRefreshHash: string) =>
+    setUserTokenOnRefresh: ({
+      userId,
+      newTokenRefreshHash,
+    }: SetUserTokenOnRefresh) =>
       db.transaction()
         .add({
-          files: [setUserTokenOnRefreshQuery],
+          files: [setUserHashOnRefreshQuery],
           params: {
-            newTokenRefreshHash,
             userId,
+            newTokenRefreshHash,
           },
         })
         .execute(),
 
-    removeUserRefreshToken: async (userId: string): Promise<{ user: IAuthSetUserRefreshHashNullResult | null }> => {
+    removeUserRefreshToken: async ({
+      userId,
+    }: RemoveUserRefreshToken): Promise<{ user: IAuthSetUserRefreshHashNullResult | null }> => {
       const [userRow] = await db.transaction()
         .add<IAuthSetUserRefreshHashNullResult>({
-          files: [setUserTokenNullQuery],
+          files: [setUserRefreshHashNullQuery],
           params: { userId },
         })
         .execute();
