@@ -6,7 +6,7 @@ import {
 
 import {
   errorsToHandle,
-} from '../../../src/lib/database-errors.ts';
+} from '#lib/database-errors';
 
 describe('0010 - database-errors', () => {
   test('maps missing parameter errors to a standardized message', () => {

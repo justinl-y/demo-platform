@@ -6,16 +6,16 @@ import {
   vi,
 } from 'vitest';
 
-vi.mock('../../../src/lib/database-sql-loader.ts', () => ({
+vi.mock('#lib/database-sql-loader', () => ({
   getSqlBlob: vi.fn(),
 }));
 
 import {
   flattenInstruction,
-} from '../../../src/lib/database-transaction-instruction-flattener.ts';
+} from '#lib/database-transaction-instruction-flattener';
 import {
   getSqlBlob,
-} from '../../../src/lib/database-sql-loader.ts';
+} from '#lib/database-sql-loader';
 
 describe('0011 - database-transaction-instruction-flattener', () => {
   const getSqlBlobMock = vi.mocked(getSqlBlob);

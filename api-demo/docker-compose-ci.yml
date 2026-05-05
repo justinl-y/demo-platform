@@ -72,7 +72,7 @@ services:
     tty: true
     volumes:
       - ./test/container-test:/usr/app
-      # Canonical API source mount for test runtime imports (e.g. ../../../src/...).
+      # Canonical API source mount for test runtime imports (resolves #lib/*, #utils/*, etc.).
       - ./src:/src:ro
       - coverage:/coverage
 
