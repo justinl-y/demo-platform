@@ -22,7 +22,7 @@ async function putLogout(this: FastifyInstance, request: FastifyRequest, reply: 
     tokenRefresh,
   };
 
-  await logout(this.db, this.jwt, logoutParams);
+  await logout(this.repositories.auth, this.jwt, logoutParams);
 
   // return 204 irrespective of an actual user or not
   return reply

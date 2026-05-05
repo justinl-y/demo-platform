@@ -22,7 +22,7 @@ async function postRefresh(this: FastifyInstance, request: FastifyRequest, reply
     tokenRefresh,
   };
 
-  const result = await refresh(this.db, this.jwt, refreshParams);
+  const result = await refresh(this.repositories.auth, this.jwt, refreshParams);
 
   // access cookie
   reply.setCookie(accessTokenCookie, result.accessToken, {
