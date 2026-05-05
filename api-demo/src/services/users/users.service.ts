@@ -2,7 +2,7 @@ import { getUsers as getUsersFromDb } from '#repositories/users/users.repository
 
 import type { DatabaseDecorator } from '../../types/database.ts';
 
-interface getUsersParams {
+interface GetUsersParams {
   userId: string | null;
 }
 
@@ -14,7 +14,7 @@ interface Users {
   };
 }
 
-async function getUsers(db: DatabaseDecorator, params: getUsersParams): Promise<Users> {
+async function getUsers(db: DatabaseDecorator, params: GetUsersParams): Promise<Users> {
   const {
     userId,
   } = params;
