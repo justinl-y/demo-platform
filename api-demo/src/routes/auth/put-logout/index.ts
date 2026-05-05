@@ -18,7 +18,11 @@ async function putLogout(this: FastifyInstance, request: FastifyRequest, reply: 
 
   if (!tokenRefresh) throw new BadRequestError('Refresh token required');
 
-  await logout(this.db, this.jwt, tokenRefresh);
+  const logoutParams = {
+    tokenRefresh,
+  };
+
+  await logout(this.db, this.jwt, logoutParams);
 
   // return 204 irrespective of an actual user or not
   return reply

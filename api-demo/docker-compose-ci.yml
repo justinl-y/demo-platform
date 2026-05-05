@@ -72,8 +72,10 @@ services:
     tty: true
     volumes:
       - ./test/container-test:/usr/app
-      # Canonical API source mount for test runtime imports (resolves #lib/*, #utils/*, etc.).
+      # Required by vitest resolve.alias (vitest.config.ts resolves #lib/*, #utils/*, etc. from this path).
       - ./src:/src:ro
+      # Required by c8 coverage report: paths in V8 coverage JSON use /srv/api/src (API container path).
+      - ./src:/srv/api/src:ro
       - coverage:/coverage
 
 volumes:

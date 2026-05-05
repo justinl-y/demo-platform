@@ -8,14 +8,6 @@
     "node": ">=24.0.0 <26.0.0"
   },
   "type": "module",
-  "imports": {
-    "#utils/*": "../../src/utils/*.ts",
-    "#config/*": "../../src/config/*.ts",
-    "#lib/*": "../../src/lib/*.ts",
-    "#decorators/*": "../../src/decorators/*.ts",
-    "#repositories/*": "../../src/repositories/*.ts",
-    "#services/*": "../../src/services/*.ts"
-  },
   "scripts": {},
   "dependencies": {
     "@faker-js/faker": "^10.4.0",

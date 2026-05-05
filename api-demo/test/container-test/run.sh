@@ -43,7 +43,7 @@ if [[ "${COVERAGE:-0}" == "1" ]]; then
   c8 report \
     --temp-directory /coverage \
     --allow-external \
-    --include '/src/**/*.ts' \
+    --include '/srv/api/src/**/*.ts' \
     --exclude '**/*.typed.*' \
     --reporter text \
     || echo "Coverage report failed (non-fatal)"
