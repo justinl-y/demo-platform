@@ -26,7 +26,12 @@ async function postLogin(this: FastifyInstance, request: FastifyRequest<Request>
     accessTokenCookie, accessTokenCookieMaxAge, refreshTokenCookie, refreshTokenCookieMaxAge,
   } = Config.authConfig();
 
-  const result = await login(this.db, this.jwt, email, password);
+  const loginParams = {
+    email,
+    password,
+  };
+
+  const result = await login(this.db, this.jwt, loginParams);
 
   // access cookie
   reply.setCookie(accessTokenCookie, result.accessToken, {

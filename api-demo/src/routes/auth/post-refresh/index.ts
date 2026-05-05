@@ -18,7 +18,11 @@ async function postRefresh(this: FastifyInstance, request: FastifyRequest, reply
 
   if (!tokenRefresh) throw new UnauthorizedError('Authentication failed');
 
-  const result = await refresh(this.db, this.jwt, tokenRefresh);
+  const refreshParams = {
+    tokenRefresh,
+  };
+
+  const result = await refresh(this.db, this.jwt, refreshParams);
 
   // access cookie
   reply.setCookie(accessTokenCookie, result.accessToken, {

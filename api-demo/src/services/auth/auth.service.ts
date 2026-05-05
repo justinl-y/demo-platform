@@ -21,6 +21,11 @@ import type { JWT } from '@fastify/jwt';
 import type { DatabaseDecorator } from '../../types/database.ts';
 import type { JwtUser } from '../../types/jwt.ts';
 
+interface LoginParams {
+  email: string;
+  password: string;
+}
+
 interface LoginResult {
   accessToken: string;
   refreshToken: string;
@@ -31,12 +36,16 @@ interface LoginResult {
     known_as: string | null;
   };
 }
-
-async function login(db: DatabaseDecorator, jwt: JWT, email: string, password: string): Promise<LoginResult> {
+async function login(db: DatabaseDecorator, jwt: JWT, params: LoginParams): Promise<LoginResult> {
   const {
     accessTokenJwt,
     refreshTokenJwt,
   } = Config.authConfig();
+
+  const {
+    email,
+    password,
+  } = params;
 
   const user = await getUserByEmail(db, email);
   if (!user) throw new UnauthorizedError('Authentication failed');
@@ -70,16 +79,24 @@ async function login(db: DatabaseDecorator, jwt: JWT, email: string, password: s
   };
 }
 
+interface RefreshParams {
+  tokenRefresh: string;
+}
+
 interface RefreshResult {
   accessToken: string;
   refreshToken: string;
 }
 
-async function refresh(db: DatabaseDecorator, jwt: JWT, tokenRefresh: string): Promise<RefreshResult> {
+async function refresh(db: DatabaseDecorator, jwt: JWT, params: RefreshParams): Promise<RefreshResult> {
   const {
     accessTokenJwt,
     refreshTokenJwt,
   } = Config.authConfig();
+
+  const {
+    tokenRefresh,
+  } = params;
 
   let decodedToken: JwtUser;
 
@@ -115,14 +132,22 @@ async function refresh(db: DatabaseDecorator, jwt: JWT, tokenRefresh: string): P
   };
 }
 
+interface LogoutParams {
+  tokenRefresh: string;
+}
+
 interface LogoutResult {
   returnedUserId: string | null;
 }
 
-async function logout(db: DatabaseDecorator, jwt: JWT, tokenRefresh: string): Promise<LogoutResult> {
+async function logout(db: DatabaseDecorator, jwt: JWT, params: LogoutParams): Promise<LogoutResult> {
   const {
     refreshTokenJwt,
   } = Config.authConfig();
+
+  const {
+    tokenRefresh,
+  } = params;
 
   let decodedToken: JwtUser;
 

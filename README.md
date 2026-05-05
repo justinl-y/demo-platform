@@ -86,7 +86,7 @@ flowchart TD
 - 📋 Cloudwatch for logging
 - 🔐 AWS SSO for authentication
 
-[Read more here ...](/api-demo/README.md)
+[Read more here ...](./api-demo/README.md)
 
 ---
 

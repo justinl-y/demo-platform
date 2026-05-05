@@ -174,9 +174,17 @@ API-Demo contains a bespoke database interaction library built on top of `node-p
 - `db.query` — SQL data query language (DQL): `SELECT`
 - `db.transaction` — SQL data manipulation language (DML): `INSERT` / `UPDATE` / `DELETE`
 
+Internally, the database library is split into focused modules:
+
+- `src/lib/database.ts` — query/transaction orchestration and error flow
+- `src/lib/database-errors.ts` — error normalization + PG/system-to-HTTP mapping
+- `src/lib/database-pg-client.ts` and `src/lib/database-pg-named.ts` — PG client patching and named-parameter interpolation
+- `src/lib/database-sql-loader.ts` — SQL file loading with optional environment-aware caching
+- `src/lib/database-transaction-builder.ts` and `src/lib/database-transaction-instruction-flattener.ts` — fluent transaction API and instruction expansion
+
 Both methods return promises and work with `async/await`. Each SQL file must contain a **single statement** — this keeps operations modular and reusable and avoids the prepared-statement limitation that prevents multiple DML commands in one call. Multiple operations within a single statement are supported via CTEs.
 
-Named parameters (e.g. `$userId`) in SQL files are transparently interpolated into positional `$1, $2, ...` parameters before being sent to Postgres. Callers always use named parameters.
+Named parameters (e.g. `$userId`) in SQL files are transparently interpolated into positional `$1, $2, ...` parameters by the PG client patch layer before being sent to Postgres. Callers always use named parameters.
 
 SQL files and their pgtyped types live in `src/repositories/<resource>/`. Run `npm run sql:types` after adding or editing any `.sql` file to regenerate types.
 
@@ -185,6 +193,8 @@ SQL files and their pgtyped types live in `src/repositories/<resource>/`. Run `n
 ### `db.query<TRow>(file, params, outputFormat?)`
 
 Acquires a connection from the PG pool, reads the SQL file, substitutes named parameters, runs the query, and returns the result. DML keywords (`INSERT`, `UPDATE`, `DELETE`) are **not** permitted in query files — use `db.transaction` instead.
+
+SQL file text is cached in memory by default only in live environments (`PROD`, `STAGE`) and is not cached by default in `LOCAL`/`TEST`.
 
 - `file` — absolute path to the SQL file **without** the `.sql` extension. The library appends `.sql` internally. Use the `cwd` utility to build the path relative to the repository directory.
 - `params` — `Record<string, unknown>` of named parameters to substitute into the SQL.
@@ -215,19 +225,19 @@ async function getUsersByCustomer(db: DatabaseDecorator, customerId: number) {
 #### Example — `'one'`
 
 ```sql
--- src/repositories/auth/get-user.sql
+-- src/repositories/auth/get-user-by-email.sql
 SELECT id, email, password_hash FROM public.users WHERE email = $email;
 ```
 
 ```ts
 // src/repositories/auth/auth.repository.ts
-import type { IGetUserResult } from './types/get-user.typed.queries.ts';
+import type { IAuthGetUserByEmailResult } from './types/get-user-by-email.typed.queries.ts';
 
-const getUserQuery = cwd('get-user', import.meta.dirname);
+const getUserQuery = cwd('get-user-by-email', import.meta.dirname);
 
 async function getUserByEmail(db: DatabaseDecorator, email: string) {
-  return db.query<IGetUserResult>(getUserQuery, { email }, 'one');
-  // returns IGetUserResult | null
+  return db.query<IAuthGetUserByEmailResult>(getUserQuery, { email }, 'one');
+  // returns IAuthGetUserByEmailResult | null
 }
 ```
 
@@ -339,6 +349,6 @@ async function login(db: DatabaseDecorator, jwt: JWT, email: string, password: s
 ```ts
 // src/repositories/auth/auth.repository.ts
 async function getUserByEmail(db: DatabaseDecorator, email: string) {
-  return db.query<IAuthPostLoginGetUserResult>(getUserQuery, { email }, 'one');
+  return db.query<IAuthGetUserByEmailResult>(getUserQuery, { email }, 'one');
 }
 ```
