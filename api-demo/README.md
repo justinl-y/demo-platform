@@ -240,7 +240,7 @@ const getUserQuery = cwd('get-user-by-email', import.meta.dirname);
 
 function createAuthRepository(db: DatabaseDecorator) {
   return {
-    getUserByEmail: (email: string) =>
+    getUserByEmail: ({ email }: { email: string }) =>
       db.query<IAuthGetUserByEmailResult>(getUserQuery, { email }, 'one'),
       // returns IAuthGetUserByEmailResult | null
   };
@@ -351,7 +351,7 @@ async function postLogin(this: FastifyInstance, request: FastifyRequest, reply: 
 // src/services/auth/auth.service.ts
 async function login(repository: AuthRepository, jwt: JWT, params: LoginParams) {
   // Service calls repository methods — no db, no Fastify coupling
-  const user = await repository.getUserByEmail(params.email);
+  const user = await repository.getUserByEmail({ email: params.email });
   ...
 }
 ```
@@ -360,7 +360,7 @@ async function login(repository: AuthRepository, jwt: JWT, params: LoginParams) 
 // src/repositories/auth/auth.repository.ts
 function createAuthRepository(db: DatabaseDecorator) {
   return {
-    getUserByEmail: (email: string) =>
+    getUserByEmail: ({ email }: { email: string }) =>
       db.query<IAuthGetUserByEmailResult>(getUserQuery, { email }, 'one'),
     // ...
   };

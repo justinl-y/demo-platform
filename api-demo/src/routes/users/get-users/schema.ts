@@ -23,6 +23,27 @@ const querystring = {
 const response = {
   200: {
     type: 'object',
+    propertyNames: {
+      type: 'string',
+      format: 'uuid',
+    },
+    example: {
+      id1: {
+        email: 'user1@example.com',
+        full_name: 'string',
+        known_as: 'string',
+      },
+      id2: {
+        email: 'user2@example.com',
+        full_name: 'string',
+        known_as: 'string',
+      },
+      id3: {
+        email: 'user3@example.com',
+        full_name: 'string',
+        known_as: 'string',
+      },
+    },
     additionalProperties: {
       type: 'object',
       properties: {
