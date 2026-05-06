@@ -95,6 +95,10 @@ function cwd(file: string, relativePath: string) {
   return path.resolve(relativePath, file);
 }
 
+function paginationOffset(page: number, perPage: number) {
+  return (page - 1) * perPage;
+}
+
 export {
   routePropertiesCore,
   routePropertiesOnRequest,
@@ -102,4 +106,5 @@ export {
   routeSchema,
   getServerDetails,
   cwd,
+  paginationOffset,
 };

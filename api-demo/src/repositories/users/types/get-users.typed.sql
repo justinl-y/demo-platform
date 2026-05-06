@@ -6,11 +6,16 @@ WITH t_users AS (
 	  , u.email
 	  , u.full_name
 	  , u.known_as
+		, u.is_active
 	FROM
 	  public.users AS u
 	WHERE
-	  u.is_active = TRUE
+		COALESCE((u.is_active = :isActive), TRUE)
 	  AND COALESCE((u.id = :userId), TRUE)
+	ORDER BY
+		split_part(u.full_name, ' ', -1) ASC
+	LIMIT :limit
+	OFFSET :offset
 )
 SELECT
 	json_object_agg(
@@ -18,9 +23,10 @@ SELECT
 		,json_build_object(
 			'email', tu.email
 			, 'full_name', tu.full_name
-			, 'known_as', tu.known_as 
+			, 'known_as', tu.known_as
+			, 'is_active', tu.is_active
 		)
 	) AS users
-FROM 
+FROM
 	t_users AS tu
 ;

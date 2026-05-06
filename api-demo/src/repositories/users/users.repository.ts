@@ -8,14 +8,28 @@ const getUsersQuery = cwd('get-users', relPath);
 
 interface GetUsers {
   userId: string | null;
+  isActive: boolean | null;
+  limit: number;
+  offset: number;
 }
 
 function createUsersRepository(db: DatabaseDecorator) {
   return {
     getUsers: ({
       userId,
-    }: GetUsers) =>
-      db.query<IUsersGetUsersResult>(getUsersQuery, { userId }, 'one'),
+      isActive,
+      limit,
+      offset,
+    }: GetUsers) => {
+      const queryParams = {
+        userId,
+        isActive,
+        limit,
+        offset,
+      };
+
+      return db.query<IUsersGetUsersResult>(getUsersQuery, queryParams, 'one');
+    },
   };
 }
 
