@@ -105,6 +105,8 @@ describe(`${fileNumber} - Users`, () => {
         expect(user).toHaveProperty('email');
         expect(user).toHaveProperty('full_name');
         expect(user).toHaveProperty('known_as');
+        expect(user).toHaveProperty('is_active');
+        expect(user.is_active).toBeTypeOf('boolean');
       });
 
       test('"inactive=include" returns both active and inactive users', async () => {
@@ -126,6 +128,31 @@ describe(`${fileNumber} - Users`, () => {
 
         expect(res.body[activeUserId]).toBeUndefined();
         expect(res.body[inactiveUserId]).toBeDefined();
+      });
+
+      test('"per_page=1" returns exactly one user', async () => {
+        const res = await authAPI.get('/users?inactive=include&per_page=1');
+
+        expect(res.statusCode).toBe(200);
+        expect(Object.keys(res.body)).toHaveLength(1);
+      });
+
+      test('page=1 and page=2 with per_page=1 return different users', async () => {
+        const [res1, res2] = await Promise.all([
+          authAPI.get('/users?inactive=include&per_page=1&page=1'),
+          authAPI.get('/users?inactive=include&per_page=1&page=2'),
+        ]);
+
+        expect(Object.keys(res1.body)).toHaveLength(1);
+        expect(Object.keys(res2.body)).toHaveLength(1);
+        expect(Object.keys(res1.body)[0]).not.toBe(Object.keys(res2.body)[0]);
+      });
+
+      test('"page=9999" returns empty object', async () => {
+        const res = await authAPI.get('/users?inactive=include&page=9999&per_page=100');
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toEqual({});
       });
     });
   });
@@ -189,6 +216,8 @@ describe(`${fileNumber} - Users`, () => {
         expect(user).toHaveProperty('email');
         expect(user).toHaveProperty('full_name');
         expect(user).toHaveProperty('known_as');
+        expect(user).toHaveProperty('is_active');
+        expect(user.is_active).toBeTypeOf('boolean');
       });
 
       test('Response contains only the requested user', () => {

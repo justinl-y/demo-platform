@@ -52,19 +52,19 @@ const response = {
         email: 'user1@example.com',
         full_name: 'string',
         known_as: 'string',
-        is_active: 'boolean',
+        is_active: true,
       },
       'f47ac10b-58cc-4372-a567-0e02b2c3d479': {
         email: 'user2@example.com',
         full_name: 'string',
         known_as: 'string',
-        is_active: 'boolean',
+        is_active: true,
       },
       'e7b2f4d1-9c3a-4f6e-b8d2-1a5e7c9f3b8d': {
         email: 'user3@example.com',
         full_name: 'string',
         known_as: 'string',
-        is_active: 'boolean',
+        is_active: false,
       },
     },
     additionalProperties: {
