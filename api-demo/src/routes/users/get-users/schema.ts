@@ -28,17 +28,17 @@ const response = {
       format: 'uuid',
     },
     example: {
-      id1: {
+      'a3bb189e-8bf9-3888-9912-ace4e6543002': {
         email: 'user1@example.com',
         full_name: 'string',
         known_as: 'string',
       },
-      id2: {
+      'f47ac10b-58cc-4372-a567-0e02b2c3d479': {
         email: 'user2@example.com',
         full_name: 'string',
         known_as: 'string',
       },
-      id3: {
+      'e7b2f4d1-9c3a-4f6e-b8d2-1a5e7c9f3b8d': {
         email: 'user3@example.com',
         full_name: 'string',
         known_as: 'string',
