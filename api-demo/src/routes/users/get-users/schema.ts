@@ -38,6 +38,7 @@ const querystring = {
       description: 'Optional user id to fetch a single user',
     },
   },
+  required: ['inactive', 'page', 'per_page'],
 };
 
 const response = {
