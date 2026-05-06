@@ -9,16 +9,9 @@ import {
   generateJwt,
 } from '#lib/authentication';
 import { Config } from '#config/index';
-import {
-  getUserByEmail,
-  getUserWithRefreshToken,
-  setUserRefreshTokenOnLogin,
-  setUserTokenOnRefresh,
-  removeUserRefreshToken,
-} from '#repositories/auth/auth.repository';
 
 import type { JWT } from '@fastify/jwt';
-import type { DatabaseDecorator } from '../../types/database.ts';
+import type { AuthRepository } from '#repositories/auth/auth.repository';
 import type { JwtUser } from '../../types/jwt.ts';
 
 interface LoginParams {
@@ -36,7 +29,7 @@ interface LoginResult {
     known_as: string | null;
   };
 }
-async function login(db: DatabaseDecorator, jwt: JWT, params: LoginParams): Promise<LoginResult> {
+async function login(repository: AuthRepository, jwt: JWT, params: LoginParams): Promise<LoginResult> {
   const {
     accessTokenJwt,
     refreshTokenJwt,
@@ -47,7 +40,7 @@ async function login(db: DatabaseDecorator, jwt: JWT, params: LoginParams): Prom
     password,
   } = params;
 
-  const user = await getUserByEmail(db, email);
+  const user = await repository.getUserByEmail({ email });
   if (!user) throw new UnauthorizedError('Authentication failed');
 
   const {
@@ -65,7 +58,12 @@ async function login(db: DatabaseDecorator, jwt: JWT, params: LoginParams): Prom
 
   const hashedTokenRefresh = await bcryptHash(refreshToken);
 
-  await setUserRefreshTokenOnLogin(db, userId, hashedTokenRefresh);
+  const setUserRefreshTokenOnLoginParams = {
+    userId,
+    hashedTokenRefresh,
+  };
+
+  await repository.setUserRefreshTokenOnLogin(setUserRefreshTokenOnLoginParams);
 
   return {
     accessToken,
@@ -88,7 +86,7 @@ interface RefreshResult {
   refreshToken: string;
 }
 
-async function refresh(db: DatabaseDecorator, jwt: JWT, params: RefreshParams): Promise<RefreshResult> {
+async function refresh(repository: AuthRepository, jwt: JWT, params: RefreshParams): Promise<RefreshResult> {
   const {
     accessTokenJwt,
     refreshTokenJwt,
@@ -113,7 +111,7 @@ async function refresh(db: DatabaseDecorator, jwt: JWT, params: RefreshParams): 
 
   if (tokenType !== refreshTokenJwt) throw new UnauthorizedError('Incorrect authorization token type');
 
-  const user = await getUserWithRefreshToken(db, userId);
+  const user = await repository.getUserWithRefreshToken({ userId });
   if (!user) throw new UnauthorizedError('Authentication failed');
 
   const validRefreshToken = await bcryptCompare(tokenRefresh, user.token_refresh_hash);
@@ -124,7 +122,12 @@ async function refresh(db: DatabaseDecorator, jwt: JWT, params: RefreshParams): 
 
   const newTokenRefreshHash = await bcryptHash(newRefreshToken);
 
-  await setUserTokenOnRefresh(db, userId, newTokenRefreshHash);
+  const setUserTokenOnRefreshParams = {
+    userId,
+    newTokenRefreshHash,
+  };
+
+  await repository.setUserTokenOnRefresh(setUserTokenOnRefreshParams);
 
   return {
     accessToken: newAccessToken,
@@ -140,7 +143,7 @@ interface LogoutResult {
   returnedUserId: string | null;
 }
 
-async function logout(db: DatabaseDecorator, jwt: JWT, params: LogoutParams): Promise<LogoutResult> {
+async function logout(repository: AuthRepository, jwt: JWT, params: LogoutParams): Promise<LogoutResult> {
   const {
     refreshTokenJwt,
   } = Config.authConfig();
@@ -168,7 +171,7 @@ async function logout(db: DatabaseDecorator, jwt: JWT, params: LogoutParams): Pr
     returnedUserId: null,
   };
 
-  const user = await getUserWithRefreshToken(db, userId);
+  const user = await repository.getUserWithRefreshToken({ userId });
   if (!user) return nullReturnedUserId;
 
   // ensure the presented refresh token matches the persisted hash before clearing it (potential DoS)
@@ -178,7 +181,7 @@ async function logout(db: DatabaseDecorator, jwt: JWT, params: LogoutParams): Pr
   // delete refresh token
   const {
     user: removedUser,
-  } = await removeUserRefreshToken(db, userId);
+  } = await repository.removeUserRefreshToken({ userId });
 
   return {
     returnedUserId: removedUser?.id ?? null,

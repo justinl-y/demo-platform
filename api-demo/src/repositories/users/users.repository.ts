@@ -6,10 +6,20 @@ import type { IUsersGetUsersResult } from './types/get-users.typed.queries.ts';
 const relPath = import.meta.dirname;
 const getUsersQuery = cwd('get-users', relPath);
 
-async function getUsers(db: DatabaseDecorator, userId: string | null) {
-  return db.query<IUsersGetUsersResult>(getUsersQuery, { userId }, 'one');
+interface GetUsers {
+  userId: string | null;
 }
 
-export {
-  getUsers,
-};
+function createUsersRepository(db: DatabaseDecorator) {
+  return {
+    getUsers: ({
+      userId,
+    }: GetUsers) =>
+      db.query<IUsersGetUsersResult>(getUsersQuery, { userId }, 'one'),
+  };
+}
+
+type UsersRepository = ReturnType<typeof createUsersRepository>;
+
+export type { UsersRepository };
+export { createUsersRepository };

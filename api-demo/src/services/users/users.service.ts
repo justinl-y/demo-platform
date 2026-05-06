@@ -1,6 +1,4 @@
-import { getUsers as getUsersFromDb } from '#repositories/users/users.repository';
-
-import type { DatabaseDecorator } from '../../types/database.ts';
+import type { UsersRepository } from '#repositories/users/users.repository';
 
 interface GetUsersParams {
   userId: string | null;
@@ -14,12 +12,12 @@ interface Users {
   };
 }
 
-async function getUsers(db: DatabaseDecorator, params: GetUsersParams): Promise<Users> {
+async function getUsers(repository: UsersRepository, params: GetUsersParams): Promise<Users> {
   const {
     userId,
   } = params;
 
-  const result = await getUsersFromDb(db, userId);
+  const result = await repository.getUsers({ userId });
 
   return (result?.users ?? {}) as Users;
 }

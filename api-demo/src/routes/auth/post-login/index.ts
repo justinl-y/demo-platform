@@ -31,7 +31,7 @@ async function postLogin(this: FastifyInstance, request: FastifyRequest<Request>
     password,
   };
 
-  const result = await login(this.db, this.jwt, loginParams);
+  const result = await login(this.repositories.auth, this.jwt, loginParams);
 
   // access cookie
   reply.setCookie(accessTokenCookie, result.accessToken, {

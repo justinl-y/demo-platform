@@ -55,7 +55,7 @@ src/
   index.ts              # Entrypoint
   build-instance.ts     # Fastify instance builder
   config/               # Config modules (api, auth, aws, fastify, postgres, sentry, swagger)
-  plugins/              # Fastify plugins (postgres, jwt, custom-ajv-formats)
+  plugins/              # Fastify plugins (postgres, jwt, repositories, custom-ajv-formats)
   hooks/                # Fastify lifecycle hooks (auth, error handling, Sentry)
   routes/               # Thin HTTP handlers — parse request, call service, send response
     auth/               # post-login, post-refresh, put-logout
@@ -66,9 +66,9 @@ src/
     health/             # checkDb(), checkEb()
     users/              # getUsers()
   repositories/         # DB access only — SQL files, pgtyped types, query functions
-    auth/               # getUserByEmail, getUserWithRefreshToken, setUserRefreshTokenOnLogin, setUserTokenOnRefresh, removeUserRefreshToken
-    health/             # getPgVersion
-    users/              # getUsers
+    auth/               # createAuthRepository — getUserByEmail, getUserWithRefreshToken, setUserRefreshTokenOnLogin, setUserTokenOnRefresh, removeUserRefreshToken
+    health/             # createHealthRepository — getPgVersion
+    users/              # createUsersRepository — getUsers
   lib/                  # Framework-level utilities (database, authentication, logger, sentry)
   utils/                # Shared pure utilities and constants
   types/                # Shared TypeScript types
@@ -92,11 +92,11 @@ Each feature spans three layers. Keep logic in its correct layer:
 - `index.ts` — thin handler, no business logic or SQL
 - `schema.ts` — JSON schema for request/response validation
 
-**Service functions**: Plain `async function` — no Fastify dependency. Receive `db: DatabaseDecorator` and (where needed) `jwt: JWT` as parameters passed in from the handler via `this.db` and `this.jwt`.
+**Service functions**: Plain `async function` — no Fastify or database dependency. Receive a typed repository object and (where needed) `jwt: JWT` as parameters. Handlers pass `this.repositories.<domain>` and `this.jwt`; services never see `db` or `this`.
 
 **Repository files**: Each repository directory contains:
 
-- `<resource>.repository.ts` — exported functions taking `db: DatabaseDecorator` as first parameter
+- `<resource>.repository.ts` — exports a `create<Resource>Repository(db)` factory and a `<Resource>Repository` type. The factory closes over `db`; callers receive a plain object with no database dependency.
 - `<name>.sql` — SQL source files (single statement each)
 - `types/<name>.typed.sql` — pgtyped input files (auto-generated from `.sql` by `npm run sql:types`)
 - `types/<name>.typed.queries.ts` — pgtyped output (generated — do not edit)
@@ -107,7 +107,9 @@ Each feature spans three layers. Keep logic in its correct layer:
 
 **Named functions required for route handlers**: Arrow functions lose the Fastify `this` context. Use named `async function` declarations. Services and repositories do not use `this` — they receive dependencies as plain function parameters.
 
-**Database access**: `this.db` is available on the Fastify instance (decorated by the postgres plugin). Handlers pass `this.db` to service functions; services pass it to repository functions. Do not call `this.db` directly from services or import the database module directly.
+**Database access**: `this.repositories` is available on the Fastify instance (decorated by the repositories plugin, which runs after the postgres plugin). Handlers pass `this.repositories.<domain>` to service functions. Services call repository methods directly — `db` is bound inside the repository factory and is never visible to services or routes. Do not import `db`, repository factories, or individual repository functions directly into services.
+
+The underlying `db` object (decorated by the postgres plugin) exposes two methods used inside repository factories:
 
 - `db.query<TRow>(file, params, format?)` — single SQL statement, returns rows directly.
 - `db.transaction()` — returns a `TransactionBuilder`. Chain `.add<TRow>(instruction)` for each statement, then call `.execute(dryRun?)`. Results are returned as a positional tuple of row arrays matching the order of `.add()` calls:

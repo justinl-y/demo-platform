@@ -19,7 +19,7 @@ async function getUsers(this: FastifyInstance, request: FastifyRequest<Request>,
     userId,
   };
 
-  const result = await getUsersService(this.db, getUsersParams);
+  const result = await getUsersService(this.repositories.users, getUsersParams);
 
   return reply.send(result);
 }

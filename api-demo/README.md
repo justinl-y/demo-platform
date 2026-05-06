@@ -41,7 +41,7 @@ flowchart TD
 | **Services** | `src/services/<resource>/<resource>.service.ts` | Business logic: orchestration, validation, error decisions |
 | **Repository** | `src/repositories/<resource>/<resource>.repository.ts` | DB access only: SQL files, pgtyped types, `db.query` / `db.transaction` |
 
-Services and repositories are plain functions — no Fastify dependency. The `db` object and `jwt` are passed from the handler as parameters.
+Services are plain functions with no Fastify or database dependency — they receive a typed repository object (and `jwt` where needed) as parameters. Repositories are created as factories that close over `db`, keeping database infrastructure hidden from the service layer. Handlers access `this.repositories.<domain>` and `this.jwt` and pass them down.
 
 ----
 
@@ -216,9 +216,12 @@ import type { IGetUsersResult } from './types/get-users.typed.queries.ts';
 
 const getUsersQuery = cwd('get-users', import.meta.dirname);
 
-async function getUsersByCustomer(db: DatabaseDecorator, customerId: number) {
-  return db.query<IGetUsersResult>(getUsersQuery, { customerId });
-  // returns IGetUsersResult[] | null
+function createUsersRepository(db: DatabaseDecorator) {
+  return {
+    getUsersByCustomer: (customerId: number) =>
+      db.query<IGetUsersResult>(getUsersQuery, { customerId }),
+      // returns IGetUsersResult[] | null
+  };
 }
 ```
 
@@ -235,9 +238,12 @@ import type { IAuthGetUserByEmailResult } from './types/get-user-by-email.typed.
 
 const getUserQuery = cwd('get-user-by-email', import.meta.dirname);
 
-async function getUserByEmail(db: DatabaseDecorator, email: string) {
-  return db.query<IAuthGetUserByEmailResult>(getUserQuery, { email }, 'one');
-  // returns IAuthGetUserByEmailResult | null
+function createAuthRepository(db: DatabaseDecorator) {
+  return {
+    getUserByEmail: ({ email }: { email: string }) =>
+      db.query<IAuthGetUserByEmailResult>(getUserQuery, { email }, 'one'),
+      // returns IAuthGetUserByEmailResult | null
+  };
 }
 ```
 
@@ -278,13 +284,17 @@ import type { IRemoveCustomerResult } from './types/remove-customer.typed.querie
 const removeUsersQuery = cwd('remove-users', import.meta.dirname);
 const removeCustomerQuery = cwd('remove-customer', import.meta.dirname);
 
-async function removeCustomer(db: DatabaseDecorator, customerId: number) {
-  const [removedUsers, removedCustomer] = await db.transaction()
-    .add<IRemoveUsersResult>({ files: removeUsersQuery, params: { customerId } })
-    .add<IRemoveCustomerResult>({ files: removeCustomerQuery, params: { customerId } })
-    .execute();
+function createCustomersRepository(db: DatabaseDecorator) {
+  return {
+    removeCustomer: async (customerId: number) => {
+      const [removedUsers, removedCustomer] = await db.transaction()
+        .add<IRemoveUsersResult>({ files: removeUsersQuery, params: { customerId } })
+        .add<IRemoveCustomerResult>({ files: removeCustomerQuery, params: { customerId } })
+        .execute();
 
-  return { removedUsers, removedCustomer };
+      return { removedUsers, removedCustomer };
+    },
+  };
 }
 ```
 
@@ -321,17 +331,17 @@ INSERT INTO some_table (x_col, y_col) VALUES ($x_0, $y_0), ($x_1, $y_1), ($x_2, 
 
 ### 🔗 The `this` context and named functions
 
-The Postgres plugin binds the PG pool to `db.query` and `db.transaction`, then decorates the Fastify instance with the result. Route handlers access `this.db` and `this.jwt` directly and pass them as arguments to service functions.
+The repositories plugin instantiates each repository factory with `db` and decorates the Fastify instance with the result. Route handlers access `this.repositories.<domain>` and `this.jwt` directly and pass them as arguments to service functions.
 
-**Route handlers must be named `async function` declarations** — arrow functions do not bind `this`. Services and repositories do not use `this`; they receive `db` and `jwt` as plain parameters.
+**Route handlers must be named `async function` declarations** — arrow functions do not bind `this`. Services and repositories do not use `this`; they receive a repository object and `jwt` as plain parameters.
 
 ```ts
 // src/routes/auth/post-login/index.ts
 async function postLogin(this: FastifyInstance, request: FastifyRequest, reply: FastifyReply) {
   const { email, password } = (request as Request).body;
 
-  // Pass this.db and this.jwt to the service — no direct DB access in the handler
-  const result = await login(this.db, this.jwt, email, password);
+  // Pass this.repositories.auth and this.jwt — handler has no direct DB access
+  const result = await login(this.repositories.auth, this.jwt, { email, password });
 
   reply.setCookie(...).send(result.user);
 }
@@ -339,16 +349,20 @@ async function postLogin(this: FastifyInstance, request: FastifyRequest, reply: 
 
 ```ts
 // src/services/auth/auth.service.ts
-async function login(db: DatabaseDecorator, jwt: JWT, email: string, password: string) {
-  // Service calls repository — db passed as a parameter, no Fastify coupling
-  const user = await getUserByEmail(db, email);
+async function login(repository: AuthRepository, jwt: JWT, params: LoginParams) {
+  // Service calls repository methods — no db, no Fastify coupling
+  const user = await repository.getUserByEmail({ email: params.email });
   ...
 }
 ```
 
 ```ts
 // src/repositories/auth/auth.repository.ts
-async function getUserByEmail(db: DatabaseDecorator, email: string) {
-  return db.query<IAuthGetUserByEmailResult>(getUserQuery, { email }, 'one');
+function createAuthRepository(db: DatabaseDecorator) {
+  return {
+    getUserByEmail: ({ email }: { email: string }) =>
+      db.query<IAuthGetUserByEmailResult>(getUserQuery, { email }, 'one'),
+    // ...
+  };
 }
 ```

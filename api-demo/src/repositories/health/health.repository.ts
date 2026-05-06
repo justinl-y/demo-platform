@@ -6,10 +6,14 @@ import type { IHealthGetPgVersionResult } from './types/get-pg-version.typed.que
 const relPath = import.meta.dirname;
 const getPgVersionQuery = cwd('get-pg-version', relPath);
 
-async function getPgVersion(db: DatabaseDecorator) {
-  return db.query<IHealthGetPgVersionResult>(getPgVersionQuery, {}, 'one');
+function createHealthRepository(db: DatabaseDecorator) {
+  return {
+    getPgVersion: () =>
+      db.query<IHealthGetPgVersionResult>(getPgVersionQuery, {}, 'one'),
+  };
 }
 
-export {
-  getPgVersion,
-};
+type HealthRepository = ReturnType<typeof createHealthRepository>;
+
+export type { HealthRepository };
+export { createHealthRepository };

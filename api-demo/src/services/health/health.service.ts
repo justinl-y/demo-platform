@@ -1,14 +1,12 @@
-import { getPgVersion } from '#repositories/health/health.repository';
-
-import type { DatabaseDecorator } from '../../types/database.ts';
+import type { HealthRepository } from '#repositories/health/health.repository';
 
 interface HealthStatus {
   status: 'OK' | 'BAD';
   timestamp: string;
 }
 
-async function checkDb(db: DatabaseDecorator): Promise<HealthStatus> {
-  const result = await getPgVersion(db);
+async function checkDb(repository: HealthRepository): Promise<HealthStatus> {
+  const result = await repository.getPgVersion();
 
   if (!result?.version) throw new Error('No version');
 
