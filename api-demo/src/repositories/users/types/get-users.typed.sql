@@ -14,8 +14,10 @@ WITH t_users AS (
 	  AND COALESCE((u.id = :userId), TRUE)
 	ORDER BY
 		split_part(u.full_name, ' ', -1) ASC
-	LIMIT :limit
-	OFFSET :offset
+	LIMIT
+		:limit
+	OFFSET
+		:offset
 )
 SELECT
 	json_object_agg(

@@ -24,12 +24,11 @@ const fileNumber = getFileNumber(import.meta.url);
 describe(`${fileNumber} - Users`, () => {
   describe('GET /users - all', () => {
     let activeUserId: string;
-    let activeUserEmail: string;
     let inactiveUserId: string;
 
     beforeAll(async () => {
       ({
-        userId: activeUserId, email: activeUserEmail,
+        userId: activeUserId,
       } = await createRandomUser({ isActive: true }));
 
       ({
@@ -38,6 +37,50 @@ describe(`${fileNumber} - Users`, () => {
     });
 
     const getResponse = () => authAPI.get('/users');
+
+    describe('Request Failure', () => {
+      test('"inactive" with invalid value returns 400', async () => {
+        const res = await authAPI.get('/users?inactive=invalid');
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('querystring/inactive must be equal to one of the allowed values');
+      });
+
+      test('"page" of "0" returns 400', async () => {
+        const res = await authAPI.get('/users?page=0');
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('querystring/page must match pattern "^[1-9][0-9]*$"');
+      });
+
+      test('"page" of non-numeric string returns 400', async () => {
+        const res = await authAPI.get('/users?page=abc');
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('querystring/page must match pattern "^[1-9][0-9]*$"');
+      });
+
+      test('"per_page" of "0" returns 400', async () => {
+        const res = await authAPI.get('/users?per_page=0');
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('querystring/per_page must match pattern "^([1-9][0-9]?|100)$"');
+      });
+
+      test('"per_page" of "101" returns 400', async () => {
+        const res = await authAPI.get('/users?per_page=101');
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('querystring/per_page must match pattern "^([1-9][0-9]?|100)$"');
+      });
+
+      test('"per_page" of non-numeric string returns 400', async () => {
+        const res = await authAPI.get('/users?per_page=abc');
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('querystring/per_page must match pattern "^([1-9][0-9]?|100)$"');
+      });
+    });
 
     describe('Request Success', () => {
       let rep: Supertest.Response;
@@ -64,13 +107,25 @@ describe(`${fileNumber} - Users`, () => {
         expect(user).toHaveProperty('known_as');
       });
 
-      test('Active user is included in response', () => {
-        expect(rep.body[activeUserId]).toBeDefined();
-        expect(rep.body[activeUserId].email).toBe(activeUserEmail);
+      test('"inactive=include" returns both active and inactive users', async () => {
+        const res = await authAPI.get('/users?inactive=include');
+
+        expect(res.body[activeUserId]).toBeDefined();
+        expect(res.body[inactiveUserId]).toBeDefined();
       });
 
-      test('Inactive user is excluded from response', () => {
-        expect(rep.body[inactiveUserId]).toBeUndefined();
+      test('"inactive=exclude" returns only active users', async () => {
+        const res = await authAPI.get('/users?inactive=exclude');
+
+        expect(res.body[activeUserId]).toBeDefined();
+        expect(res.body[inactiveUserId]).toBeUndefined();
+      });
+
+      test('"inactive=only" returns only inactive users', async () => {
+        const res = await authAPI.get('/users?inactive=only');
+
+        expect(res.body[activeUserId]).toBeUndefined();
+        expect(res.body[inactiveUserId]).toBeDefined();
       });
     });
   });
@@ -78,16 +133,11 @@ describe(`${fileNumber} - Users`, () => {
   describe('GET /users - single', () => {
     let activeUserId: string;
     let activeUserEmail: string;
-    let inactiveUserId: string;
 
     beforeAll(async () => {
       ({
         userId: activeUserId, email: activeUserEmail,
       } = await createRandomUser({ isActive: true }));
-
-      ({
-        userId: inactiveUserId,
-      } = await createRandomUser({ isActive: false }));
     });
 
     const getResponse = (userId: string) => authAPI.get(`/users?user_id=${userId}`);
@@ -110,13 +160,6 @@ describe(`${fileNumber} - Users`, () => {
       test('Unknown UUID returns 200 and an empty object', async () => {
         const unknownUuid = '00000000-0000-0000-0000-000000000000';
         const res = await getResponse(unknownUuid);
-
-        expect(res.statusCode).toBe(200);
-        expect(res.body).toEqual({});
-      });
-
-      test('Inactive user UUID returns 200 and an empty object', async () => {
-        const res = await getResponse(inactiveUserId);
 
         expect(res.statusCode).toBe(200);
         expect(res.body).toEqual({});
