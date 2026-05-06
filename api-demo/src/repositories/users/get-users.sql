@@ -12,6 +12,7 @@ WITH t_users AS (
 	  AND COALESCE((u.id = $userId), TRUE)
 	ORDER BY
 		split_part(u.full_name, ' ', -1) ASC
+		, u.id ASC
 	LIMIT
 		$limit
 	OFFSET

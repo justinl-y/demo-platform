@@ -26,7 +26,7 @@ async function getUsers(repository: UsersRepository, params: GetUsersParams): Pr
     userId,
   } = params;
 
-  let isActive;
+  let isActive: boolean | null;
 
   if (inactive === 'exclude') isActive = true;
   else if (inactive === 'only') isActive = false;
