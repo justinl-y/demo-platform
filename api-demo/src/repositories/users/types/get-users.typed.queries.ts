@@ -15,8 +15,8 @@ export interface IUsersGetUsersParams {
 
 /** 'UsersGetUsers' return type */
 export interface IUsersGetUsersResult {
-  users: Json | null;
   total: number | null;
+  users: Json | null;
 }
 
 /** 'UsersGetUsers' query type */
@@ -25,7 +25,7 @@ export interface IUsersGetUsersQuery {
   result: IUsersGetUsersResult;
 }
 
-const usersGetUsersIR: any = {"usedParamSet":{"isActive":true,"userId":true,"limit":true,"offset":true},"params":[{"name":"isActive","required":false,"transform":{"type":"scalar"},"locs":[{"a":218,"b":226}]},{"name":"userId","required":false,"transform":{"type":"scalar"},"locs":[{"a":260,"b":266}]},{"name":"limit","required":false,"transform":{"type":"scalar"},"locs":[{"a":347,"b":352}]},{"name":"offset","required":false,"transform":{"type":"scalar"},"locs":[{"a":364,"b":370}]}],"statement":"                                                             \nWITH t_users AS (\n\tSELECT\n\t  u.id\n\t  , u.email\n\t  , u.full_name\n\t  , u.known_as\n\t\t, u.is_active\n\tFROM\n\t  public.users AS u\n\tWHERE\n\t\tCOALESCE((u.is_active = :isActive), TRUE)\n\t  AND COALESCE((u.id = :userId), TRUE)\n\tORDER BY\n\t\tsplit_part(u.full_name, ' ', -1) ASC\n\t\t, u.id ASC\n\tLIMIT\n\t\t:limit\n\tOFFSET\n\t\t:offset\n)\nSELECT\n\tjson_object_agg(\n\t\ttu.id\n\t\t,json_build_object(\n\t\t\t'email', tu.email\n\t\t\t, 'full_name', tu.full_name\n\t\t\t, 'known_as', tu.known_as\n\t\t\t, 'is_active', tu.is_active\n\t\t)\n\t) AS users\nFROM\n\tt_users AS tu"};
+const usersGetUsersIR: any = {"usedParamSet":{"isActive":true,"userId":true,"limit":true,"offset":true},"params":[{"name":"isActive","required":false,"transform":{"type":"scalar"},"locs":[{"a":248,"b":256}]},{"name":"userId","required":false,"transform":{"type":"scalar"},"locs":[{"a":290,"b":296}]},{"name":"limit","required":false,"transform":{"type":"scalar"},"locs":[{"a":377,"b":382}]},{"name":"offset","required":false,"transform":{"type":"scalar"},"locs":[{"a":394,"b":400}]}],"statement":"                                                             \nWITH t_users AS (\n\tSELECT\n\t  u.id\n\t  , u.email\n\t  , u.full_name\n\t  , u.known_as\n\t\t, u.is_active\n\t\t, COUNT(*) OVER () AS total\n\tFROM\n\t  public.users AS u\n\tWHERE\n\t\tCOALESCE((u.is_active = :isActive), TRUE)\n\t  AND COALESCE((u.id = :userId), TRUE)\n\tORDER BY\n\t\tsplit_part(u.full_name, ' ', -1) ASC\n\t\t, u.id ASC\n\tLIMIT\n\t\t:limit\n\tOFFSET\n\t\t:offset\n)\nSELECT\n\tjson_object_agg(\n\t\ttu.id\n\t\t,json_build_object(\n\t\t\t'email', tu.email\n\t\t\t, 'full_name', tu.full_name\n\t\t\t, 'known_as', tu.known_as\n\t\t\t, 'is_active', tu.is_active\n\t\t)\n\t) AS users\n\t, COALESCE(MAX(tu.total), 0)::int AS total\nFROM\n\tt_users AS tu"};
 
 /**
  * Query generated from SQL:
@@ -38,6 +38,7 @@ const usersGetUsersIR: any = {"usedParamSet":{"isActive":true,"userId":true,"lim
  * 	  , u.full_name
  * 	  , u.known_as
  * 		, u.is_active
+ * 		, COUNT(*) OVER () AS total
  * 	FROM
  * 	  public.users AS u
  * 	WHERE
@@ -61,6 +62,7 @@ const usersGetUsersIR: any = {"usedParamSet":{"isActive":true,"userId":true,"lim
  * 			, 'is_active', tu.is_active
  * 		)
  * 	) AS users
+ * 	, COALESCE(MAX(tu.total), 0)::int AS total
  * FROM
  * 	t_users AS tu
  * ```
