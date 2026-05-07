@@ -99,6 +99,14 @@ function paginationOffset(page: number, perPage: number) {
   return (page - 1) * perPage;
 }
 
+function paginationCount(record: Record<string, unknown>) {
+  return Object.keys(record).length;
+}
+
+function paginationPages(total: number | null | undefined, perPage: number) {
+  return Math.ceil((total ?? 0) / perPage);
+}
+
 export {
   routePropertiesCore,
   routePropertiesOnRequest,
@@ -107,4 +115,6 @@ export {
   getServerDetails,
   cwd,
   paginationOffset,
+  paginationCount,
+  paginationPages,
 };

@@ -16,6 +16,7 @@ export interface IUsersGetUsersParams {
 /** 'UsersGetUsers' return type */
 export interface IUsersGetUsersResult {
   users: Json | null;
+  total: number | null;
 }
 
 /** 'UsersGetUsers' query type */

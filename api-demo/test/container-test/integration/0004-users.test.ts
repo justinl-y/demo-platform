@@ -93,13 +93,19 @@ describe(`${fileNumber} - Users`, () => {
         expect(rep.statusCode).toBe(200);
       });
 
-      test('Response body is a non-array object', () => {
-        expect(rep.body).toBeTypeOf('object');
-        expect(Array.isArray(rep.body)).toBe(false);
+      test('Response body has correct shape', () => {
+        expect(rep.body).toHaveProperty('output');
+        expect(rep.body).toHaveProperty('count');
+        expect(rep.body).toHaveProperty('pagination');
+        expect(rep.body.output).toBeTypeOf('object');
+        expect(Array.isArray(rep.body.output)).toBe(false);
+        expect(rep.body.count).toBeTypeOf('number');
+        expect(rep.body.pagination).toHaveProperty('page');
+        expect(rep.body.pagination).toHaveProperty('pages');
       });
 
       test('Response entries have correct shape', () => {
-        const user = rep.body[activeUserId];
+        const user = rep.body.output[activeUserId];
 
         expect(user).toBeDefined();
         expect(user).toHaveProperty('email');
@@ -112,29 +118,31 @@ describe(`${fileNumber} - Users`, () => {
       test('"inactive=include" returns both active and inactive users', async () => {
         const res = await authAPI.get('/users?inactive=include');
 
-        expect(res.body[activeUserId]).toBeDefined();
-        expect(res.body[inactiveUserId]).toBeDefined();
+        expect(res.body.output[activeUserId]).toBeDefined();
+        expect(res.body.output[inactiveUserId]).toBeDefined();
       });
 
       test('"inactive=exclude" returns only active users', async () => {
         const res = await authAPI.get('/users?inactive=exclude');
 
-        expect(res.body[activeUserId]).toBeDefined();
-        expect(res.body[inactiveUserId]).toBeUndefined();
+        expect(res.body.output[activeUserId]).toBeDefined();
+        expect(res.body.output[inactiveUserId]).toBeUndefined();
       });
 
       test('"inactive=only" returns only inactive users', async () => {
         const res = await authAPI.get('/users?inactive=only');
 
-        expect(res.body[activeUserId]).toBeUndefined();
-        expect(res.body[inactiveUserId]).toBeDefined();
+        expect(res.body.output[activeUserId]).toBeUndefined();
+        expect(res.body.output[inactiveUserId]).toBeDefined();
       });
 
       test('"per_page=1" returns exactly one user', async () => {
         const res = await authAPI.get('/users?inactive=include&per_page=1');
 
         expect(res.statusCode).toBe(200);
-        expect(Object.keys(res.body)).toHaveLength(1);
+        expect(Object.keys(res.body.output)).toHaveLength(1);
+        expect(res.body.count).toBe(1);
+        expect(res.body.pagination.pages).toBeGreaterThanOrEqual(1);
       });
 
       test('page=1 and page=2 with per_page=1 return different users', async () => {
@@ -143,16 +151,17 @@ describe(`${fileNumber} - Users`, () => {
           authAPI.get('/users?inactive=include&per_page=1&page=2'),
         ]);
 
-        expect(Object.keys(res1.body)).toHaveLength(1);
-        expect(Object.keys(res2.body)).toHaveLength(1);
-        expect(Object.keys(res1.body)[0]).not.toBe(Object.keys(res2.body)[0]);
+        expect(Object.keys(res1.body.output)).toHaveLength(1);
+        expect(Object.keys(res2.body.output)).toHaveLength(1);
+        expect(Object.keys(res1.body.output)[0]).not.toBe(Object.keys(res2.body.output)[0]);
       });
 
-      test('"page=9999" returns empty object', async () => {
+      test('"page=9999" returns empty output with count 0', async () => {
         const res = await authAPI.get('/users?inactive=include&page=9999&per_page=100');
 
         expect(res.statusCode).toBe(200);
-        expect(res.body).toEqual({});
+        expect(res.body.output).toEqual({});
+        expect(res.body.count).toBe(0);
       });
     });
   });
@@ -184,12 +193,13 @@ describe(`${fileNumber} - Users`, () => {
         expect(res.body.message).toBe('querystring/user_id must match format "uuid"');
       });
 
-      test('Unknown UUID returns 200 and an empty object', async () => {
+      test('Unknown UUID returns 200 with empty output and count 0', async () => {
         const unknownUuid = '00000000-0000-0000-0000-000000000000';
         const res = await getResponse(unknownUuid);
 
         expect(res.statusCode).toBe(200);
-        expect(res.body).toEqual({});
+        expect(res.body.output).toEqual({});
+        expect(res.body.count).toBe(0);
       });
     });
 
@@ -204,13 +214,17 @@ describe(`${fileNumber} - Users`, () => {
         expect(rep.statusCode).toBe(200);
       });
 
-      test('Response body is a non-array object', () => {
-        expect(rep.body).toBeTypeOf('object');
-        expect(Array.isArray(rep.body)).toBe(false);
+      test('Response body has correct shape', () => {
+        expect(rep.body).toHaveProperty('output');
+        expect(rep.body).toHaveProperty('count');
+        expect(rep.body).toHaveProperty('pagination');
+        expect(rep.body.output).toBeTypeOf('object');
+        expect(Array.isArray(rep.body.output)).toBe(false);
+        expect(rep.body.count).toBeTypeOf('number');
       });
 
       test('Response entry has correct shape', () => {
-        const user = rep.body[activeUserId];
+        const user = rep.body.output[activeUserId];
 
         expect(user).toBeDefined();
         expect(user).toHaveProperty('email');
@@ -221,12 +235,13 @@ describe(`${fileNumber} - Users`, () => {
       });
 
       test('Response contains only the requested user', () => {
-        expect(Object.keys(rep.body)).toHaveLength(1);
-        expect(rep.body[activeUserId]).toBeDefined();
+        expect(Object.keys(rep.body.output)).toHaveLength(1);
+        expect(rep.body.output[activeUserId]).toBeDefined();
+        expect(rep.body.count).toBe(1);
       });
 
       test('Returned user has correct data', () => {
-        expect(rep.body[activeUserId].email).toBe(activeUserEmail);
+        expect(rep.body.output[activeUserId].email).toBe(activeUserEmail);
       });
     });
   });
