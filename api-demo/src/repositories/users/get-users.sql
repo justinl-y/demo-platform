@@ -5,6 +5,7 @@ WITH t_users AS (
 	  , u.full_name
 	  , u.known_as
 		, u.is_active
+		, COUNT(*) OVER () AS total
 	FROM
 	  public.users AS u
 	WHERE
@@ -28,6 +29,7 @@ SELECT
 			, 'is_active', tu.is_active
 		)
 	) AS users
+	, COALESCE(MAX(tu.total), 0)::int AS total
 FROM
 	t_users AS tu
 ;

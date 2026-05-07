@@ -1,6 +1,7 @@
-import { paginationOffset } from '#utils/functions';
+import { paginationOffset, paginationCount, paginationPages } from '#utils/functions';
 
 import type { UsersRepository } from '#repositories/users/users.repository';
+import type { GetResult } from '../../types/general.ts';
 
 interface GetUsersParams {
   userId: string | null;
@@ -9,16 +10,18 @@ interface GetUsersParams {
   perPage: number;
 }
 
-interface Users {
-  [id: string]: {
-    email: string;
-    full_name: string;
-    known_as: string | null;
-    is_active: boolean;
-  };
+interface UserItem {
+  email: string;
+  full_name: string;
+  known_as: string | null;
+  is_active: boolean;
 }
 
-async function getUsers(repository: UsersRepository, params: GetUsersParams): Promise<Users> {
+interface GetUsersResult extends GetResult {
+  output: { [id: string]: UserItem };
+}
+
+async function getUsers(repository: UsersRepository, params: GetUsersParams): Promise<GetUsersResult> {
   const {
     inactive,
     page,
@@ -43,7 +46,18 @@ async function getUsers(repository: UsersRepository, params: GetUsersParams): Pr
 
   const result = await repository.getUsers(getUsersParams);
 
-  return (result?.users ?? {}) as Users;
+  const output = (result?.users ?? {}) as unknown as { [id: string]: UserItem };
+  const count = paginationCount(output);
+  const pages = paginationPages(result?.total, perPage);
+
+  return {
+    output,
+    count,
+    pagination: {
+      page,
+      pages,
+    },
+  };
 }
 
 export {

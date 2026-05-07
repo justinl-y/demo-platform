@@ -44,50 +44,80 @@ const querystring = {
 const response = {
   200: {
     type: 'object',
-    propertyNames: {
-      type: 'string',
-      format: 'uuid',
+    properties: {
+      output: {
+        type: 'object',
+        propertyNames: {
+          type: 'string',
+          format: 'uuid',
+        },
+        additionalProperties: {
+          type: 'object',
+          properties: {
+            email: {
+              type: 'string',
+              format: 'email',
+            },
+            full_name: {
+              type: 'string',
+            },
+            known_as: {
+              type: 'string',
+              nullable: true,
+            },
+            is_active: {
+              type: 'boolean',
+            },
+          },
+          required: ['email', 'full_name', 'known_as', 'is_active'],
+          additionalProperties: false,
+        },
+      },
+      count: {
+        type: 'integer',
+      },
+      pagination: {
+        type: 'object',
+        properties: {
+          page: {
+            type: 'integer',
+          },
+          pages: {
+            type: 'integer',
+          },
+        },
+        required: ['page', 'pages'],
+        additionalProperties: false,
+      },
     },
+    required: ['output', 'count', 'pagination'],
+    additionalProperties: false,
     example: {
-      'a3bb189e-8bf9-3888-9912-ace4e6543002': {
-        email: 'user1@example.com',
-        full_name: 'string',
-        known_as: 'string',
-        is_active: true,
-      },
-      'f47ac10b-58cc-4372-a567-0e02b2c3d479': {
-        email: 'user2@example.com',
-        full_name: 'string',
-        known_as: 'string',
-        is_active: true,
-      },
-      'e7b2f4d1-9c3a-4f6e-b8d2-1a5e7c9f3b8d': {
-        email: 'user3@example.com',
-        full_name: 'string',
-        known_as: 'string',
-        is_active: false,
-      },
-    },
-    additionalProperties: {
-      type: 'object',
-      properties: {
-        email: {
-          type: 'string',
-          format: 'email',
+      output: {
+        'a3bb189e-8bf9-3888-9912-ace4e6543002': {
+          email: 'user1@example.com',
+          full_name: 'string',
+          known_as: 'string',
+          is_active: true,
         },
-        full_name: {
-          type: 'string',
+        'f47ac10b-58cc-4372-a567-0e02b2c3d479': {
+          email: 'user2@example.com',
+          full_name: 'string',
+          known_as: 'string',
+          is_active: true,
         },
-        known_as: {
-          type: 'string',
-          nullable: true,
-        },
-        is_active: {
-          type: 'boolean',
+        'e7b2f4d1-9c3a-4f6e-b8d2-1a5e7c9f3b8d': {
+          email: 'user3@example.com',
+          full_name: 'string',
+          known_as: 'string',
+          is_active: false,
         },
       },
-      required: ['email', 'full_name', 'known_as', 'is_active'],
-      additionalProperties: false,
+      count: 3,
+      pagination: {
+        page: 1,
+        pages: 1,
+      },
     },
   },
 };
