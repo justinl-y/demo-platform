@@ -8,6 +8,7 @@ import type { RouteKey } from './index.ts';
 function preHandler(this: FastifyInstance, key: RouteKey) {
   const routePreHandler = {
     getUsers: routePropertiesPrehandler([]),
+    postUsers: routePropertiesPrehandler([]),
   };
 
   return routePreHandler[key] ?? {};

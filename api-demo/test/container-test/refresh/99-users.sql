@@ -1,15 +1,18 @@
-INSERT INTO public.users
-  (email, password_hash, full_name, known_as)
-VALUES
-  ('user.super@email.com', public.bcrypt('user.super@email.com'), 'Super User', 'Super')
-  , ('alice.smith@example.com', public.bcrypt('password1'), 'Alice Smith', 'Ali')
-  , ('bob.johnson@example.com', public.bcrypt('password2'), 'Bob Johnson', 'Bobby')
-  , ('carol.williams@example.com', public.bcrypt('password3'), 'Carol Williams', NULL)
-  , ('david.brown@example.com', public.bcrypt('password4'), 'David Brown', 'Dave')
-  , ('eve.jones@example.com', public.bcrypt('password5'), 'Eve Jones', NULL)
-  , ('frank.miller@example.com', public.bcrypt('password6'), 'Frank Miller', 'Frankie')
-  , ('grace.davis@example.com', public.bcrypt('password7'), 'Grace Davis', 'Gracie')
-  , ('henry.garcia@example.com', public.bcrypt('password8'), 'Henry Garcia', 'Hank')
-  , ('irene.martinez@example.com', public.bcrypt('password9'), 'Irene Martinez', 'Ivy')
-  , ('jack.rodriguez@example.com', public.bcrypt('password10'), 'Jack Rodriguez', 'J.R.')
+SELECT
+  public.add_user(email, pwd, full_name, known_as, status)
+FROM
+  (VALUES
+    ('user.super@email.com', 'user.super@email.com', 'Super User', 'Super', 'ACTIVE'),
+    ('alice.smith@example.com', 'password1', 'Alice Smith', 'Ali', 'ACTIVE'),
+    ('bob.johnson@example.com', 'password2', 'Bob Johnson', 'Bobby', 'ACTIVE'),
+    ('carol.williams@example.com', 'password3', 'Carol Williams', NULL, 'ACTIVE'),
+    ('david.brown@example.com', 'password4', 'David Brown', 'Dave', 'ACTIVE'),
+    ('eve.jones@example.com', 'password5', 'Eve Jones', NULL, 'ACTIVE'),
+    ('frank.miller@example.com', 'password6', 'Frank Miller', 'Frankie', 'ACTIVE'),
+    ('grace.davis@example.com', 'password7', 'Grace Davis', 'Gracie', 'ACTIVE'),
+    ('henry.garcia@example.com', 'password8', 'Henry Garcia', 'Hank', 'ACTIVE'),
+    ('irene.martinez@example.com', 'password9', 'Irene Martinez', 'Ivy', 'ACTIVE'),
+    ('jack.rodriguez@example.com', 'password10', 'Jack Rodriguez', 'J.R.', 'ACTIVE')
+  ) AS u
+  (email, pwd, full_name, known_as, status)
 ;

@@ -7,7 +7,9 @@ import {
 import schema from './schema.ts';
 import onRequest from './on-request.ts';
 import preHandlers from './pre-handlers.ts';
+
 import getUsers from './get-users/index.ts';
+import postUsers from './post-users/index.ts';
 
 import type {
   FastifyInstance,
@@ -16,10 +18,12 @@ import type {
 
 const {
   GET,
+  POST,
 } = HTTP_METHODS;
 
 const routes = {
   getUsers: routePropertiesCore(GET, '/users', getUsers as RouteHandlerMethod),
+  postUsers: routePropertiesCore(POST, '/users', postUsers as RouteHandlerMethod),
 };
 
 export type RouteKey = keyof typeof routes;

@@ -26,8 +26,10 @@ function removeSingleQuotes(originalString: string) {
   return originalString.replace(/'/g, '');
 }
 
+type UserStatus = 'CREATED' | 'INVITED' | 'ACTIVE' | 'DEACTIVATED';
+
 async function createRandomUser({
-  isActive = true,
+  status = 'ACTIVE' as UserStatus,
 } = {}) {
   const firstName = removeSingleQuotes(faker.person.firstName());
   const lastName = removeSingleQuotes(faker.person.lastName());
@@ -41,10 +43,10 @@ async function createRandomUser({
 
   const addUserSQL = `SELECT public.add_user(
       '${email}'
-      ,NULL
+      , NULL
       ,'${fullName}'
       ,'${knownAs}'
-      ,${isActive}
+      ,'${status}'
     );`
   ;
 

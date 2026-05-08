@@ -4,5 +4,6 @@ SET
   token_refresh_hash = $newTokenRefreshHash
 WHERE
   id = $userId
-  AND is_active = TRUE
+  AND activated_at IS NOT NULL
+  AND deactivated_at IS NULL
 ;

@@ -28,7 +28,7 @@ describe(`${fileNumber} - Auth`, () => {
   beforeAll(async () => {
     ({
       userId, email: userEmail,
-    } = await createRandomUser({ isActive: true }));
+    } = await createRandomUser());
   });
 
   describe('POST /login', () => {
@@ -343,7 +343,7 @@ describe(`${fileNumber} - Auth`, () => {
     beforeAll(async () => {
       ({
         userId: logoutUserId, email: logoutUserEmail,
-      } = await createRandomUser({ isActive: true }));
+      } = await createRandomUser());
     });
 
     const getResponse = (cookieString?: string) =>

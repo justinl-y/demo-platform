@@ -12,12 +12,6 @@ const route = {
 const querystring = {
   type: 'object',
   properties: {
-    inactive: {
-      type: 'string',
-      enum: ['include', 'exclude', 'only'],
-      default: 'include',
-      description: 'Filter by active status',
-    },
     page: {
       type: 'string',
       format: 'integer',
@@ -32,13 +26,30 @@ const querystring = {
       default: '50',
       description: 'Number of items per page (max 100, default 50)',
     },
+    status: {
+      anyOf: [
+        {
+          type: 'string',
+          enum: ['CREATED', 'INVITED', 'ACTIVE', 'DEACTIVATED'],
+        },
+        {
+          type: 'array',
+          items: {
+            type: 'string',
+            enum: ['CREATED', 'INVITED', 'ACTIVE', 'DEACTIVATED'],
+          },
+          uniqueItems: true,
+        },
+      ],
+      description: 'Filter by status',
+    },
     user_id: {
       type: 'string',
       format: 'uuid',
       description: 'Optional user id to fetch a single user',
     },
   },
-  required: ['inactive', 'page', 'per_page'],
+  required: ['page', 'per_page'],
 };
 
 const response = {
@@ -65,11 +76,11 @@ const response = {
               type: 'string',
               nullable: true,
             },
-            is_active: {
-              type: 'boolean',
+            status: {
+              type: 'string',
             },
           },
-          required: ['email', 'full_name', 'known_as', 'is_active'],
+          required: ['email', 'full_name', 'known_as', 'status'],
           additionalProperties: false,
         },
       },
@@ -98,19 +109,19 @@ const response = {
           email: 'user1@example.com',
           full_name: 'string',
           known_as: 'string',
-          is_active: true,
+          status: 'ACTIVE',
         },
         'f47ac10b-58cc-4372-a567-0e02b2c3d479': {
           email: 'user2@example.com',
           full_name: 'string',
           known_as: 'string',
-          is_active: true,
+          status: 'ACTIVE',
         },
         'e7b2f4d1-9c3a-4f6e-b8d2-1a5e7c9f3b8d': {
           email: 'user3@example.com',
           full_name: 'string',
           known_as: 'string',
-          is_active: false,
+          status: 'DEACTIVATED',
         },
       },
       count: 3,

@@ -1,20 +1,20 @@
 import { paginationOffset, paginationCount, paginationPages } from '#utils/functions';
 
 import type { UsersRepository } from '#repositories/users/users.repository';
-import type { GetResult } from '../../types/general.ts';
+import type { GetResult, UserStatus } from '../../types/general.ts';
 
 interface GetUsersParams {
-  userId: string | null;
-  inactive: 'include' | 'exclude' | 'only';
   page: number;
   perPage: number;
+  userId: string | null;
+  status: UserStatus[] | null;
 }
 
 interface UserItem {
   email: string;
   full_name: string;
   known_as: string | null;
-  is_active: boolean;
+  status: UserStatus;
 }
 
 interface GetUsersResult extends GetResult {
@@ -23,23 +23,17 @@ interface GetUsersResult extends GetResult {
 
 async function getUsers(repository: UsersRepository, params: GetUsersParams): Promise<GetUsersResult> {
   const {
-    inactive,
     page,
     perPage,
+    status,
     userId,
   } = params;
-
-  let isActive: boolean | null;
-
-  if (inactive === 'exclude') isActive = true;
-  else if (inactive === 'only') isActive = false;
-  else isActive = null;
 
   const offset = paginationOffset(page, perPage);
 
   const getUsersParams = {
     userId,
-    isActive,
+    status,
     limit: perPage,
     offset,
   };
@@ -60,6 +54,24 @@ async function getUsers(repository: UsersRepository, params: GetUsersParams): Pr
   };
 }
 
+interface PostUsersParams {
+  email: string;
+  fullName: string;
+  knownAs: string | null;
+}
+
+/* interface PostUsersResult {
+  id: string;
+  email: string;
+  fullName: string;
+  knownAs: string | null;
+} */
+
+async function postUsers(repository: UsersRepository, params: PostUsersParams): Promise<void> { // Promise<PostUsersResult>
+
+}
+
 export {
   getUsers,
+  postUsers,
 };

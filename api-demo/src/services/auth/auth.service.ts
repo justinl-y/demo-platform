@@ -41,6 +41,7 @@ async function login(repository: AuthRepository, jwt: JWT, params: LoginParams):
   } = params;
 
   const user = await repository.getUserByEmail({ email });
+
   if (!user) throw new UnauthorizedError('Authentication failed');
 
   const {

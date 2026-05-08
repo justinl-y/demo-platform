@@ -8,5 +8,6 @@ FROM
 WHERE
   u.id = :userId
   AND u.token_refresh_hash IS NOT NULL
-  AND u.is_active = true
+  AND (u.activated_at IS NOT NULL
+    AND u.deactivated_at IS NULL)
 ;

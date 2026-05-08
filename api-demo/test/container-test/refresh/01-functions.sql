@@ -15,7 +15,7 @@ CREATE OR REPLACE FUNCTION public.add_user (
   , _password VARCHAR DEFAULT NULL
   , _full_name VARCHAR DEFAULT NULL
   , _known_as VARCHAR DEFAULT NULL
-  , _is_active BOOLEAN DEFAULT true
+  , _status VARCHAR DEFAULT 'ACTIVE'
 )
 RETURNS UUID AS
 $$
@@ -23,6 +23,11 @@ DECLARE
   v_unencrypted_password VARCHAR := COALESCE(_password, _email);
   v_encrypted_password VARCHAR := bcrypt(v_unencrypted_password);
   v_user_id UUID;
+
+  v_current_timestamp timestamptz := now();
+  v_invited_at timestamptz := v_current_timestamp + INTERVAL '5 minutes';
+  v_activated_at timestamptz := v_current_timestamp + INTERVAL '10 minutes';
+  v_deactivated_at timestamptz := v_current_timestamp + INTERVAL '15 minutes';
 BEGIN
   INSERT INTO public.users
     (
@@ -30,7 +35,9 @@ BEGIN
       , "password_hash"
       , full_name
       , known_as
-      , is_active
+      , invited_at
+      , activated_at
+      , deactivated_at
     )
   VALUES
     (
@@ -38,7 +45,9 @@ BEGIN
       , v_encrypted_password
       , _full_name
       , _known_as
-      , _is_active
+      , CASE WHEN _status IN ('INVITED', 'ACTIVE', 'DEACTIVATED') THEN v_invited_at END
+      , CASE WHEN _status IN ('ACTIVE', 'DEACTIVATED') THEN v_activated_at END
+      , CASE WHEN _status = 'DEACTIVATED' THEN v_deactivated_at END
     )
   RETURNING
     id

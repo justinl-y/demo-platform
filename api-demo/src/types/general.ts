@@ -6,6 +6,9 @@ interface GetResult {
   };
 }
 
+type UserStatus = 'CREATED' | 'INVITED' | 'ACTIVE' | 'DEACTIVATED';
+
 export type {
   GetResult,
+  UserStatus,
 };
