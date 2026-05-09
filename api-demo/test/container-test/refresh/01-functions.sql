@@ -10,12 +10,21 @@ LANGUAGE SQL;
 
 -------------------------------------------------------------------
 
+CREATE TYPE public.user_status AS ENUM (
+  'CREATED'
+  , 'INVITED'
+  , 'ACTIVE'
+  , 'DEACTIVATED'
+);
+
+-------------------------------------------------------------------
+
 CREATE OR REPLACE FUNCTION public.add_user (
   _email VARCHAR
   , _password VARCHAR DEFAULT NULL
   , _full_name VARCHAR DEFAULT NULL
   , _known_as VARCHAR DEFAULT NULL
-  , _status VARCHAR DEFAULT 'ACTIVE'
+  , _status public.user_status DEFAULT 'ACTIVE'
 )
 RETURNS UUID AS
 $$

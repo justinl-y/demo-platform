@@ -19,7 +19,7 @@ const body = {
     },
     full_name: {
       type: 'string',
-      description: 'User\'s fullname',
+      description: 'User\'s full name',
     },
     known_as: {
       type: 'string',

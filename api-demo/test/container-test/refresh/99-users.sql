@@ -1,5 +1,5 @@
 SELECT
-  public.add_user(email, pwd, full_name, known_as, status)
+  public.add_user(email, pwd, full_name, known_as, status::public.user_status)
 FROM
   (VALUES
     ('user.super@email.com', 'user.super@email.com', 'Super User', 'Super', 'ACTIVE'),
