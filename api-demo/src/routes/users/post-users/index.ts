@@ -6,7 +6,7 @@ interface Request {
   Body: {
     email: string;
     full_name: string;
-    known_as: string | null;
+    known_as?: string | null;
   };
 }
 

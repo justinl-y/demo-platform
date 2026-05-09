@@ -1,3 +1,10 @@
+CREATE TYPE public.user_status AS ENUM (
+  'CREATED'
+  , 'INVITED'
+  , 'ACTIVE'
+  , 'DEACTIVATED'
+);
+
 ALTER TABLE
   public.users
   ADD COLUMN invited_at timestamp with time zone

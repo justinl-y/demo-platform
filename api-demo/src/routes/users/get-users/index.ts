@@ -17,14 +17,15 @@ async function getUsers(this: FastifyInstance, request: FastifyRequest<Request>,
     query: {
       page: pageRaw,
       per_page: perPageRaw,
-      status: statusRaw = null,
-      user_id: userId = null,
+      status: statusRaw,
+      user_id: userIdRaw,
     },
   } = request;
 
   const page = +pageRaw;
   const perPage = +perPageRaw;
   const status = statusRaw ? (Array.isArray(statusRaw) ? statusRaw : [statusRaw]) : null;
+  const userId = userIdRaw ?? null;
 
   const getUsersParams = {
     page,

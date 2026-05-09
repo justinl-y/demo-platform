@@ -6,25 +6,12 @@ WITH t_users AS (
 	  , u.email
 	  , u.full_name
 	  , u.known_as
-		, CASE
-				WHEN (u.invited_at IS NULL AND u.activated_at IS NULL AND u.deactivated_at IS NULL) THEN 'CREATED'
-				WHEN (u.invited_at IS NOT NULL AND u.activated_at IS NULL AND u.deactivated_at IS NULL) THEN 'INVITED'
-				WHEN (u.invited_at IS NOT NULL AND u.activated_at IS NOT NULL AND u.deactivated_at IS NULL) THEN 'ACTIVE'
-				WHEN (u.invited_at IS NOT NULL AND u.activated_at IS NOT NULL AND u.deactivated_at IS NOT NULL) THEN 'DEACTIVATED'
-			END AS status
+		, u.status
 		, COUNT(*) OVER () AS total
 	FROM
 	  public.users AS u
 	WHERE
-		COALESCE(
-			CASE
-				WHEN (u.invited_at IS NULL AND u.activated_at IS NULL AND u.deactivated_at IS NULL) THEN 'CREATED'
-				WHEN (u.invited_at IS NOT NULL AND u.activated_at IS NULL AND u.deactivated_at IS NULL) THEN 'INVITED'
-				WHEN (u.invited_at IS NOT NULL AND u.activated_at IS NOT NULL AND u.deactivated_at IS NULL) THEN 'ACTIVE'
-				WHEN (u.invited_at IS NOT NULL AND u.activated_at IS NOT NULL AND u.deactivated_at IS NOT NULL) THEN 'DEACTIVATED'
-			END = ANY(:status),
-			TRUE
-		)
+		COALESCE(u.status = ANY(:status), TRUE)
 	  AND COALESCE((u.id = :userId), TRUE)
 	ORDER BY
 		split_part(u.full_name, ' ', -1) ASC

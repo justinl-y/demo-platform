@@ -10,6 +10,5 @@ FROM
   public.users AS u
 WHERE
   u.email = :email
-  AND (u.activated_at IS NOT NULL
-    AND u.deactivated_at IS NULL)
+  AND u.status = 'ACTIVE'
 ;

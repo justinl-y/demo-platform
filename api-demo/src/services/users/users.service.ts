@@ -57,7 +57,7 @@ async function getUsers(repository: UsersRepository, params: GetUsersParams): Pr
 interface PostUsersParams {
   email: string;
   fullName: string;
-  knownAs: string | null;
+  knownAs?: string | null;
 }
 
 /* interface PostUsersResult {

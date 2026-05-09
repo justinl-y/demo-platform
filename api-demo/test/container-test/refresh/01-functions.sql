@@ -10,15 +10,6 @@ LANGUAGE SQL;
 
 -------------------------------------------------------------------
 
-CREATE TYPE public.user_status AS ENUM (
-  'CREATED'
-  , 'INVITED'
-  , 'ACTIVE'
-  , 'DEACTIVATED'
-);
-
--------------------------------------------------------------------
-
 CREATE OR REPLACE FUNCTION public.add_user (
   _email VARCHAR
   , _password VARCHAR DEFAULT NULL

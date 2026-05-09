@@ -18,7 +18,7 @@ export interface IAuthGetUserRefreshHashQuery {
   result: IAuthGetUserRefreshHashResult;
 }
 
-const authGetUserRefreshHashIR: any = {"usedParamSet":{"userId":true},"params":[{"name":"userId","required":false,"transform":{"type":"scalar"},"locs":[{"a":141,"b":147}]}],"statement":"                                                             \nSELECT\n  u.id\n  , u.token_refresh_hash\nFROM\n  public.users AS u\nWHERE\n  u.id = :userId\n  AND u.token_refresh_hash IS NOT NULL\n  AND (u.activated_at IS NOT NULL\n    AND u.deactivated_at IS NULL)"};
+const authGetUserRefreshHashIR: any = {"usedParamSet":{"userId":true},"params":[{"name":"userId","required":false,"transform":{"type":"scalar"},"locs":[{"a":141,"b":147}]}],"statement":"                                                             \nSELECT\n  u.id\n  , u.token_refresh_hash\nFROM\n  public.users AS u\nWHERE\n  u.id = :userId\n  AND u.token_refresh_hash IS NOT NULL\n  AND u.status = 'ACTIVE'"};
 
 /**
  * Query generated from SQL:
@@ -32,8 +32,7 @@ const authGetUserRefreshHashIR: any = {"usedParamSet":{"userId":true},"params":[
  * WHERE
  *   u.id = :userId
  *   AND u.token_refresh_hash IS NOT NULL
- *   AND (u.activated_at IS NOT NULL
- *     AND u.deactivated_at IS NULL)
+ *   AND u.status = 'ACTIVE'
  * ```
  */
 export const authGetUserRefreshHash = new PreparedQuery<IAuthGetUserRefreshHashParams,IAuthGetUserRefreshHashResult>(authGetUserRefreshHashIR);
