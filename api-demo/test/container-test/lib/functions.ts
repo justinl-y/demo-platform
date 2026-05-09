@@ -29,7 +29,9 @@ function removeSingleQuotes(originalString: string) {
 type UserStatus = 'CREATED' | 'INVITED' | 'ACTIVE' | 'DEACTIVATED';
 
 async function createRandomUser({
-  status = 'ACTIVE' as UserStatus,
+  status = 'ACTIVE',
+}: {
+  status?: UserStatus;
 } = {}) {
   const firstName = removeSingleQuotes(faker.person.firstName());
   const lastName = removeSingleQuotes(faker.person.lastName());
