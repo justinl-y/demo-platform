@@ -8,5 +8,5 @@ FROM
   public.users AS u
 WHERE
   u.email = $email
-  and u.is_active = true
+  AND u.status = 'ACTIVE'
 ;

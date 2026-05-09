@@ -3,38 +3,37 @@ import {
 } from '#utils/functions';
 
 const route = {
-  tags: ['auth'],
-  summary: 'User login',
-  description: 'Authenticates a user with email and password',
+  tags: ['users'],
+  summary: 'Create a user',
+  description: 'Create a user',
+  security: [{ cookieAuth: [] }],
 };
 
 const body = {
   type: 'object',
-  required: ['email', 'password'],
-  additionalProperties: false,
   properties: {
     email: {
       type: 'string',
       format: 'email',
-      description: 'User email address',
+      description: 'User\'s email address, must be unique',
     },
-    password: {
+    full_name: {
       type: 'string',
-      description: 'User password',
+      description: 'User\'s full name',
+    },
+    known_as: {
+      type: 'string',
+      nullable: true,
+      description: 'User\'s known by name or first name',
     },
   },
+  required: ['email', 'full_name'],
+  additionalProperties: false,
 };
 
 const response = {
-  200: {
+  201: {
     type: 'object',
-    headers: {
-      'set-cookie': {
-        type: 'array',
-        items: { type: 'string' },
-        description: 'Sets access_token and refresh_token as HttpOnly cookies',
-      },
-    },
     properties: {
       id: {
         type: 'string',
@@ -60,12 +59,18 @@ const response = {
         description: 'User known as name (usually first name)',
         example: 'John',
       },
+      status: {
+        type: 'string',
+        description: 'The active status of the user',
+        example: 'DEACTIVATED',
+      },
     },
     required: [
       'id',
       'email',
       'full_name',
       'known_as',
+      'status',
     ],
     additionalProperties: false,
   },

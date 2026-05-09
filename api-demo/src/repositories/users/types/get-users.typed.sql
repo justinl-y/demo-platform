@@ -6,12 +6,12 @@ WITH t_users AS (
 	  , u.email
 	  , u.full_name
 	  , u.known_as
-		, u.is_active
+		, u.status
 		, COUNT(*) OVER () AS total
 	FROM
 	  public.users AS u
 	WHERE
-		COALESCE((u.is_active = :isActive), TRUE)
+		COALESCE(u.status = ANY(:status), TRUE)
 	  AND COALESCE((u.id = :userId), TRUE)
 	ORDER BY
 		split_part(u.full_name, ' ', -1) ASC
@@ -28,7 +28,7 @@ SELECT
 			'email', tu.email
 			, 'full_name', tu.full_name
 			, 'known_as', tu.known_as
-			, 'is_active', tu.is_active
+			, 'status', tu.status
 		)
 	) AS users
 	, COALESCE(MAX(tu.total), 0)::int AS total

@@ -21,7 +21,7 @@ export interface IAuthGetUserByEmailQuery {
   result: IAuthGetUserByEmailResult;
 }
 
-const authGetUserByEmailIR: any = {"usedParamSet":{"email":true},"params":[{"name":"email","required":false,"transform":{"type":"scalar"},"locs":[{"a":182,"b":187}]}],"statement":"                                                             \nSELECT\n  u.id\n  , u.email\n  , u.full_name\n  , u.known_as\n  , u.password_hash\nFROM\n  public.users AS u\nWHERE\n  u.email = :email\n  and u.is_active = true"};
+const authGetUserByEmailIR: any = {"usedParamSet":{"email":true},"params":[{"name":"email","required":false,"transform":{"type":"scalar"},"locs":[{"a":182,"b":187}]}],"statement":"                                                             \nSELECT\n  u.id\n  , u.email\n  , u.full_name\n  , u.known_as\n  , u.password_hash\nFROM\n  public.users AS u\nWHERE\n  u.email = :email\n  AND u.status = 'ACTIVE'"};
 
 /**
  * Query generated from SQL:
@@ -37,7 +37,7 @@ const authGetUserByEmailIR: any = {"usedParamSet":{"email":true},"params":[{"nam
  *   public.users AS u
  * WHERE
  *   u.email = :email
- *   and u.is_active = true
+ *   AND u.status = 'ACTIVE'
  * ```
  */
 export const authGetUserByEmail = new PreparedQuery<IAuthGetUserByEmailParams,IAuthGetUserByEmailResult>(authGetUserByEmailIR);
