@@ -22,7 +22,7 @@ async function postUsers(this: FastifyInstance, request: FastifyRequest<Request>
   const postUsersParams = {
     email,
     fullName,
-    knownAs: knownAs || null,
+    knownAs: knownAs ?? null,
   };
 
   const result = await postUsersService(this.repositories.users, postUsersParams);

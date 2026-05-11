@@ -25,6 +25,7 @@ const body = {
     known_as: {
       type: 'string',
       nullable: true,
+      minLength: 1,
       description: 'User\'s known by name',
     },
   },

@@ -51,7 +51,7 @@ function createUsersRepository(db: DatabaseDecorator) {
         .execute();
 
       return {
-        user: userRow?.[0] ?? null,
+        user: userRow[0],
       };
     },
   };
