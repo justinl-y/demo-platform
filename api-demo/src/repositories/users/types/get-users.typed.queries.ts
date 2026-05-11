@@ -1,17 +1,19 @@
 /** Types generated for queries found in "src/repositories/users/types/get-users.typed.sql" */
 import { PreparedQuery } from '@pgtyped/runtime';
 
+export type user_status = 'ACTIVE' | 'CREATED' | 'DEACTIVATED' | 'INVITED';
+
 export type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 
 export type NumberOrString = number | string;
 
-export type stringArray = (string)[];
+export type user_statusArray = (user_status)[];
 
 /** 'UsersGetUsers' parameters type */
 export interface IUsersGetUsersParams {
   limit?: NumberOrString | null | void;
   offset?: NumberOrString | null | void;
-  status?: stringArray | null | void;
+  status?: user_statusArray | null | void;
   userId?: string | null | void;
 }
 

@@ -439,7 +439,10 @@ describe(`${fileNumber} - Auth`, () => {
       });
     });
   });
-  // describe.skip('PUT /passwordRecovery', () => {});
+
+  describe.skip('PUT /passwordRecovery', () => {});
+
   describe.skip('PUT /passwordReset', () => {});
+
   describe.skip('POST /invite', () => {});
 });

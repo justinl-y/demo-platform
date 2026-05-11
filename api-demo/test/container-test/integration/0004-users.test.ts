@@ -4,20 +4,18 @@ import {
   expect,
   test,
 } from 'vitest';
-// import _ from 'lodash';
-// import bcrypt from 'bcryptjs';
+import _ from 'lodash';
+import { faker } from '@faker-js/faker/locale/en';
 
-// import { query } from '../lib/db.ts';
+import { query } from '../lib/db.ts';
 import { authAPI } from '../lib/api.ts';
 import {
   createRandomUser,
-  // generateTestCookie,
   getFileNumber,
-  // setCookies,
 } from '../lib/functions.ts';
 
 import type Supertest from 'supertest';
-// import type { RequestBody } from '../types/request-types.ts';
+import type { RequestBody } from '../types/request-types.ts';
 
 const fileNumber = getFileNumber(import.meta.url);
 
@@ -246,6 +244,181 @@ describe(`${fileNumber} - Users`, () => {
     });
   });
 
-  describe.skip('POST /users', () => {});
-  describe.skip('PUT /users/:userID', () => {});
+  describe('POST /users', () => {
+    const getResponse = (reqBody: RequestBody) => authAPI.post('/users', reqBody);
+
+    let validRequestBody = {} as RequestBody;
+
+    beforeAll(() => {
+      const firstName = faker.person.firstName().replace(/'/g, '');
+      const lastName = faker.person.lastName().replace(/'/g, '');
+
+      validRequestBody = {
+        email: faker.internet.email({
+          firstName,
+          lastName,
+        }).toLowerCase(),
+        full_name: `${firstName} ${lastName}`,
+        known_as: firstName,
+      };
+    });
+
+    describe('Request Failure', () => {
+      test('Absent required body "email" returns 400', async () => {
+        const reqBody = _.cloneDeep(validRequestBody);
+        delete reqBody.email;
+
+        const res = await getResponse(reqBody);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe(`body must have required property 'email'`);
+      });
+
+      test('Absent required body "full_name" returns 400', async () => {
+        const reqBody = _.cloneDeep(validRequestBody);
+        delete reqBody.full_name;
+
+        const res = await getResponse(reqBody);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe(`body must have required property 'full_name'`);
+      });
+
+      test('Invalid type body "email" returns 400', async () => {
+        const reqBody = _.cloneDeep(validRequestBody);
+        reqBody.email = 1234;
+
+        const res = await getResponse(reqBody);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('body/email must be string');
+      });
+
+      test('Invalid format body "email" returns 400', async () => {
+        const reqBody = _.cloneDeep(validRequestBody);
+        reqBody.email = 'not-an-email';
+
+        const res = await getResponse(reqBody);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('body/email must match format "email"');
+      });
+
+      test('Invalid type body "full_name" returns 400', async () => {
+        const reqBody = _.cloneDeep(validRequestBody);
+        reqBody.full_name = 1234;
+
+        const res = await getResponse(reqBody);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('body/full_name must be string');
+      });
+
+      test('Empty string body "full_name" returns 400', async () => {
+        const reqBody = _.cloneDeep(validRequestBody);
+        reqBody.full_name = '';
+
+        const res = await getResponse(reqBody);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('body/full_name must NOT have fewer than 1 characters');
+      });
+
+      test('Duplicate "email" returns 400', async () => {
+        const {
+          email,
+        } = await createRandomUser();
+        const res = await getResponse({
+          ...validRequestBody,
+          email,
+        });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('User email is not unique');
+      });
+    });
+
+    describe('Request Success', () => {
+      interface DbUser {
+        id: string;
+        email: string;
+        full_name: string;
+        known_as: string | null;
+        status: string;
+      }
+
+      let rep: Supertest.Response;
+      let dbUser: DbUser;
+      let responseBody: DbUser;
+
+      beforeAll(async () => {
+        rep = await getResponse(validRequestBody);
+
+        const getUserByIdSql = 'SELECT u.id, u.email, u.full_name, u.known_as, u.status FROM public.users AS u WHERE u.id = $1';
+        const [result] = await query<DbUser>(getUserByIdSql, [rep.body.id]);
+
+        dbUser = result;
+
+        ({
+          body: responseBody,
+        } = rep);
+      });
+
+      test('Success response returns 201', () => {
+        expect(rep.statusCode).toBe(201);
+      });
+
+      test('Response body has correct shape', () => {
+        expect(responseBody).toHaveProperty('id');
+        expect(responseBody).toHaveProperty('email');
+        expect(responseBody).toHaveProperty('full_name');
+        expect(responseBody).toHaveProperty('known_as');
+        expect(responseBody).toHaveProperty('status');
+      });
+
+      test('Response "id" is a UUID', () => {
+        expect(responseBody.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+      });
+
+      test('Response "email" matches request', () => {
+        expect(responseBody.email).toBe(validRequestBody.email);
+      });
+
+      test('Response "full_name" matches request', () => {
+        expect(responseBody.full_name).toBe(validRequestBody.full_name);
+      });
+
+      test('Response "known_as" matches request', () => {
+        expect(responseBody.known_as).toBe(validRequestBody.known_as);
+      });
+
+      test('Response "status" is "CREATED"', () => {
+        expect(responseBody.status).toBe('CREATED');
+      });
+
+      test('User data is persisted in the database', () => {
+        expect(dbUser).toBeDefined();
+        expect(dbUser.email).toBe(validRequestBody.email);
+        expect(dbUser.full_name).toBe(validRequestBody.full_name);
+        expect(dbUser.known_as).toBe(validRequestBody.known_as);
+        expect(dbUser.status).toBe('CREATED');
+      });
+
+      test('Omitting "known_as" persists null for the field', async () => {
+        const {
+          known_as: _knownAs,
+          ...bodyWithoutKnownAs
+        } = validRequestBody as Record<string, unknown>;
+        const res = await getResponse({
+          ...bodyWithoutKnownAs,
+          email: faker.internet.email().toLowerCase(),
+        } as RequestBody);
+
+        expect(res.statusCode).toBe(201);
+        expect(res.body.known_as).toBeNull();
+      });
+    });
+  });
+
+  describe.skip('PUT /users/:userId', () => {});
 });

@@ -1,6 +1,8 @@
 import request from 'supertest';
 
 import { BASE_REQUEST } from './constants.ts';
+import { query } from './db.ts';
+import { generateTestCookie } from './functions.ts';
 
 import type Supertest from 'supertest';
 
@@ -20,28 +22,20 @@ type ApiRequest = (
 
 type ApiClient = Record<ApiMethod, ApiRequest>;
 
-async function userLogin() {
-  const result = await app
-    .post('/login')
-    .send({
-      email: 'user.super@email.com',
-      password: 'user.super@email.com',
-    })
-    .set('Accept', 'application/json')
-  ;
+const SUPER_USER_EMAIL = 'user.super@email.com';
 
-  const setCookie = result.headers['set-cookie'] as string[] | string | undefined;
-  const cookies = Array.isArray(setCookie) ? setCookie : (setCookie ? [setCookie] : []);
-  const accessTokenCookie = cookies.find((c) => c.startsWith('access_token='));
+async function getAccessTokenCookie() {
+  const [row] = await query<{ id: string }>(
+    'SELECT id FROM public.users WHERE email = $1',
+    [SUPER_USER_EMAIL],
+  );
 
-  if (!accessTokenCookie) {
-    throw new Error(`userLogin failed: no access_token cookie (status ${result.status})\n${JSON.stringify(result.body)}`);
-  }
+  if (!row) throw new Error(`getAccessTokenCookie: super user not found (${SUPER_USER_EMAIL})`);
 
-  return accessTokenCookie.split(';')[0];
+  return generateTestCookie('access', row.id, SUPER_USER_EMAIL);
 }
 
-const accessTokenCookie = await userLogin();
+const accessTokenCookie = await getAccessTokenCookie();
 
 const methods: ApiMethod[] = ['get', 'put', 'patch', 'del', 'post'];
 const requestByMethod: Record<ApiMethod, (resource: string) => Supertest.Test> = {

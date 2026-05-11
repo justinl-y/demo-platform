@@ -5,4 +5,6 @@ SET
 WHERE
   id = $userId
   AND status = 'ACTIVE'
+RETURNING
+  id
 ;

@@ -1,3 +1,5 @@
+import { BadRequestError } from 'http-errors-enhanced';
+
 import { paginationOffset, paginationCount, paginationPages } from '#utils/functions';
 
 import type { UsersRepository } from '#repositories/users/users.repository';
@@ -65,10 +67,34 @@ interface PostUsersParams {
   email: string;
   fullName: string;
   knownAs: string | null;
+  status: UserStatus;
 } */
 
-async function postUsers(repository: UsersRepository, params: PostUsersParams): Promise<void> { // Promise<PostUsersResult>
+async function postUsers(repository: UsersRepository, params: PostUsersParams) {
+  const {
+    email,
+    fullName,
+    knownAs,
+  } = params;
 
+  // check email is unique
+  const emailCount = await repository.getCountUsersByEmail({ email });
+  const countExistingEmail = emailCount?.count_email ?? 0;
+
+  if (countExistingEmail) throw new BadRequestError('User email is not unique');
+
+  const newUserParams = {
+    email,
+    fullName,
+    knownAs,
+  };
+
+  // insert user data, get response and return
+  const {
+    user: newUser,
+  } = await repository.addUser(newUserParams);
+
+  return newUser;
 }
 
 export {

@@ -52,7 +52,7 @@ async function login(repository: AuthRepository, jwt: JWT, params: LoginParams):
 
   const [accessToken, validPassword] = await Promise.all([
     generateJwt(jwt, userId, email, accessTokenJwt),
-    bcryptCompare(password, passwordHash),
+    bcryptCompare(password, passwordHash || ''),
   ]);
 
   if (!validPassword) throw new UnauthorizedError('Authentication failed');
