@@ -68,7 +68,7 @@ src/
   repositories/         # DB access only — SQL files, pgtyped types, query functions
     auth/               # createAuthRepository — getUserByEmail, getUserWithRefreshToken, setUserRefreshTokenOnLogin, setUserTokenOnRefresh, removeUserRefreshToken
     health/             # createHealthRepository — getPgVersion
-    users/              # createUsersRepository — getUsers, getCountUsersByEmail, addUser
+    users/              # createUsersRepository — getUsers, addUser
   lib/                  # Framework-level utilities (database, authentication, logger, sentry)
   utils/                # Shared pure utilities and constants
   types/                # Shared TypeScript types

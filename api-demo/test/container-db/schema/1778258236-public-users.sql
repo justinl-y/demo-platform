@@ -7,7 +7,8 @@ CREATE TYPE public.user_status AS ENUM (
 
 ALTER TABLE
   public.users
-  ADD COLUMN invited_at timestamp with time zone
+  ALTER COLUMN password_hash DROP NOT NULL
+  , ADD COLUMN invited_at timestamp with time zone
   , ADD COLUMN activated_at timestamp with time zone
   , ADD COLUMN deactivated_at timestamp with time zone
   , ADD CONSTRAINT password_hash_check CHECK (activated_at IS NULL OR password_hash IS NOT NULL)
