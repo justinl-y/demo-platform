@@ -59,16 +59,16 @@ src/
   hooks/                # Fastify lifecycle hooks (auth, error handling, Sentry)
   routes/               # Thin HTTP handlers — parse request, call service, send response
     auth/               # post-login, post-refresh, put-logout
-    users/              # get-users
+    users/              # get-users, post-users
     health-check/       # get-health-db, get-health-eb
   services/             # Business logic — no HTTP, no SQL
     auth/               # login(), refresh(), logout()
     health/             # checkDb(), checkEb()
-    users/              # getUsers()
+    users/              # getUsers(), postUsers()
   repositories/         # DB access only — SQL files, pgtyped types, query functions
     auth/               # createAuthRepository — getUserByEmail, getUserWithRefreshToken, setUserRefreshTokenOnLogin, setUserTokenOnRefresh, removeUserRefreshToken
     health/             # createHealthRepository — getPgVersion
-    users/              # createUsersRepository — getUsers
+    users/              # createUsersRepository — getUsers, getCountUsersByEmail, addUser
   lib/                  # Framework-level utilities (database, authentication, logger, sentry)
   utils/                # Shared pure utilities and constants
   types/                # Shared TypeScript types
