@@ -48,6 +48,8 @@ async function login(repository: AuthRepository, jwt: JWT, params: LoginParams):
     id: userId, full_name: fullName, known_as: knownAs, password_hash: passwordHash,
   } = user;
 
+  if (!passwordHash) throw new UnauthorizedError('Authentication failed');
+
   const refreshToken = generateJwt(jwt, userId, email, refreshTokenJwt);
 
   const [accessToken, validPassword] = await Promise.all([

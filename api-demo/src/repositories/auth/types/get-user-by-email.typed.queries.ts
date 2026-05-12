@@ -12,7 +12,7 @@ export interface IAuthGetUserByEmailResult {
   full_name: string;
   id: string;
   known_as: string | null;
-  password_hash: string;
+  password_hash: string | null;
 }
 
 /** 'AuthGetUserByEmail' query type */

@@ -47,9 +47,9 @@ const helmetConfig = {
 } as const;
 
 const rateLimitConfig = {
-  max: 100,
+  max: apiEnv === 'TEST' ? 10000 : 250,
   timeWindow: '1 minute',
-} as const;
+};
 
 const serverConfig = {
   port: 8000,
