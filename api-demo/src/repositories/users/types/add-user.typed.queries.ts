@@ -16,7 +16,7 @@ export interface IUsersAddUserResult {
   full_name: string;
   id: string;
   known_as: string | null;
-  status: user_status | null;
+  status: user_status;
 }
 
 /** 'UsersAddUser' query type */
