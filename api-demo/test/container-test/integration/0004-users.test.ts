@@ -420,5 +420,103 @@ describe(`${fileNumber} - Users`, () => {
     });
   });
 
+  describe('DELETE /users/:user_id', () => {
+    const getResponse = (userId: string) => authAPI.del(`/users/${userId}`);
+
+    describe('Request Failure', () => {
+      test('Non-UUID "user_id" returns 400', async () => {
+        const res = await getResponse('not-a-uuid');
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('params/user_id must match format "uuid"');
+      });
+
+      test('Integer "user_id" returns 400', async () => {
+        const res = await getResponse('12345');
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('params/user_id must match format "uuid"');
+      });
+
+      test('Unknown UUID returns 400', async () => {
+        const unknownUuid = '00000000-0000-0000-0000-000000000000';
+        const res = await getResponse(unknownUuid);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid user id or user status');
+      });
+
+      test('User with ACTIVE status returns 400', async () => {
+        const {
+          userId,
+        } = await createRandomUser({ status: 'ACTIVE' });
+        const res = await getResponse(userId);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid user id or user status');
+      });
+
+      test('User with DEACTIVATED status returns 400', async () => {
+        const {
+          userId,
+        } = await createRandomUser({ status: 'DEACTIVATED' });
+        const res = await getResponse(userId);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid user id or user status');
+      });
+
+      test('Already-deleted user returns 400', async () => {
+        const {
+          userId,
+        } = await createRandomUser({ status: 'CREATED' });
+        await getResponse(userId);
+        const res = await getResponse(userId);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid user id or user status');
+      });
+    });
+
+    describe('Request Success', () => {
+      interface DbUser {
+        id: string;
+      }
+
+      let createdUserId: string;
+      let rep: Supertest.Response;
+      let responseBody: DbUser;
+
+      beforeAll(async () => {
+        ({
+          userId: createdUserId,
+        } = await createRandomUser({ status: 'CREATED' }));
+
+        rep = await getResponse(createdUserId);
+
+        ({
+          body: responseBody,
+        } = rep);
+      });
+
+      test('Success response returns 204', () => {
+        expect(rep.statusCode).toBe(204);
+      });
+
+      test('Response body is empty', () => {
+        expect(responseBody).toEqual({});
+      });
+
+      test('User is removed from the database', async () => {
+        const getDeletedUserSql = 'SELECT id FROM public.users WHERE id = $1';
+        const [result] = await query<DbUser>(getDeletedUserSql, [createdUserId]);
+
+        expect(result).toBeUndefined();
+      });
+    });
+  });
+
+  describe.skip('PATCH /users/deactivate/:userId', () => {});
+
   describe.skip('PUT /users/:userId', () => {});
 });

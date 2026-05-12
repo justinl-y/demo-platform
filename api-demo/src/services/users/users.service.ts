@@ -92,7 +92,33 @@ async function postUsers(repository: UsersRepository, params: PostUsersParams): 
   return newUser;
 }
 
+interface DeleteUsersParams {
+  userId: string;
+}
+
+interface DeleteUsersResult {
+  id: string;
+}
+
+async function deleteUsers(repository: UsersRepository, params: DeleteUsersParams): Promise<DeleteUsersResult> {
+  const {
+    userId,
+  } = params;
+
+  const createdUser = await repository.getCreatedUser({ userId });
+  if (!createdUser) throw new BadRequestError(`Invalid user id or user status`);
+
+  const {
+    user: deletedUser,
+  } = await repository.removeUser({
+    userId,
+  });
+
+  return deletedUser;
+}
+
 export {
   getUsers,
   postUsers,
+  deleteUsers,
 };
