@@ -28,7 +28,7 @@ ALTER TABLE
       WHEN (invited_at IS NOT NULL AND activated_at IS NOT NULL AND deactivated_at IS NULL) THEN 'ACTIVE'::public.user_status
       WHEN (invited_at IS NOT NULL AND activated_at IS NOT NULL AND deactivated_at IS NOT NULL) THEN 'DEACTIVATED'::public.user_status
     END
-  ) STORED
+  ) STORED NOT NULL
   , DROP COLUMN is_active
 ;
 

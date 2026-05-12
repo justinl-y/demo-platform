@@ -56,8 +56,8 @@ All endpoints are served from the API base URL. Auth endpoints use JWT cookies; 
 | `PUT` | `/logout` | cookie | Invalidate the session and clear both cookies. |
 | `GET` | `/users` | cookie | Get paginated users. Optional filters: `status`, `user_id`, `page`, `per_page`. |
 | `POST` | `/users` | cookie | Create a new user. |
-| `GET` | `/health/db` | — | Database health check. |
-| `GET` | `/health/eb` | — | Elastic Beanstalk health check. |
+| `GET` | `/health_db` | — | Database health check. |
+| `GET` | `/health_eb` | — | Elastic Beanstalk health check. |
 
 ----
 
