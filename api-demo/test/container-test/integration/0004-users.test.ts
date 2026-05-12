@@ -485,7 +485,6 @@ describe(`${fileNumber} - Users`, () => {
 
       let createdUserId: string;
       let rep: Supertest.Response;
-      let responseBody: DbUser;
 
       beforeAll(async () => {
         ({
@@ -493,10 +492,6 @@ describe(`${fileNumber} - Users`, () => {
         } = await createRandomUser({ status: 'CREATED' }));
 
         rep = await getResponse(createdUserId);
-
-        ({
-          body: responseBody,
-        } = rep);
       });
 
       test('Success response returns 204', () => {
@@ -504,7 +499,7 @@ describe(`${fileNumber} - Users`, () => {
       });
 
       test('Response body is empty', () => {
-        expect(responseBody).toEqual({});
+        expect(rep.body).toEqual({});
       });
 
       test('User is removed from the database', async () => {

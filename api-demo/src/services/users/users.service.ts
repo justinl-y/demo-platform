@@ -105,14 +105,13 @@ async function deleteUsers(repository: UsersRepository, params: DeleteUsersParam
     userId,
   } = params;
 
-  const createdUser = await repository.getCreatedUser({ userId });
-  if (!createdUser) throw new BadRequestError(`Invalid user id or user status`);
-
   const {
     user: deletedUser,
   } = await repository.removeUser({
     userId,
   });
+
+  if (!deletedUser) throw new BadRequestError(`Invalid user id or user status`);
 
   return deletedUser;
 }
