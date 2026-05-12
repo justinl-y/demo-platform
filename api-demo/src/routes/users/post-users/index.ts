@@ -13,14 +13,14 @@ interface Request {
 async function postUsers(this: FastifyInstance, request: FastifyRequest<Request>, reply: FastifyReply) {
   const {
     body: {
-      email,
+      email: emailRaw,
       full_name: fullName,
       known_as: knownAs,
     },
   } = request;
 
   const postUsersParams = {
-    email,
+    email: emailRaw.toLowerCase(),
     fullName,
     knownAs: knownAs ?? null,
   };

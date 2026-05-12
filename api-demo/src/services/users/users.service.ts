@@ -89,7 +89,7 @@ async function postUsers(repository: UsersRepository, params: PostUsersParams): 
     knownAs,
   });
 
-  return newUser as PostUsersResult;
+  return newUser;
 }
 
 export {
