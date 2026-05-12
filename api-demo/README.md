@@ -45,6 +45,22 @@ Services are plain functions with no Fastify or database dependency — they rec
 
 ----
 
+## 🔌 API Endpoints
+
+All endpoints are served from the API base URL. Auth endpoints use JWT cookies; protected endpoints require a valid `access_token` cookie.
+
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| `POST` | `/login` | — | Authenticate with email + password. Sets `access_token` and `refresh_token` HttpOnly cookies. |
+| `POST` | `/refresh` | cookie | Refresh the access token using the `refresh_token` cookie. Issues new cookies. |
+| `PUT` | `/logout` | cookie | Invalidate the session and clear both cookies. |
+| `GET` | `/users` | cookie | Get paginated users. Optional filters: `status`, `user_id`, `page`, `per_page`. |
+| `POST` | `/users` | cookie | Create a new user. |
+| `GET` | `/health/db` | — | Database health check. |
+| `GET` | `/health/eb` | — | Elastic Beanstalk health check. |
+
+----
+
 ## 🐳 Dockerized Environments
 
 API-Demo uses Docker containers for hosting production, development and test environments.
@@ -197,9 +213,9 @@ Acquires a connection from the PG pool, reads the SQL file, substitutes named pa
 SQL file text is cached in memory by default only in live environments (`PROD`, `STAGE`) and is not cached by default in `LOCAL`/`TEST`.
 
 - `file` — absolute path to the SQL file **without** the `.sql` extension. The library appends `.sql` internally. Use the `cwd` utility to build the path relative to the repository directory.
-- `params` — `Record<string, unknown>` of named parameters to substitute into the SQL.
+- `params` — `Record<string, unknown>` of named parameters to substitute into the SQL. Use the pgtyped-generated `I*Params` interface for compile-time safety.
 - `outputFormat` — `'collection'` (default) returns `TRow[] | null`; `'one'` returns `TRow | null`.
-- `TRow` — optional generic for the row shape. Use a pgtyped-generated type for compile-time safety.
+- `TRow` — optional generic for the row shape. Use the pgtyped-generated `I*Result` interface for compile-time safety.
 
 Returns `null` when `rowCount` is `0`, regardless of `outputFormat`.
 
@@ -207,20 +223,20 @@ Returns `null` when `rowCount` is `0`, regardless of `outputFormat`.
 
 ```sql
 -- src/repositories/users/get-users.sql
-SELECT id, email, full_name FROM public.users WHERE customer_id = $customerId;
+SELECT id, email, full_name, status FROM public.users WHERE status = ANY($status);
 ```
 
 ```ts
 // src/repositories/users/users.repository.ts
-import type { IGetUsersResult } from './types/get-users.typed.queries.ts';
+import type { IUsersGetUsersParams, IUsersGetUsersResult } from './types/get-users.typed.queries.ts';
 
 const getUsersQuery = cwd('get-users', import.meta.dirname);
 
 function createUsersRepository(db: DatabaseDecorator) {
   return {
-    getUsersByCustomer: (customerId: number) =>
-      db.query<IGetUsersResult>(getUsersQuery, { customerId }),
-      // returns IGetUsersResult[] | null
+    getUsers: ({ userId, status, limit, offset }: IUsersGetUsersParams) =>
+      db.query<IUsersGetUsersResult>(getUsersQuery, { userId, status, limit, offset }),
+      // returns IUsersGetUsersResult[] | null
   };
 }
 ```
@@ -228,21 +244,21 @@ function createUsersRepository(db: DatabaseDecorator) {
 #### Example — `'one'`
 
 ```sql
--- src/repositories/auth/get-user-by-email.sql
-SELECT id, email, password_hash FROM public.users WHERE email = $email;
+-- src/repositories/users/get-user-by-email.sql
+SELECT id FROM public.users WHERE email = $email;
 ```
 
 ```ts
-// src/repositories/auth/auth.repository.ts
-import type { IAuthGetUserByEmailResult } from './types/get-user-by-email.typed.queries.ts';
+// src/repositories/users/users.repository.ts
+import type { IUsersGetUserByEmailParams, IUsersGetUserByEmailResult } from './types/get-user-by-email.typed.queries.ts';
 
-const getUserQuery = cwd('get-user-by-email', import.meta.dirname);
+const getUserByEmailQuery = cwd('get-user-by-email', import.meta.dirname);
 
-function createAuthRepository(db: DatabaseDecorator) {
+function createUsersRepository(db: DatabaseDecorator) {
   return {
-    getUserByEmail: ({ email }: { email: string }) =>
-      db.query<IAuthGetUserByEmailResult>(getUserQuery, { email }, 'one'),
-      // returns IAuthGetUserByEmailResult | null
+    getUserByEmail: ({ email }: IUsersGetUserByEmailParams) =>
+      db.query<IUsersGetUserByEmailResult>(getUserByEmailQuery, { email }, 'one'),
+      // returns IUsersGetUserByEmailResult | null
   };
 }
 ```
@@ -277,22 +293,19 @@ DELETE FROM public.customers WHERE id = $customerId RETURNING id;
 ```
 
 ```ts
-// src/repositories/customers/customers.repository.ts
-import type { IRemoveUsersResult } from './types/remove-users.typed.queries.ts';
-import type { IRemoveCustomerResult } from './types/remove-customer.typed.queries.ts';
+// src/repositories/users/users.repository.ts
+import type { IUsersAddUserParams, IUsersAddUserResult } from './types/add-user.typed.queries.ts';
 
-const removeUsersQuery = cwd('remove-users', import.meta.dirname);
-const removeCustomerQuery = cwd('remove-customer', import.meta.dirname);
+const addUserQuery = cwd('add-user', import.meta.dirname);
 
-function createCustomersRepository(db: DatabaseDecorator) {
+function createUsersRepository(db: DatabaseDecorator) {
   return {
-    removeCustomer: async (customerId: number) => {
-      const [removedUsers, removedCustomer] = await db.transaction()
-        .add<IRemoveUsersResult>({ files: removeUsersQuery, params: { customerId } })
-        .add<IRemoveCustomerResult>({ files: removeCustomerQuery, params: { customerId } })
+    addUser: async ({ email, fullName, knownAs }: IUsersAddUserParams): Promise<{ user: IUsersAddUserResult }> => {
+      const [userRow] = await db.transaction()
+        .add<IUsersAddUserResult>({ files: [addUserQuery], params: { email, fullName, knownAs } })
         .execute();
 
-      return { removedUsers, removedCustomer };
+      return { user: userRow[0] };
     },
   };
 }
@@ -358,9 +371,11 @@ async function login(repository: AuthRepository, jwt: JWT, params: LoginParams) 
 
 ```ts
 // src/repositories/auth/auth.repository.ts
+import type { IAuthGetUserByEmailParams, IAuthGetUserByEmailResult } from './types/get-user-by-email.typed.queries.ts';
+
 function createAuthRepository(db: DatabaseDecorator) {
   return {
-    getUserByEmail: ({ email }: { email: string }) =>
+    getUserByEmail: ({ email }: IAuthGetUserByEmailParams) =>
       db.query<IAuthGetUserByEmailResult>(getUserQuery, { email }, 'one'),
     // ...
   };

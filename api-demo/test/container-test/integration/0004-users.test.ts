@@ -334,7 +334,7 @@ describe(`${fileNumber} - Users`, () => {
         });
 
         expect(res.statusCode).toBe(400);
-        expect(res.body.message).toBe('User email is not unique');
+        expect(res.body.message).toBe('Supplied user email is not unique');
       });
     });
 

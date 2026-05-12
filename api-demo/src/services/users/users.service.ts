@@ -1,4 +1,4 @@
-import { BadRequestError, InternalServerError } from 'http-errors-enhanced';
+import { BadRequestError } from 'http-errors-enhanced';
 
 import { paginationOffset, paginationCount, paginationPages } from '#utils/functions';
 
@@ -67,7 +67,7 @@ interface PostUsersResult {
   email: string;
   full_name: string;
   known_as: string | null;
-  status: UserStatus | null;
+  status: UserStatus;
 }
 
 async function postUsers(repository: UsersRepository, params: PostUsersParams): Promise<PostUsersResult> {
@@ -77,24 +77,19 @@ async function postUsers(repository: UsersRepository, params: PostUsersParams): 
     knownAs,
   } = params;
 
-  try {
-    const {
-      user: newUser,
-    } = await repository.addUser({
-      email,
-      fullName,
-      knownAs,
-    });
+  // check email is unique
+  const existing = await repository.getUserByEmail({ email });
+  if (existing) throw new BadRequestError('Supplied user email is not unique');
 
-    return newUser;
-  }
-  catch (err) {
-    if (err instanceof InternalServerError && /unique/i.test(err.message)) {
-      throw new BadRequestError('User email is not unique');
-    }
+  const {
+    user: newUser,
+  } = await repository.addUser({
+    email,
+    fullName,
+    knownAs,
+  });
 
-    throw err;
-  }
+  return newUser as PostUsersResult;
 }
 
 export {

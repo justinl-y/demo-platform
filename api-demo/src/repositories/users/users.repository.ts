@@ -3,10 +3,12 @@ import { cwd } from '#utils/functions';
 import type { DatabaseDecorator } from '../../types/database.ts';
 import type { IUsersGetUsersParams, IUsersGetUsersResult } from './types/get-users.typed.queries.ts';
 import type { IUsersAddUserParams, IUsersAddUserResult } from './types/add-user.typed.queries.ts';
+import type { IUsersGetUserByEmailParams, IUsersGetUserByEmailResult } from './types/get-user-by-email.typed.queries.ts';
 
 const relPath = import.meta.dirname;
 const getUsersQuery = cwd('get-users', relPath);
 const addUserQuery = cwd('add-user', relPath);
+const getUserByEmailQuery = cwd('get-user-by-email', relPath);
 
 function createUsersRepository(db: DatabaseDecorator) {
   return {
@@ -24,6 +26,12 @@ function createUsersRepository(db: DatabaseDecorator) {
       };
 
       return db.query<IUsersGetUsersResult>(getUsersQuery, queryParams, 'one');
+    },
+
+    getUserByEmail: ({
+      email,
+    }: IUsersGetUserByEmailParams) => {
+      return db.query<IUsersGetUserByEmailResult>(getUserByEmailQuery, { email }, 'one');
     },
 
     addUser: async ({
