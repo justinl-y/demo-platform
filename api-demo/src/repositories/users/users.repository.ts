@@ -5,12 +5,14 @@ import type { IUsersGetUsersParams, IUsersGetUsersResult } from './types/get-use
 import type { IUsersGetUserByEmailParams, IUsersGetUserByEmailResult } from './types/get-user-by-email.typed.queries.ts';
 import type { IUsersAddUserParams, IUsersAddUserResult } from './types/add-user.typed.queries.ts';
 import type { IUsersRemoveUserParams, IUsersRemoveUserResult } from './types/remove-user.typed.queries.ts';
+import type { IUsersSetUserDeactivatedParams, IUsersSetUserDeactivatedResult } from './types/set-user-deactivated.typed.queries.ts';
 
 const relPath = import.meta.dirname;
 const getUsersQuery = cwd('get-users', relPath);
 const getUserByEmailQuery = cwd('get-user-by-email', relPath);
 const addUserQuery = cwd('add-user', relPath);
 const removeUserQuery = cwd('remove-user', relPath);
+const deactivateUserQuery = cwd('set-user-deactivated', relPath);
 
 function createUsersRepository(db: DatabaseDecorator) {
   return {
@@ -65,6 +67,25 @@ function createUsersRepository(db: DatabaseDecorator) {
           files: [removeUserQuery],
           params: {
             userId,
+          },
+        })
+        .execute();
+
+      return {
+        user: userResult[0],
+      };
+    },
+
+    deactivateUser: async ({
+      userId,
+      newPasswordHash,
+    }: IUsersSetUserDeactivatedParams): Promise<{ user: IUsersSetUserDeactivatedResult | undefined }> => {
+      const [userResult] = await db.transaction()
+        .add<IUsersSetUserDeactivatedResult>({
+          files: [deactivateUserQuery],
+          params: {
+            userId,
+            newPasswordHash,
           },
         })
         .execute();
