@@ -3,7 +3,7 @@ import { PreparedQuery } from '@pgtyped/runtime';
 
 /** 'AuthGetUserByEmail' parameters type */
 export interface IAuthGetUserByEmailParams {
-  email?: string | null | void;
+  email: string;
 }
 
 /** 'AuthGetUserByEmail' return type */
@@ -21,7 +21,7 @@ export interface IAuthGetUserByEmailQuery {
   result: IAuthGetUserByEmailResult;
 }
 
-const authGetUserByEmailIR: any = {"usedParamSet":{"email":true},"params":[{"name":"email","required":false,"transform":{"type":"scalar"},"locs":[{"a":182,"b":187}]}],"statement":"                                                             \nSELECT\n  u.id\n  , u.email\n  , u.full_name\n  , u.known_as\n  , u.password_hash\nFROM\n  public.users AS u\nWHERE\n  u.email = :email\n  AND u.status = 'ACTIVE'"};
+const authGetUserByEmailIR: any = {"usedParamSet":{"email":true},"params":[{"name":"email","required":true,"transform":{"type":"scalar"},"locs":[{"a":182,"b":188}]}],"statement":"                                                             \nSELECT\n  u.id\n  , u.email\n  , u.full_name\n  , u.known_as\n  , u.password_hash\nFROM\n  public.users AS u\nWHERE\n  u.email = :email!\n  AND u.status = 'ACTIVE'"};
 
 /**
  * Query generated from SQL:
@@ -36,7 +36,7 @@ const authGetUserByEmailIR: any = {"usedParamSet":{"email":true},"params":[{"nam
  * FROM
  *   public.users AS u
  * WHERE
- *   u.email = :email
+ *   u.email = :email!
  *   AND u.status = 'ACTIVE'
  * ```
  */

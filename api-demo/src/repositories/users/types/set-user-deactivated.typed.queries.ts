@@ -3,8 +3,8 @@ import { PreparedQuery } from '@pgtyped/runtime';
 
 /** 'UsersSetUserDeactivated' parameters type */
 export interface IUsersSetUserDeactivatedParams {
-  newPasswordHash?: string | null | void;
-  userId?: string | null | void;
+  newPasswordHash: string;
+  userId: string;
 }
 
 /** 'UsersSetUserDeactivated' return type */
@@ -18,7 +18,7 @@ export interface IUsersSetUserDeactivatedQuery {
   result: IUsersSetUserDeactivatedResult;
 }
 
-const usersSetUserDeactivatedIR: any = {"usedParamSet":{"newPasswordHash":true,"userId":true},"params":[{"name":"newPasswordHash","required":false,"transform":{"type":"scalar"},"locs":[{"a":133,"b":148}]},{"name":"userId","required":false,"transform":{"type":"scalar"},"locs":[{"a":163,"b":169}]}],"statement":"                                                             \nUPDATE\n  public.users\nSET\n  deactivated_at = NOW()\n  , password_hash = :newPasswordHash\nWHERE\n  id = :userId\n  AND status = 'ACTIVE'\nRETURNING\n  id"};
+const usersSetUserDeactivatedIR: any = {"usedParamSet":{"newPasswordHash":true,"userId":true},"params":[{"name":"newPasswordHash","required":true,"transform":{"type":"scalar"},"locs":[{"a":133,"b":149}]},{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":164,"b":171}]}],"statement":"                                                             \nUPDATE\n  public.users\nSET\n  deactivated_at = NOW()\n  , password_hash = :newPasswordHash!\nWHERE\n  id = :userId!\n  AND status = 'ACTIVE'\nRETURNING\n  id"};
 
 /**
  * Query generated from SQL:
@@ -28,9 +28,9 @@ const usersSetUserDeactivatedIR: any = {"usedParamSet":{"newPasswordHash":true,"
  *   public.users
  * SET
  *   deactivated_at = NOW()
- *   , password_hash = :newPasswordHash
+ *   , password_hash = :newPasswordHash!
  * WHERE
- *   id = :userId
+ *   id = :userId!
  *   AND status = 'ACTIVE'
  * RETURNING
  *   id

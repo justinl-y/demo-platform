@@ -130,6 +130,14 @@ async function patchUsersDeactivate(repository: UsersRepository, params: PatchUs
     userId,
   } = params;
 
+  const validUserParams = {
+    userId,
+    status: 'ACTIVE' as UserStatus,
+  };
+
+  const validUser = await repository.getUserByStatus(validUserParams);
+  if (!validUser) throw new BadRequestError('Invalid user id or user status');
+
   const newPasswordHash = await bcryptHash(randomAlphaNumeric());
 
   const {
@@ -139,7 +147,7 @@ async function patchUsersDeactivate(repository: UsersRepository, params: PatchUs
     newPasswordHash,
   });
 
-  if (!deactivatedUser) throw new BadRequestError(`Invalid user id or user status`);
+  if (!deactivatedUser) throw new BadRequestError('Invalid user id or user status');
 
   return deactivatedUser;
 }

@@ -3,6 +3,7 @@ import { cwd } from '#utils/functions';
 import type { DatabaseDecorator } from '../../types/database.ts';
 import type { IUsersGetUsersParams, IUsersGetUsersResult } from './types/get-users.typed.queries.ts';
 import type { IUsersGetUserByEmailParams, IUsersGetUserByEmailResult } from './types/get-user-by-email.typed.queries.ts';
+import type { IUsersGetUserByStatusParams, IUsersGetUserByStatusResult } from './types/get-user-by-status.typed.queries.ts';
 import type { IUsersAddUserParams, IUsersAddUserResult } from './types/add-user.typed.queries.ts';
 import type { IUsersRemoveUserParams, IUsersRemoveUserResult } from './types/remove-user.typed.queries.ts';
 import type { IUsersSetUserDeactivatedParams, IUsersSetUserDeactivatedResult } from './types/set-user-deactivated.typed.queries.ts';
@@ -10,6 +11,7 @@ import type { IUsersSetUserDeactivatedParams, IUsersSetUserDeactivatedResult } f
 const relPath = import.meta.dirname;
 const getUsersQuery = cwd('get-users', relPath);
 const getUserByEmailQuery = cwd('get-user-by-email', relPath);
+const getUserByStatusQuery = cwd('get-user-by-status', relPath);
 const addUserQuery = cwd('add-user', relPath);
 const removeUserQuery = cwd('remove-user', relPath);
 const deactivateUserQuery = cwd('set-user-deactivated', relPath);
@@ -36,6 +38,18 @@ function createUsersRepository(db: DatabaseDecorator) {
       email,
     }: IUsersGetUserByEmailParams) => {
       return db.query<IUsersGetUserByEmailResult>(getUserByEmailQuery, { email }, 'one');
+    },
+
+    getUserByStatus: ({
+      userId,
+      status,
+    }: IUsersGetUserByStatusParams) => {
+      const queryParams = {
+        userId,
+        status,
+      };
+
+      return db.query<IUsersGetUserByStatusResult>(getUserByStatusQuery, queryParams, 'one');
     },
 
     addUser: async ({

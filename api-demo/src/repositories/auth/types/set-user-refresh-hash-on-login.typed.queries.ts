@@ -3,8 +3,8 @@ import { PreparedQuery } from '@pgtyped/runtime';
 
 /** 'AuthSetUserRefreshHashOnLogin' parameters type */
 export interface IAuthSetUserRefreshHashOnLoginParams {
-  hashedTokenRefresh?: string | null | void;
-  userId?: string | null | void;
+  hashedTokenRefresh: string;
+  userId: string;
 }
 
 /** 'AuthSetUserRefreshHashOnLogin' return type */
@@ -18,7 +18,7 @@ export interface IAuthSetUserRefreshHashOnLoginQuery {
   result: IAuthSetUserRefreshHashOnLoginResult;
 }
 
-const authSetUserRefreshHashOnLoginIR: any = {"usedParamSet":{"hashedTokenRefresh":true,"userId":true},"params":[{"name":"hashedTokenRefresh","required":false,"transform":{"type":"scalar"},"locs":[{"a":111,"b":129}]},{"name":"userId","required":false,"transform":{"type":"scalar"},"locs":[{"a":179,"b":185}]}],"statement":"                                                             \nUPDATE\n  public.users\nSET\n  token_refresh_hash = :hashedTokenRefresh\n  , last_login = CURRENT_TIMESTAMP\nWHERE\n  id = :userId\n  AND status = 'ACTIVE'\nRETURNING\n  id"};
+const authSetUserRefreshHashOnLoginIR: any = {"usedParamSet":{"hashedTokenRefresh":true,"userId":true},"params":[{"name":"hashedTokenRefresh","required":true,"transform":{"type":"scalar"},"locs":[{"a":111,"b":130}]},{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":180,"b":187}]}],"statement":"                                                             \nUPDATE\n  public.users\nSET\n  token_refresh_hash = :hashedTokenRefresh!\n  , last_login = CURRENT_TIMESTAMP\nWHERE\n  id = :userId!\n  AND status = 'ACTIVE'\nRETURNING\n  id"};
 
 /**
  * Query generated from SQL:
@@ -27,10 +27,10 @@ const authSetUserRefreshHashOnLoginIR: any = {"usedParamSet":{"hashedTokenRefres
  * UPDATE
  *   public.users
  * SET
- *   token_refresh_hash = :hashedTokenRefresh
+ *   token_refresh_hash = :hashedTokenRefresh!
  *   , last_login = CURRENT_TIMESTAMP
  * WHERE
- *   id = :userId
+ *   id = :userId!
  *   AND status = 'ACTIVE'
  * RETURNING
  *   id

@@ -616,6 +616,17 @@ describe(`${fileNumber} - Users`, () => {
         expect(res.body.message).toBe('Invalid user id or user status');
       });
 
+      test('User with INVITED status returns 400', async () => {
+        const {
+          userId,
+        } = await createRandomUser({ status: 'INVITED' });
+
+        const res = await getResponse(userId);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid user id or user status');
+      });
+
       test('User with DEACTIVATED status returns 400', async () => {
         const {
           userId,

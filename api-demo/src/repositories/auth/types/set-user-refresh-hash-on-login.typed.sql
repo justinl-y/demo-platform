@@ -3,10 +3,10 @@
 UPDATE
   public.users
 SET
-  token_refresh_hash = :hashedTokenRefresh
+  token_refresh_hash = :hashedTokenRefresh!
   , last_login = CURRENT_TIMESTAMP
 WHERE
-  id = :userId
+  id = :userId!
   AND status = 'ACTIVE'
 RETURNING
   id

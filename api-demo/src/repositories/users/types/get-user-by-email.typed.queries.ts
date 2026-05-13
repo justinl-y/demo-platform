@@ -3,7 +3,7 @@ import { PreparedQuery } from '@pgtyped/runtime';
 
 /** 'UsersGetUserByEmail' parameters type */
 export interface IUsersGetUserByEmailParams {
-  email?: string | null | void;
+  email: string;
 }
 
 /** 'UsersGetUserByEmail' return type */
@@ -17,7 +17,7 @@ export interface IUsersGetUserByEmailQuery {
   result: IUsersGetUserByEmailResult;
 }
 
-const usersGetUserByEmailIR: any = {"usedParamSet":{"email":true},"params":[{"name":"email","required":false,"transform":{"type":"scalar"},"locs":[{"a":106,"b":111}]}],"statement":"                                                             \nSELECT\n\tid\nFROM public.users\nWHERE\n\temail = :email"};
+const usersGetUserByEmailIR: any = {"usedParamSet":{"email":true},"params":[{"name":"email","required":true,"transform":{"type":"scalar"},"locs":[{"a":106,"b":112}]}],"statement":"                                                             \nSELECT\n\tid\nFROM public.users\nWHERE\n\temail = :email!"};
 
 /**
  * Query generated from SQL:
@@ -27,7 +27,7 @@ const usersGetUserByEmailIR: any = {"usedParamSet":{"email":true},"params":[{"na
  * 	id
  * FROM public.users
  * WHERE
- * 	email = :email
+ * 	email = :email!
  * ```
  */
 export const usersGetUserByEmail = new PreparedQuery<IUsersGetUserByEmailParams,IUsersGetUserByEmailResult>(usersGetUserByEmailIR);
