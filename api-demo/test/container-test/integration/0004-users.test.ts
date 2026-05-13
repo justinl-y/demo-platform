@@ -656,6 +656,7 @@ describe(`${fileNumber} - Users`, () => {
         id: string;
         status: string;
         password_hash: string;
+        token_refresh_hash: string | null;
       }
 
       let activeUserId: string;
@@ -668,7 +669,7 @@ describe(`${fileNumber} - Users`, () => {
           userId: activeUserId,
         } = await createRandomUser({ status: 'ACTIVE' }));
 
-        const getUserSql = 'SELECT u.id, u.status, u.password_hash FROM public.users AS u WHERE u.id = $1';
+        const getUserSql = 'SELECT u.id, u.status, u.password_hash, u.token_refresh_hash FROM public.users AS u WHERE u.id = $1';
         const [original] = await query<DbUser>(getUserSql, [activeUserId]);
         originalPasswordHash = original.password_hash;
 
@@ -692,6 +693,10 @@ describe(`${fileNumber} - Users`, () => {
 
       test('User password_hash is invalidated in the database', () => {
         expect(dbUser.password_hash).not.toBe(originalPasswordHash);
+      });
+
+      test('User token_refresh_hash is null in the database', () => {
+        expect(dbUser.token_refresh_hash).toBeNull();
       });
     });
   });
