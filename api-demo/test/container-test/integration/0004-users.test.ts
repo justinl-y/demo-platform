@@ -336,6 +336,32 @@ describe(`${fileNumber} - Users`, () => {
         expect(res.statusCode).toBe(400);
         expect(res.body.message).toBe('Supplied user email is not unique');
       });
+
+      test('Duplicate "email" differing only by case returns 400', async () => {
+        const {
+          email,
+        } = await createRandomUser();
+        const res = await getResponse({
+          ...validRequestBody,
+          email: email.toUpperCase(),
+        });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Supplied user email is not unique');
+      });
+
+      test('Duplicate "email" differing only by whitespace returns 400', async () => {
+        const {
+          email,
+        } = await createRandomUser();
+        const res = await getResponse({
+          ...validRequestBody,
+          email: `  ${email}  `,
+        });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Supplied user email is not unique');
+      });
     });
 
     describe('Request Success', () => {
@@ -402,6 +428,44 @@ describe(`${fileNumber} - Users`, () => {
         expect(dbUser.full_name).toBe(validRequestBody.full_name);
         expect(dbUser.known_as).toBe(validRequestBody.known_as);
         expect(dbUser.status).toBe('CREATED');
+      });
+
+      test('"email" with mixed case and whitespace is normalized in response and database', async () => {
+        const baseEmail = faker.internet.email().toLowerCase();
+        const res = await getResponse({
+          ...validRequestBody,
+          email: `  ${baseEmail.toUpperCase()}  `,
+        });
+
+        expect(res.statusCode).toBe(201);
+        expect(res.body.email).toBe(baseEmail);
+
+        const getUserByIdSql = 'SELECT u.email FROM public.users AS u WHERE u.id = $1';
+        const [dbUser] = await query<{ email: string }>(getUserByIdSql, [res.body.id]);
+
+        expect(dbUser.email).toBe(baseEmail);
+      });
+
+      test('"full_name" with leading and trailing whitespace is stored trimmed', async () => {
+        const res = await getResponse({
+          ...validRequestBody,
+          email: faker.internet.email().toLowerCase(),
+          full_name: '  John Doe  ',
+        });
+
+        expect(res.statusCode).toBe(201);
+        expect(res.body.full_name).toBe('John Doe');
+      });
+
+      test('"known_as" with leading and trailing whitespace is stored trimmed', async () => {
+        const res = await getResponse({
+          ...validRequestBody,
+          email: faker.internet.email().toLowerCase(),
+          known_as: '  John  ',
+        });
+
+        expect(res.statusCode).toBe(201);
+        expect(res.body.known_as).toBe('John');
       });
 
       test('Omitting "known_as" persists null for the field', async () => {

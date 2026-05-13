@@ -198,6 +198,18 @@ describe(`${fileNumber} - Auth`, () => {
         expect(new Date(lastLogin).getTime()).toBeGreaterThanOrEqual(requestTime.getTime() - 5000);
         expect(new Date(lastLogin).getTime()).toBeLessThanOrEqual(Date.now() + 1000);
       });
+
+      test('"email" with mixed case and whitespace is normalized before matching', async () => {
+        const {
+          email,
+        } = await createRandomUser();
+        const res = await getResponse({
+          email: `  ${email.toUpperCase()}  `,
+          password: email,
+        });
+
+        expect(res.statusCode).toBe(200);
+      });
     });
   });
 
