@@ -4,7 +4,7 @@ SELECT
 FROM
   public.users AS u
 WHERE
-  u.id = $userId
+  u.id = $userId!
   AND u.token_refresh_hash IS NOT NULL
   AND u.status = 'ACTIVE'
 ;

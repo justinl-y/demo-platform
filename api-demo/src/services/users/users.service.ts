@@ -1,6 +1,7 @@
 import { BadRequestError } from 'http-errors-enhanced';
 
-import { paginationOffset, paginationCount, paginationPages } from '#utils/functions';
+import { paginationOffset, paginationCount, paginationPages, randomAlphaNumeric } from '#utils/functions';
+import { bcryptHash } from '#lib/authentication';
 
 import type { UsersRepository } from '#repositories/users/users.repository';
 import type { GetResult, UserStatus } from '../../types/general.ts';
@@ -116,8 +117,44 @@ async function deleteUsers(repository: UsersRepository, params: DeleteUsersParam
   return deletedUser;
 }
 
+interface PatchUsersDeactivateParams {
+  userId: string;
+}
+
+interface PatchUsersDeactivateResult {
+  id: string;
+}
+
+async function patchUsersDeactivate(repository: UsersRepository, params: PatchUsersDeactivateParams): Promise<PatchUsersDeactivateResult> {
+  const {
+    userId,
+  } = params;
+
+  const validUserParams = {
+    userId,
+    status: 'ACTIVE' as UserStatus,
+  };
+
+  const validUser = await repository.getUserByStatus(validUserParams);
+  if (!validUser) throw new BadRequestError('Invalid user id or user status');
+
+  const newPasswordHash = await bcryptHash(randomAlphaNumeric());
+
+  const {
+    user: deactivatedUser,
+  } = await repository.deactivateUser({
+    userId,
+    newPasswordHash,
+  });
+
+  if (!deactivatedUser) throw new BadRequestError('Invalid user id or user status');
+
+  return deactivatedUser;
+}
+
 export {
   getUsers,
   postUsers,
   deleteUsers,
+  patchUsersDeactivate,
 };

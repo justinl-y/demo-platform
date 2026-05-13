@@ -9,6 +9,6 @@ SELECT
 FROM
   public.users AS u
 WHERE
-  u.email = :email
+  u.email = :email!
   AND u.status = 'ACTIVE'
 ;

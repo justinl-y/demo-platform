@@ -3,7 +3,7 @@ import { PreparedQuery } from '@pgtyped/runtime';
 
 /** 'AuthGetUserRefreshHash' parameters type */
 export interface IAuthGetUserRefreshHashParams {
-  userId?: string | null | void;
+  userId: string;
 }
 
 /** 'AuthGetUserRefreshHash' return type */
@@ -18,7 +18,7 @@ export interface IAuthGetUserRefreshHashQuery {
   result: IAuthGetUserRefreshHashResult;
 }
 
-const authGetUserRefreshHashIR: any = {"usedParamSet":{"userId":true},"params":[{"name":"userId","required":false,"transform":{"type":"scalar"},"locs":[{"a":141,"b":147}]}],"statement":"                                                             \nSELECT\n  u.id\n  , u.token_refresh_hash\nFROM\n  public.users AS u\nWHERE\n  u.id = :userId\n  AND u.token_refresh_hash IS NOT NULL\n  AND u.status = 'ACTIVE'"};
+const authGetUserRefreshHashIR: any = {"usedParamSet":{"userId":true},"params":[{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":141,"b":148}]}],"statement":"                                                             \nSELECT\n  u.id\n  , u.token_refresh_hash\nFROM\n  public.users AS u\nWHERE\n  u.id = :userId!\n  AND u.token_refresh_hash IS NOT NULL\n  AND u.status = 'ACTIVE'"};
 
 /**
  * Query generated from SQL:
@@ -30,7 +30,7 @@ const authGetUserRefreshHashIR: any = {"usedParamSet":{"userId":true},"params":[
  * FROM
  *   public.users AS u
  * WHERE
- *   u.id = :userId
+ *   u.id = :userId!
  *   AND u.token_refresh_hash IS NOT NULL
  *   AND u.status = 'ACTIVE'
  * ```

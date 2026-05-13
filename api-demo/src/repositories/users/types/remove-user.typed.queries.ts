@@ -3,7 +3,7 @@ import { PreparedQuery } from '@pgtyped/runtime';
 
 /** 'UsersRemoveUser' parameters type */
 export interface IUsersRemoveUserParams {
-  userId?: string | null | void;
+  userId: string;
 }
 
 /** 'UsersRemoveUser' return type */
@@ -17,7 +17,7 @@ export interface IUsersRemoveUserQuery {
   result: IUsersRemoveUserResult;
 }
 
-const usersRemoveUserIR: any = {"usedParamSet":{"userId":true},"params":[{"name":"userId","required":false,"transform":{"type":"scalar"},"locs":[{"a":102,"b":108}]}],"statement":"                                                             \nDELETE FROM\n  public.users\nWHERE\n  id = :userId\n  AND status = 'CREATED'\nRETURNING\n  id"};
+const usersRemoveUserIR: any = {"usedParamSet":{"userId":true},"params":[{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":102,"b":109}]}],"statement":"                                                             \nDELETE FROM\n  public.users\nWHERE\n  id = :userId!\n  AND status = 'CREATED'\nRETURNING\n  id"};
 
 /**
  * Query generated from SQL:
@@ -26,7 +26,7 @@ const usersRemoveUserIR: any = {"usedParamSet":{"userId":true},"params":[{"name"
  * DELETE FROM
  *   public.users
  * WHERE
- *   id = :userId
+ *   id = :userId!
  *   AND status = 'CREATED'
  * RETURNING
  *   id

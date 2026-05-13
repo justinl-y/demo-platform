@@ -8,8 +8,8 @@ INSERT INTO public.users
 	)
 VALUES
 	(
-		:email
-		, :fullName
+		:email!
+		, :fullName!
 		, :knownAs
 	)
 RETURNING

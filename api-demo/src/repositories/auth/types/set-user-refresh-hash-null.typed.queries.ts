@@ -3,7 +3,7 @@ import { PreparedQuery } from '@pgtyped/runtime';
 
 /** 'AuthSetUserRefreshHashNull' parameters type */
 export interface IAuthSetUserRefreshHashNullParams {
-  userId?: string | null | void;
+  userId: string;
 }
 
 /** 'AuthSetUserRefreshHashNull' return type */
@@ -17,7 +17,7 @@ export interface IAuthSetUserRefreshHashNullQuery {
   result: IAuthSetUserRefreshHashNullResult;
 }
 
-const authSetUserRefreshHashNullIR: any = {"usedParamSet":{"userId":true},"params":[{"name":"userId","required":false,"transform":{"type":"scalar"},"locs":[{"a":129,"b":135}]}],"statement":"                                                             \nUPDATE\n  public.users\nSET\n  token_refresh_hash = NULL\nWHERE\n  id = :userId\n  AND token_refresh_hash IS NOT NULL\nRETURNING\n  id"};
+const authSetUserRefreshHashNullIR: any = {"usedParamSet":{"userId":true},"params":[{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":129,"b":136}]}],"statement":"                                                             \nUPDATE\n  public.users\nSET\n  token_refresh_hash = NULL\nWHERE\n  id = :userId!\n  AND token_refresh_hash IS NOT NULL\nRETURNING\n  id"};
 
 /**
  * Query generated from SQL:
@@ -28,7 +28,7 @@ const authSetUserRefreshHashNullIR: any = {"usedParamSet":{"userId":true},"param
  * SET
  *   token_refresh_hash = NULL
  * WHERE
- *   id = :userId
+ *   id = :userId!
  *   AND token_refresh_hash IS NOT NULL
  * RETURNING
  *   id

@@ -3,8 +3,8 @@ import { PreparedQuery } from '@pgtyped/runtime';
 
 /** 'AuthSetUserRefreshHashOnRefresh' parameters type */
 export interface IAuthSetUserRefreshHashOnRefreshParams {
-  newTokenRefreshHash?: string | null | void;
-  userId?: string | null | void;
+  newTokenRefreshHash: string;
+  userId: string;
 }
 
 /** 'AuthSetUserRefreshHashOnRefresh' return type */
@@ -18,7 +18,7 @@ export interface IAuthSetUserRefreshHashOnRefreshQuery {
   result: IAuthSetUserRefreshHashOnRefreshResult;
 }
 
-const authSetUserRefreshHashOnRefreshIR: any = {"usedParamSet":{"newTokenRefreshHash":true,"userId":true},"params":[{"name":"newTokenRefreshHash","required":false,"transform":{"type":"scalar"},"locs":[{"a":111,"b":130}]},{"name":"userId","required":false,"transform":{"type":"scalar"},"locs":[{"a":145,"b":151}]}],"statement":"                                                             \nUPDATE\n  public.users\nSET\n  token_refresh_hash = :newTokenRefreshHash\nWHERE\n  id = :userId\n  AND status = 'ACTIVE'\nRETURNING\n  id"};
+const authSetUserRefreshHashOnRefreshIR: any = {"usedParamSet":{"newTokenRefreshHash":true,"userId":true},"params":[{"name":"newTokenRefreshHash","required":true,"transform":{"type":"scalar"},"locs":[{"a":111,"b":131}]},{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":146,"b":153}]}],"statement":"                                                             \nUPDATE\n  public.users\nSET\n  token_refresh_hash = :newTokenRefreshHash!\nWHERE\n  id = :userId!\n  AND status = 'ACTIVE'\nRETURNING\n  id"};
 
 /**
  * Query generated from SQL:
@@ -27,9 +27,9 @@ const authSetUserRefreshHashOnRefreshIR: any = {"usedParamSet":{"newTokenRefresh
  * UPDATE
  *   public.users
  * SET
- *   token_refresh_hash = :newTokenRefreshHash
+ *   token_refresh_hash = :newTokenRefreshHash!
  * WHERE
- *   id = :userId
+ *   id = :userId!
  *   AND status = 'ACTIVE'
  * RETURNING
  *   id

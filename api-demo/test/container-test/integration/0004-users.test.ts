@@ -514,6 +514,7 @@ describe(`${fileNumber} - Users`, () => {
         const {
           userId,
         } = await createRandomUser({ status: 'ACTIVE' });
+
         const res = await getResponse(userId);
 
         expect(res.statusCode).toBe(400);
@@ -524,6 +525,7 @@ describe(`${fileNumber} - Users`, () => {
         const {
           userId,
         } = await createRandomUser({ status: 'DEACTIVATED' });
+
         const res = await getResponse(userId);
 
         expect(res.statusCode).toBe(400);
@@ -535,6 +537,7 @@ describe(`${fileNumber} - Users`, () => {
           userId,
         } = await createRandomUser({ status: 'CREATED' });
         await getResponse(userId);
+
         const res = await getResponse(userId);
 
         expect(res.statusCode).toBe(400);
@@ -575,7 +578,128 @@ describe(`${fileNumber} - Users`, () => {
     });
   });
 
-  describe.skip('PATCH /users/deactivate/:userId', () => {});
+  describe('PATCH /users/deactivate/:userId', () => {
+    const getResponse = (userId: string) => authAPI.patch(`/users/deactivate/${userId}`);
+
+    describe('Request Failure', () => {
+      test('Non-UUID "user_id" returns 400', async () => {
+        const res = await getResponse('not-a-uuid');
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('params/user_id must match format "uuid"');
+      });
+
+      test('Integer "user_id" returns 400', async () => {
+        const res = await getResponse('12345');
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('params/user_id must match format "uuid"');
+      });
+
+      test('Unknown UUID returns 400', async () => {
+        const unknownUuid = '00000000-0000-0000-0000-000000000000';
+
+        const res = await getResponse(unknownUuid);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid user id or user status');
+      });
+
+      test('User with CREATED status returns 400', async () => {
+        const {
+          userId,
+        } = await createRandomUser({ status: 'CREATED' });
+
+        const res = await getResponse(userId);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid user id or user status');
+      });
+
+      test('User with INVITED status returns 400', async () => {
+        const {
+          userId,
+        } = await createRandomUser({ status: 'INVITED' });
+
+        const res = await getResponse(userId);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid user id or user status');
+      });
+
+      test('User with DEACTIVATED status returns 400', async () => {
+        const {
+          userId,
+        } = await createRandomUser({ status: 'DEACTIVATED' });
+
+        const res = await getResponse(userId);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid user id or user status');
+      });
+
+      test('Already-deactivated user returns 400', async () => {
+        const {
+          userId,
+        } = await createRandomUser({ status: 'ACTIVE' });
+        await getResponse(userId);
+
+        const res = await getResponse(userId);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid user id or user status');
+      });
+    });
+
+    describe('Request Success', () => {
+      interface DbUser {
+        id: string;
+        status: string;
+        password_hash: string;
+        token_refresh_hash: string | null;
+      }
+
+      let activeUserId: string;
+      let originalPasswordHash: string;
+      let rep: Supertest.Response;
+      let dbUser: DbUser;
+
+      beforeAll(async () => {
+        ({
+          userId: activeUserId,
+        } = await createRandomUser({ status: 'ACTIVE' }));
+
+        const getUserSql = 'SELECT u.id, u.status, u.password_hash, u.token_refresh_hash FROM public.users AS u WHERE u.id = $1';
+        const [original] = await query<DbUser>(getUserSql, [activeUserId]);
+        originalPasswordHash = original.password_hash;
+
+        rep = await getResponse(activeUserId);
+
+        const [result] = await query<DbUser>(getUserSql, [activeUserId]);
+        dbUser = result;
+      });
+
+      test('Success response returns 204', () => {
+        expect(rep.statusCode).toBe(204);
+      });
+
+      test('Response body is empty', () => {
+        expect(rep.body).toEqual({});
+      });
+
+      test('User status is DEACTIVATED in the database', () => {
+        expect(dbUser.status).toBe('DEACTIVATED');
+      });
+
+      test('User password_hash is invalidated in the database', () => {
+        expect(dbUser.password_hash).not.toBe(originalPasswordHash);
+      });
+
+      test('User token_refresh_hash is null in the database', () => {
+        expect(dbUser.token_refresh_hash).toBeNull();
+      });
+    });
+  });
 
   describe.skip('PUT /users/:userId', () => {});
 });

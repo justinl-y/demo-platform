@@ -2,5 +2,5 @@ SELECT
 	id
 FROM public.users
 WHERE
-	email = $email
+	email = $email!
 ;

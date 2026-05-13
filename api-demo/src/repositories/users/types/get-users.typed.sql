@@ -17,9 +17,9 @@ WITH t_users AS (
 		split_part(u.full_name, ' ', -1) ASC
 		, u.id ASC
 	LIMIT
-		:limit
+		:limit!
 	OFFSET
-		:offset
+		:offset!
 )
 SELECT
 	json_object_agg(

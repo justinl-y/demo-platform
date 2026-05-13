@@ -1,7 +1,7 @@
 DELETE FROM
   public.users
 WHERE
-  id = $userId
+  id = $userId!
   AND status = 'CREATED'
 RETURNING
   id

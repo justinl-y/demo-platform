@@ -34,9 +34,12 @@ function isQueryConfig(value: unknown): value is QueryConfig {
 }
 
 function numericFromNamed(sql: string, parameters: SqlParams): NumericQuery {
+  // Strip pgtyped's required-param marker before processing — '!' is a pgtyped annotation, not valid SQL.
+  const normalizedSql = sql.replace(/(\$[a-zA-Z][a-zA-Z0-9_]*)!/g, '$1');
+
   // Validate placeholders first so callers get deterministic missing-parameter failures.
   const objTokens = Object.keys(parameters);
-  const sqlTokens = [...new Set((sql.match(tokenPattern) ?? []).map((token) => token.substring(1)))];
+  const sqlTokens = [...new Set((normalizedSql.match(tokenPattern) ?? []).map((token) => token.substring(1)))];
   const unmatchedTokens = sqlTokens.filter((t) => !objTokens.includes(t));
 
   if (unmatchedTokens.length) {
@@ -48,7 +51,7 @@ function numericFromNamed(sql: string, parameters: SqlParams): NumericQuery {
   const fillValues = fillTokens.map((token) => parameters[token]);
   const interpolatedSql = fillTokens.reduce((partiallyInterpolated, token, index) => {
     return partiallyInterpolated.replace(new RegExp(`\\$${token}\\b`, 'g'), `$${index + 1}`);
-  }, sql);
+  }, normalizedSql);
 
   return {
     sql: interpolatedSql,

@@ -25,9 +25,10 @@ DECLARE
   v_user_id UUID;
 
   v_current_timestamp timestamptz := now();
-  v_invited_at timestamptz := v_current_timestamp + INTERVAL '5 minutes';
-  v_activated_at timestamptz := v_current_timestamp + INTERVAL '10 minutes';
-  v_deactivated_at timestamptz := v_current_timestamp + INTERVAL '15 minutes';
+  v_created_at timestamptz := v_current_timestamp - INTERVAL '30 minutes';
+  v_invited_at timestamptz := v_created_at + INTERVAL '5 minutes';
+  v_activated_at timestamptz := v_created_at + INTERVAL '10 minutes';
+  v_deactivated_at timestamptz := v_created_at + INTERVAL '15 minutes';
 BEGIN
   INSERT INTO public.users
     (
@@ -35,6 +36,7 @@ BEGIN
       , "password_hash"
       , full_name
       , known_as
+      , created_at
       , invited_at
       , activated_at
       , deactivated_at
@@ -45,6 +47,7 @@ BEGIN
       , v_encrypted_password
       , _full_name
       , _known_as
+      , v_created_at
       , CASE WHEN _status IN ('INVITED', 'ACTIVE', 'DEACTIVATED') THEN v_invited_at END
       , CASE WHEN _status IN ('ACTIVE', 'DEACTIVATED') THEN v_activated_at END
       , CASE WHEN _status = 'DEACTIVATED' THEN v_deactivated_at END

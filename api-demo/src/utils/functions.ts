@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import path from 'path';
 
 import { Config } from '#config/index';
@@ -107,6 +108,16 @@ function paginationPages(total: number | null | undefined, perPage: number) {
   return Math.ceil((total ?? 0) / perPage);
 }
 
+function randomAlphaNumeric(length: number = 30): string {
+  let result = '';
+
+  while (result.length < length) {
+    result += crypto.randomBytes(32).toString('base64').replace(/[^a-zA-Z0-9]/g, '');
+  }
+
+  return result.slice(0, length);
+}
+
 export {
   routePropertiesCore,
   routePropertiesOnRequest,
@@ -117,4 +128,5 @@ export {
   paginationOffset,
   paginationCount,
   paginationPages,
+  randomAlphaNumeric,
 };
