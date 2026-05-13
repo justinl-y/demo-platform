@@ -18,7 +18,7 @@ type Request = {
 async function postLogin(this: FastifyInstance, request: FastifyRequest<Request>, reply: FastifyReply) {
   const {
     body: {
-      email: emailRaw,
+      email,
       password,
     },
   } = request;
@@ -28,7 +28,7 @@ async function postLogin(this: FastifyInstance, request: FastifyRequest<Request>
   } = Config.authConfig();
 
   const loginParams = {
-    email: emailRaw.toLowerCase(),
+    email,
     password,
   };
 

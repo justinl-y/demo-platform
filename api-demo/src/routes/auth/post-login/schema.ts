@@ -16,6 +16,7 @@ const body = {
     email: {
       type: 'string',
       format: 'email',
+      transform: ['trim', 'toLowerCase'],
       description: 'User email address',
     },
     password: {

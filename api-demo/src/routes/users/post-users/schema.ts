@@ -15,17 +15,20 @@ const body = {
     email: {
       type: 'string',
       format: 'email',
+      transform: ['trim', 'toLowerCase'],
       description: 'User\'s email address, must be unique',
     },
     full_name: {
       type: 'string',
       minLength: 1,
+      transform: ['trim'],
       description: 'User\'s full name',
     },
     known_as: {
       type: 'string',
       nullable: true,
       minLength: 1,
+      transform: ['trim'],
       description: 'User\'s known by name',
     },
   },
