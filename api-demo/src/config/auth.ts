@@ -1,6 +1,7 @@
+import { apiEnv, liveEnvironments } from '#config/api';
 import { secretValues } from '#lib/secrets-manager';
 
-const accessJwtExpirationMinutes = 60;
+const accessJwtExpirationMinutes = liveEnvironments.includes(apiEnv) ? 5 : 60;
 const accessCookieExpirationSeconds = accessJwtExpirationMinutes * 60;
 const refreshJwtExpirationDays = 7;
 const refreshCookieExpirationSeconds = refreshJwtExpirationDays * 24 * 60 * 60;
