@@ -6,7 +6,7 @@ import type { IUsersGetUserByEmailParams, IUsersGetUserByEmailResult } from './t
 import type { IUsersGetUserByStatusParams, IUsersGetUserByStatusResult } from './types/get-user-by-status.typed.queries.ts';
 import type { IUsersAddUserParams, IUsersAddUserResult } from './types/add-user.typed.queries.ts';
 import type { IUsersRemoveUserParams, IUsersRemoveUserResult } from './types/remove-user.typed.queries.ts';
-import type { IUsersSetUsersParams, IUsersSetUsersResult } from './types/set-users.typed.queries.ts';
+import type { IUsersSetUserParams, IUsersSetUserResult } from './types/set-user.typed.queries.ts';
 import type { IUsersSetUserDeactivatedParams, IUsersSetUserDeactivatedResult } from './types/set-user-deactivated.typed.queries.ts';
 
 const relPath = import.meta.dirname;
@@ -15,7 +15,7 @@ const getUserByEmailQuery = cwd('get-user-by-email', relPath);
 const getUserByStatusQuery = cwd('get-user-by-status', relPath);
 const addUserQuery = cwd('add-user', relPath);
 const removeUserQuery = cwd('remove-user', relPath);
-const updateUserQuery = cwd('set-users', relPath);
+const updateUserQuery = cwd('set-user', relPath);
 const deactivateUserQuery = cwd('set-user-deactivated', relPath);
 
 function createUsersRepository(db: DatabaseDecorator) {
@@ -96,9 +96,9 @@ function createUsersRepository(db: DatabaseDecorator) {
       userId,
       fullName,
       knownAs,
-    }: IUsersSetUsersParams): Promise<{ user: IUsersSetUsersResult | undefined }> => {
+    }: IUsersSetUserParams): Promise<{ user: IUsersSetUserResult | undefined }> => {
       const [userResult] = await db.transaction()
-        .add<IUsersSetUsersResult>({
+        .add<IUsersSetUserResult>({
           files: [updateUserQuery],
           params: {
             userId,
