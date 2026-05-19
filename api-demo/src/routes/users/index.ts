@@ -11,6 +11,7 @@ import preHandlers from './pre-handlers.ts';
 import getUsers from './get-users/index.ts';
 import postUsers from './post-users/index.ts';
 import deleteUsers from './delete-users/index.ts';
+import putUsers from './put-users/index.ts';
 import patchUsersDeactivate from './patch-users-deactivate/index.ts';
 
 import type {
@@ -23,12 +24,14 @@ const {
   POST,
   DELETE,
   PATCH,
+  PUT,
 } = HTTP_METHODS;
 
 const routes = {
   getUsers: routePropertiesCore(GET, '/users', getUsers as RouteHandlerMethod),
   postUsers: routePropertiesCore(POST, '/users', postUsers as RouteHandlerMethod),
   deleteUsers: routePropertiesCore(DELETE, '/users/:user_id', deleteUsers as RouteHandlerMethod),
+  putUsers: routePropertiesCore(PUT, '/users/:user_id', putUsers as RouteHandlerMethod),
   patchUsersDeactivate: routePropertiesCore(PATCH, '/users/deactivate/:user_id', patchUsersDeactivate as RouteHandlerMethod),
 };
 

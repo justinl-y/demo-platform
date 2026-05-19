@@ -578,6 +578,183 @@ describe(`${fileNumber} - Users`, () => {
     });
   });
 
+  describe('PUT /users/:user_id', () => {
+    const getResponse = (userId: string, reqBody: RequestBody) => authAPI.put(`/users/${userId}`, reqBody);
+
+    let validUserId: string;
+    let validRequestBody: RequestBody;
+
+    beforeAll(async () => {
+      ({
+        userId: validUserId,
+      } = await createRandomUser());
+
+      const firstName = faker.person.firstName().replace(/'/g, '');
+      const lastName = faker.person.lastName().replace(/'/g, '');
+
+      validRequestBody = {
+        full_name: `${firstName} ${lastName}`,
+        known_as: firstName,
+      };
+    });
+
+    describe('Request Failure', () => {
+      test('Non-UUID "user_id" returns 400', async () => {
+        const res = await getResponse('not-a-uuid', validRequestBody);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('params/user_id must match format "uuid"');
+      });
+
+      test('Integer "user_id" returns 400', async () => {
+        const res = await getResponse('12345', validRequestBody);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('params/user_id must match format "uuid"');
+      });
+
+      test('Unknown UUID returns 400', async () => {
+        const unknownUuid = '00000000-0000-0000-0000-000000000000';
+        const res = await getResponse(unknownUuid, validRequestBody);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid user id');
+      });
+
+      test('Absent required body "full_name" returns 400', async () => {
+        const reqBody = _.cloneDeep(validRequestBody);
+        delete reqBody.full_name;
+
+        const res = await getResponse(validUserId, reqBody);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe(`body must have required property 'full_name'`);
+      });
+
+      test('Invalid type body "full_name" returns 400', async () => {
+        const reqBody = _.cloneDeep(validRequestBody);
+        reqBody.full_name = 1234;
+
+        const res = await getResponse(validUserId, reqBody);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('body/full_name must be string');
+      });
+
+      test('Empty string body "full_name" returns 400', async () => {
+        const reqBody = _.cloneDeep(validRequestBody);
+        reqBody.full_name = '';
+
+        const res = await getResponse(validUserId, reqBody);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('body/full_name must NOT have fewer than 1 characters');
+      });
+
+      test('Empty string body "known_as" returns 400', async () => {
+        const reqBody = _.cloneDeep(validRequestBody);
+        reqBody.known_as = '';
+
+        const res = await getResponse(validUserId, reqBody);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('body/known_as must NOT have fewer than 1 characters');
+      });
+    });
+
+    describe('Request Success', () => {
+      interface DbUser {
+        id: string;
+        full_name: string;
+        known_as: string | null;
+      }
+
+      let rep: Supertest.Response;
+      let dbUser: DbUser;
+      let responseBody: DbUser;
+
+      beforeAll(async () => {
+        rep = await getResponse(validUserId, validRequestBody);
+
+        const getUserSql = 'SELECT u.id, u.full_name, u.known_as FROM public.users AS u WHERE u.id = $1';
+        const [result] = await query<DbUser>(getUserSql, [validUserId]);
+        dbUser = result;
+
+        ({
+          body: responseBody,
+        } = rep);
+      });
+
+      test('Success response returns 200', () => {
+        expect(rep.statusCode).toBe(200);
+      });
+
+      test('Response body has correct shape', () => {
+        expect(responseBody).toHaveProperty('id');
+        expect(responseBody).toHaveProperty('full_name');
+        expect(responseBody).toHaveProperty('known_as');
+      });
+
+      test('Response "id" matches the user', () => {
+        expect(responseBody.id).toBe(validUserId);
+      });
+
+      test('Response "full_name" matches request', () => {
+        expect(responseBody.full_name).toBe(validRequestBody.full_name);
+      });
+
+      test('Response "known_as" matches request', () => {
+        expect(responseBody.known_as).toBe(validRequestBody.known_as);
+      });
+
+      test('User data is persisted in the database', () => {
+        expect(dbUser.full_name).toBe(validRequestBody.full_name);
+        expect(dbUser.known_as).toBe(validRequestBody.known_as);
+      });
+
+      test('"full_name" with leading and trailing whitespace is stored trimmed', async () => {
+        const res = await getResponse(validUserId, {
+          ...validRequestBody,
+          full_name: '  Jane Doe  ',
+        });
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.full_name).toBe('Jane Doe');
+      });
+
+      test('"known_as" with leading and trailing whitespace is stored trimmed', async () => {
+        const res = await getResponse(validUserId, {
+          ...validRequestBody,
+          known_as: '  Jane  ',
+        });
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.known_as).toBe('Jane');
+      });
+
+      test('Omitting "known_as" sets it to null', async () => {
+        const {
+          known_as: _knownAs,
+          ...bodyWithoutKnownAs
+        } = validRequestBody as Record<string, unknown>;
+        const res = await getResponse(validUserId, bodyWithoutKnownAs as RequestBody);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.known_as).toBeNull();
+      });
+
+      test('Sending "known_as: null" sets it to null', async () => {
+        const res = await getResponse(validUserId, {
+          ...(validRequestBody as Record<string, unknown>),
+          known_as: null,
+        } as unknown as RequestBody);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.known_as).toBeNull();
+      });
+    });
+  });
+
   describe('PATCH /users/deactivate/:userId', () => {
     const getResponse = (userId: string) => authAPI.patch(`/users/deactivate/${userId}`);
 
@@ -700,6 +877,4 @@ describe(`${fileNumber} - Users`, () => {
       });
     });
   });
-
-  describe.skip('PUT /users/:userId', () => {});
 });

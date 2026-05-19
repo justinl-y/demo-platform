@@ -117,6 +117,40 @@ async function deleteUsers(repository: UsersRepository, params: DeleteUsersParam
   return deletedUser;
 }
 
+interface PutUsersParams {
+  userId: string;
+  fullName: string;
+  knownAs?: string | null;
+}
+
+interface PutUsersResult {
+  id: string;
+  full_name: string;
+  known_as: string | null;
+}
+
+async function putUsers(repository: UsersRepository, params: PutUsersParams): Promise<PutUsersResult> {
+  const {
+    userId,
+    fullName,
+    knownAs,
+  } = params;
+
+  const putUsersParams = {
+    userId,
+    fullName,
+    knownAs,
+  };
+
+  const {
+    user: updatedUser,
+  } = await repository.updateUser(putUsersParams);
+
+  if (!updatedUser) throw new BadRequestError('Invalid user id');
+
+  return updatedUser;
+}
+
 interface PatchUsersDeactivateParams {
   userId: string;
 }
@@ -156,5 +190,6 @@ export {
   getUsers,
   postUsers,
   deleteUsers,
+  putUsers,
   patchUsersDeactivate,
 };
