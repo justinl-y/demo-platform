@@ -916,7 +916,7 @@ describe(`${fileNumber} - Users`, () => {
     });
   });
 
-  describe('PATCH /users/:userId/deactivate', () => {
+  describe('PATCH /users/:user_id/deactivate', () => {
     const getResponse = (userId: string) => authAPI.patch(`/users/${userId}/deactivate`);
 
     describe('Request Failure', () => {
