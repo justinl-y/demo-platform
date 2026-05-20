@@ -53,9 +53,13 @@ All endpoints are served from the API base URL. Auth endpoints use JWT cookies; 
 | --- | --- | --- | --- |
 | `POST` | `/login` | — | Authenticate with email + password. Sets `access_token` and `refresh_token` HttpOnly cookies. |
 | `POST` | `/refresh` | cookie | Refresh the access token using the `refresh_token` cookie. Issues new cookies. |
-| `PUT` | `/logout` | cookie | Invalidate the session and clear both cookies. |
+| `POST` | `/logout` | cookie | Invalidate the session and clear both cookies. |
 | `GET` | `/users` | cookie | Get paginated users. Optional filters: `status`, `user_id`, `page`, `per_page`. |
 | `POST` | `/users` | cookie | Create a new user. |
+| `DELETE` | `/users/:user_id` | cookie | Delete a user. |
+| `PUT` | `/users/:user_id` | cookie | Update a user's full name and known as. |
+| `PATCH` | `/users/:user_id/deactivate` | cookie | Deactivate a user. |
+| `PATCH` | `/users/:user_id/email` | cookie | Update a user's email address. |
 | `GET` | `/health_db` | — | Database health check. |
 | `GET` | `/health_eb` | — | Elastic Beanstalk health check. |
 

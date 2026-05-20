@@ -58,17 +58,17 @@ src/
   plugins/              # Fastify plugins (postgres, jwt, repositories, custom-ajv-formats)
   hooks/                # Fastify lifecycle hooks (auth, error handling, Sentry)
   routes/               # Thin HTTP handlers — parse request, call service, send response
-    auth/               # post-login, post-refresh, put-logout
-    users/              # get-users, post-users
+    auth/               # post-login, post-refresh, post-logout
+    users/              # get-users, post-users, delete-users, put-users, patch-users-deactivate, patch-users-email
     health-check/       # get-health-db, get-health-eb
   services/             # Business logic — no HTTP, no SQL
     auth/               # login(), refresh(), logout()
     health/             # checkDb(), checkEb()
-    users/              # getUsers(), postUsers()
+    users/              # getUsers(), postUsers(), deleteUsers(), putUsers(), patchUsersDeactivate(), patchUsersEmail()
   repositories/         # DB access only — SQL files, pgtyped types, query functions
     auth/               # createAuthRepository — getUserByEmail, getUserWithRefreshToken, setUserRefreshTokenOnLogin, setUserTokenOnRefresh, removeUserRefreshToken
     health/             # createHealthRepository — getPgVersion
-    users/              # createUsersRepository — getUsers, getUserByEmail, addUser
+    users/              # createUsersRepository — getUsers, getUserByEmail, addUser, removeUser, updateUser, deactivateUser, updateUserEmail
   lib/                  # Framework-level utilities (database, authentication, logger, sentry)
   utils/                # Shared pure utilities and constants
   types/                # Shared TypeScript types
