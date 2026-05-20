@@ -33,7 +33,6 @@ BEGIN
   INSERT INTO public.users
     (
       email
-      , "password_hash"
       , full_name
       , known_as
       , created_at
@@ -44,7 +43,6 @@ BEGIN
   VALUES
     (
       _email
-      , v_encrypted_password
       , _full_name
       , _known_as
       , v_created_at
@@ -56,6 +54,15 @@ BEGIN
     id
   INTO
     v_user_id
+  ;
+
+  -- the users_authentication row is created by trg_create_users_authentication_row
+  UPDATE
+    public.users_authentication
+  SET
+    password_hash = v_encrypted_password
+  WHERE
+    user_id = v_user_id
   ;
 
   RETURN v_user_id;

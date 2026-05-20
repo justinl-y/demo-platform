@@ -1,10 +1,11 @@
 SELECT
   u.id
-  , u.token_refresh_hash
+  , a.refresh_token_hash
 FROM
   public.users AS u
+  INNER JOIN public.users_authentication AS a ON a.user_id = u.id
 WHERE
   u.id = $userId!
-  AND u.token_refresh_hash IS NOT NULL
+  AND a.refresh_token_hash IS NOT NULL
   AND u.status = 'ACTIVE'
 ;

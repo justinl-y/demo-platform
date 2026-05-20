@@ -3,7 +3,7 @@ import { PreparedQuery } from '@pgtyped/runtime';
 
 /** 'AuthSetUserRefreshHashOnRefresh' parameters type */
 export interface IAuthSetUserRefreshHashOnRefreshParams {
-  newTokenRefreshHash: string;
+  newRefreshTokenHash: string;
   userId: string;
 }
 
@@ -18,21 +18,24 @@ export interface IAuthSetUserRefreshHashOnRefreshQuery {
   result: IAuthSetUserRefreshHashOnRefreshResult;
 }
 
-const authSetUserRefreshHashOnRefreshIR: any = {"usedParamSet":{"newTokenRefreshHash":true,"userId":true},"params":[{"name":"newTokenRefreshHash","required":true,"transform":{"type":"scalar"},"locs":[{"a":111,"b":131}]},{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":146,"b":153}]}],"statement":"                                                             \nUPDATE\n  public.users\nSET\n  token_refresh_hash = :newTokenRefreshHash!\nWHERE\n  id = :userId!\n  AND status = 'ACTIVE'\nRETURNING\n  id"};
+const authSetUserRefreshHashOnRefreshIR: any = {"usedParamSet":{"newRefreshTokenHash":true,"userId":true},"params":[{"name":"newRefreshTokenHash","required":true,"transform":{"type":"scalar"},"locs":[{"a":131,"b":151}]},{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":198,"b":205}]}],"statement":"                                                             \nUPDATE\n  public.users_authentication AS a\nSET\n  refresh_token_hash = :newRefreshTokenHash!\nFROM\n  public.users AS u\nWHERE\n  a.user_id = :userId!\n  AND u.id = a.user_id\n  AND u.status = 'ACTIVE'\nRETURNING\n  a.user_id AS id"};
 
 /**
  * Query generated from SQL:
  * ```
  *                                                              
  * UPDATE
- *   public.users
+ *   public.users_authentication AS a
  * SET
- *   token_refresh_hash = :newTokenRefreshHash!
+ *   refresh_token_hash = :newRefreshTokenHash!
+ * FROM
+ *   public.users AS u
  * WHERE
- *   id = :userId!
- *   AND status = 'ACTIVE'
+ *   a.user_id = :userId!
+ *   AND u.id = a.user_id
+ *   AND u.status = 'ACTIVE'
  * RETURNING
- *   id
+ *   a.user_id AS id
  * ```
  */
 export const authSetUserRefreshHashOnRefresh = new PreparedQuery<IAuthSetUserRefreshHashOnRefreshParams,IAuthSetUserRefreshHashOnRefreshResult>(authSetUserRefreshHashOnRefreshIR);

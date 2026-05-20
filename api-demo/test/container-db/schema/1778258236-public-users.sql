@@ -32,4 +32,4 @@ ALTER TABLE
   , DROP COLUMN is_active
 ;
 
-CREATE INDEX users_status_idx ON public.users (status);
+CREATE INDEX idx_public_users_status ON public.users (status);

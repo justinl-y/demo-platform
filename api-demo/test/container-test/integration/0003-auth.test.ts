@@ -107,14 +107,14 @@ describe(`${fileNumber} - Auth`, () => {
 
     describe('Request Success', () => {
       interface DbUserTokenHash {
-        token_refresh_hash: string;
+        refresh_token_hash: string;
         last_login: Date;
       }
 
       let rep: Supertest.Response;
       let cookies: string[];
       let requestTime: Date;
-      let tokenRefreshHash: string;
+      let refreshTokenHash: string;
       let lastLogin: Date;
 
       beforeAll(async () => {
@@ -123,17 +123,18 @@ describe(`${fileNumber} - Auth`, () => {
         cookies = setCookies(rep.headers);
 
         const getUserTokenHashSql = `SELECT
-            u.token_refresh_hash
-            , u.last_login
+            a.refresh_token_hash
+            , a.last_login
           FROM
             public.users AS u
+            INNER JOIN public.users_authentication AS a ON a.user_id = u.id
           WHERE
             u.email = $1;`;
 
         const [result] = await query<DbUserTokenHash>(getUserTokenHashSql, [userEmail]);
 
         ({
-          token_refresh_hash: tokenRefreshHash, last_login: lastLogin,
+          refresh_token_hash: refreshTokenHash, last_login: lastLogin,
         } = result);
       });
 
@@ -188,7 +189,7 @@ describe(`${fileNumber} - Auth`, () => {
       test('Check "refresh_token" cookie value matches persisted hash in db', async () => {
         const cookie = cookies.find((c) => c.startsWith('refresh_token='))!;
         const refreshToken = cookie.split(';')[0].replace('refresh_token=', '');
-        const isMatch = await bcrypt.compare(refreshToken, tokenRefreshHash);
+        const isMatch = await bcrypt.compare(refreshToken, refreshTokenHash);
 
         expect(isMatch).toBe(true);
       });
@@ -226,7 +227,12 @@ describe(`${fileNumber} - Auth`, () => {
         accessTokenValue = generateTestCookie('access', userId, userEmail).replace('access_token=', '');
 
         await query(
-          'UPDATE public.users SET token_refresh_hash = NULL WHERE id = $1',
+          `UPDATE
+              public.users_authentication
+            SET
+              refresh_token_hash = NULL
+            WHERE
+              user_id = $1;`,
           [userId],
         );
       });
@@ -262,12 +268,12 @@ describe(`${fileNumber} - Auth`, () => {
 
     describe('Request Success', () => {
       interface DbUserRefreshHash {
-        token_refresh_hash: string;
+        refresh_token_hash: string;
       }
 
       let rep: Supertest.Response;
       let cookies: string[];
-      let tokenRefreshHash: string;
+      let refreshTokenHash: string;
 
       beforeAll(async () => {
         const freshRefreshTokenCookie = generateTestCookie('refresh', userId, userEmail);
@@ -276,17 +282,27 @@ describe(`${fileNumber} - Auth`, () => {
         const salt = await bcrypt.genSalt(10);
         const hash = await bcrypt.hash(freshRefreshToken, salt);
 
-        const setUserTokenRefreshHash = 'UPDATE public.users SET token_refresh_hash = $1 WHERE id = $2';
-        await query(setUserTokenRefreshHash, [hash, userId]);
+        const setUserRefreshTokenHash = `UPDATE
+          public.users_authentication
+        SET
+          refresh_token_hash = $1
+        WHERE
+          user_id = $2;`;
+        await query(setUserRefreshTokenHash, [hash, userId]);
 
         rep = await getResponse(freshRefreshTokenCookie);
         cookies = setCookies(rep.headers);
 
-        const getTokenRefreshHashSql = 'SELECT u.token_refresh_hash FROM public.users AS u WHERE u.id = $1';
-        const [result] = await query<DbUserRefreshHash>(getTokenRefreshHashSql, [userId]);
+        const getRefreshTokenHashSql = `SELECT
+          a.refresh_token_hash
+        FROM
+          public.users_authentication AS a
+        WHERE
+          a.user_id = $1;`;
+        const [result] = await query<DbUserRefreshHash>(getRefreshTokenHashSql, [userId]);
 
         ({
-          token_refresh_hash: tokenRefreshHash,
+          refresh_token_hash: refreshTokenHash,
         } = result);
       });
 
@@ -341,7 +357,7 @@ describe(`${fileNumber} - Auth`, () => {
       test('Check "refresh_token" cookie value matches persisted hash in db', async () => {
         const cookie = cookies.find((c) => c.startsWith('refresh_token='))!;
         const refreshToken = cookie.split(';')[0].replace('refresh_token=', '');
-        const isMatch = await bcrypt.compare(refreshToken, tokenRefreshHash);
+        const isMatch = await bcrypt.compare(refreshToken, refreshTokenHash);
 
         expect(isMatch).toBe(true);
       });
@@ -392,13 +408,13 @@ describe(`${fileNumber} - Auth`, () => {
 
     describe('Request Success', () => {
       interface DbUserRefreshHash {
-        token_refresh_hash: string | null;
+        refresh_token_hash: string | null;
       }
 
       let rep: Supertest.Response;
       let cookies: string[];
       let refreshTokenCookie: string;
-      let tokenRefreshHash: string | null;
+      let refreshTokenHash: string | null;
 
       beforeAll(async () => {
         refreshTokenCookie = generateTestCookie('refresh', logoutUserId, logoutUserEmail);
@@ -407,16 +423,29 @@ describe(`${fileNumber} - Auth`, () => {
         const salt = await bcrypt.genSalt(10);
         const hash = await bcrypt.hash(refreshToken, salt);
 
-        await query('UPDATE public.users SET token_refresh_hash = $1 WHERE id = $2', [hash, logoutUserId]);
+        await query(
+          `UPDATE
+              public.users_authentication
+            SET
+              refresh_token_hash = $1
+            WHERE
+              user_id = $2;`,
+          [hash, logoutUserId],
+        );
 
         rep = await getResponse(refreshTokenCookie);
         cookies = setCookies(rep.headers);
 
-        const getTokenRefreshHashSql = 'SELECT u.token_refresh_hash FROM public.users AS u WHERE u.id = $1';
-        const [result] = await query<DbUserRefreshHash>(getTokenRefreshHashSql, [logoutUserId]);
+        const getRefreshTokenHashSql = `SELECT
+          a.refresh_token_hash
+        FROM
+          public.users_authentication AS a
+        WHERE
+          a.user_id = $1;`;
+        const [result] = await query<DbUserRefreshHash>(getRefreshTokenHashSql, [logoutUserId]);
 
         ({
-          token_refresh_hash: tokenRefreshHash,
+          refresh_token_hash: refreshTokenHash,
         } = result);
       });
 
@@ -424,8 +453,8 @@ describe(`${fileNumber} - Auth`, () => {
         expect(rep.statusCode).toBe(204);
       });
 
-      test('User "token_refresh_hash" is NULL in db after logout', () => {
-        expect(tokenRefreshHash).toBeNull();
+      test('User "refresh_token_hash" is NULL in db after logout', () => {
+        expect(refreshTokenHash).toBeNull();
       });
 
       test('Response clears "access_token" cookie', () => {

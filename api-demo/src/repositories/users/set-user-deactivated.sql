@@ -1,12 +1,23 @@
+WITH deactivated AS (
+  UPDATE
+    public.users
+  SET
+    deactivated_at = NOW()
+  WHERE
+    id = $userId!
+    AND status = 'ACTIVE'
+  RETURNING
+    id
+)
 UPDATE
-  public.users
+  public.users_authentication AS a
 SET
-  deactivated_at = NOW()
-  , password_hash = $newPasswordHash!
-  , token_refresh_hash = NULL
+  password_hash = $newPasswordHash!
+  , refresh_token_hash = NULL
+FROM
+  deactivated AS d
 WHERE
-  id = $userId!
-  AND status = 'ACTIVE'
+  a.user_id = d.id
 RETURNING
-  id
+  a.user_id AS id
 ;

@@ -17,21 +17,21 @@ export interface IAuthSetUserRefreshHashNullQuery {
   result: IAuthSetUserRefreshHashNullResult;
 }
 
-const authSetUserRefreshHashNullIR: any = {"usedParamSet":{"userId":true},"params":[{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":129,"b":136}]}],"statement":"                                                             \nUPDATE\n  public.users\nSET\n  token_refresh_hash = NULL\nWHERE\n  id = :userId!\n  AND token_refresh_hash IS NOT NULL\nRETURNING\n  id"};
+const authSetUserRefreshHashNullIR: any = {"usedParamSet":{"userId":true},"params":[{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":149,"b":156}]}],"statement":"                                                             \nUPDATE\n  public.users_authentication\nSET\n  refresh_token_hash = NULL\nWHERE\n  user_id = :userId!\n  AND refresh_token_hash IS NOT NULL\nRETURNING\n  user_id AS id"};
 
 /**
  * Query generated from SQL:
  * ```
  *                                                              
  * UPDATE
- *   public.users
+ *   public.users_authentication
  * SET
- *   token_refresh_hash = NULL
+ *   refresh_token_hash = NULL
  * WHERE
- *   id = :userId!
- *   AND token_refresh_hash IS NOT NULL
+ *   user_id = :userId!
+ *   AND refresh_token_hash IS NOT NULL
  * RETURNING
- *   id
+ *   user_id AS id
  * ```
  */
 export const authSetUserRefreshHashNull = new PreparedQuery<IAuthSetUserRefreshHashNullParams,IAuthSetUserRefreshHashNullResult>(authSetUserRefreshHashNullIR);

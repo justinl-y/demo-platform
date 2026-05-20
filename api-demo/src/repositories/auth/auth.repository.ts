@@ -28,14 +28,14 @@ function createAuthRepository(db: DatabaseDecorator) {
 
     setUserRefreshTokenOnLogin: async ({
       userId,
-      hashedTokenRefresh,
+      hashedRefreshToken,
     }: IAuthSetUserRefreshHashOnLoginParams): Promise<void> => {
       await db.transaction()
         .add<IAuthSetUserRefreshHashOnLoginResult>({
           files: [setUserRefreshHashOnLoginQuery],
           params: {
             userId,
-            hashedTokenRefresh,
+            hashedRefreshToken,
           },
         })
         .execute();
@@ -43,14 +43,14 @@ function createAuthRepository(db: DatabaseDecorator) {
 
     setUserTokenOnRefresh: async ({
       userId,
-      newTokenRefreshHash,
+      newRefreshTokenHash,
     }: IAuthSetUserRefreshHashOnRefreshParams): Promise<void> => {
       await db.transaction()
         .add<IAuthSetUserRefreshHashOnRefreshResult>({
           files: [setUserRefreshHashOnRefreshQuery],
           params: {
             userId,
-            newTokenRefreshHash,
+            newRefreshTokenHash,
           },
         })
         .execute();
