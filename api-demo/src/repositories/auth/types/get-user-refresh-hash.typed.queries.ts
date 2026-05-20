@@ -9,7 +9,7 @@ export interface IAuthGetUserRefreshHashParams {
 /** 'AuthGetUserRefreshHash' return type */
 export interface IAuthGetUserRefreshHashResult {
   id: string;
-  token_refresh_hash: string;
+  refresh_token_hash: string;
 }
 
 /** 'AuthGetUserRefreshHash' query type */
@@ -18,7 +18,7 @@ export interface IAuthGetUserRefreshHashQuery {
   result: IAuthGetUserRefreshHashResult;
 }
 
-const authGetUserRefreshHashIR: any = {"usedParamSet":{"userId":true},"params":[{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":141,"b":148}]}],"statement":"                                                             \nSELECT\n  u.id\n  , u.token_refresh_hash\nFROM\n  public.users AS u\nWHERE\n  u.id = :userId!\n  AND u.token_refresh_hash IS NOT NULL\n  AND u.status = 'ACTIVE'"};
+const authGetUserRefreshHashIR: any = {"usedParamSet":{"userId":true},"params":[{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":207,"b":214}]}],"statement":"                                                             \nSELECT\n  u.id\n  , a.refresh_token_hash\nFROM\n  public.users AS u\n  INNER JOIN public.users_authentication AS a ON a.user_id = u.id\nWHERE\n  u.id = :userId!\n  AND a.refresh_token_hash IS NOT NULL\n  AND u.status = 'ACTIVE'"};
 
 /**
  * Query generated from SQL:
@@ -26,12 +26,13 @@ const authGetUserRefreshHashIR: any = {"usedParamSet":{"userId":true},"params":[
  *                                                              
  * SELECT
  *   u.id
- *   , u.token_refresh_hash
+ *   , a.refresh_token_hash
  * FROM
  *   public.users AS u
+ *   INNER JOIN public.users_authentication AS a ON a.user_id = u.id
  * WHERE
  *   u.id = :userId!
- *   AND u.token_refresh_hash IS NOT NULL
+ *   AND a.refresh_token_hash IS NOT NULL
  *   AND u.status = 'ACTIVE'
  * ```
  */

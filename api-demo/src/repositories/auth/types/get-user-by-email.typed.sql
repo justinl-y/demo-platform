@@ -5,9 +5,10 @@ SELECT
   , u.email
   , u.full_name
   , u.known_as
-  , u.password_hash
+  , a.password_hash
 FROM
   public.users AS u
+  INNER JOIN public.users_authentication AS a ON a.user_id = u.id
 WHERE
   u.email = :email!
   AND u.status = 'ACTIVE'

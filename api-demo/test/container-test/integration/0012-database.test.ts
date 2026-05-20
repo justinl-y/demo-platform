@@ -115,7 +115,12 @@ describe('0012 - database', () => {
       {
         file: 'src/repositories/auth/set-user-token',
         params: { userId: 'u1' },
-        query: 'UPDATE users SET token_refresh_hash = $hashedTokenRefresh WHERE id = $userId',
+        query: `UPDATE
+          public.users_authentication
+        SET
+          refresh_token_hash = $hashedRefreshToken
+        WHERE
+          user_id = $userId;`,
       },
     ]);
 
@@ -134,7 +139,7 @@ describe('0012 - database', () => {
         files: 'src/repositories/auth/set-user-token',
         params: {
           userId: 'u1',
-          hashedTokenRefresh: 'hash',
+          hashedRefreshToken: 'hash',
         },
       })
       .execute(true);

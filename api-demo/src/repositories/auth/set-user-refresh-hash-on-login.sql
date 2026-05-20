@@ -1,11 +1,14 @@
 UPDATE
-  public.users
+  public.users_authentication AS a
 SET
-  token_refresh_hash = $hashedTokenRefresh!
+  refresh_token_hash = $hashedRefreshToken!
   , last_login = CURRENT_TIMESTAMP
+FROM
+  public.users AS u
 WHERE
-  id = $userId!
-  AND status = 'ACTIVE'
+  a.user_id = $userId!
+  AND u.id = a.user_id
+  AND u.status = 'ACTIVE'
 RETURNING
-  id
+  a.user_id AS id
 ;

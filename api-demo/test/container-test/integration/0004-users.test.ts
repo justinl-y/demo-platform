@@ -380,7 +380,16 @@ describe(`${fileNumber} - Users`, () => {
       beforeAll(async () => {
         rep = await getResponse(validRequestBody);
 
-        const getUserByIdSql = 'SELECT u.id, u.email, u.full_name, u.known_as, u.status FROM public.users AS u WHERE u.id = $1';
+        const getUserByIdSql = `SELECT
+          u.id
+          , u.email
+          , u.full_name
+          , u.known_as
+          , u.status
+        FROM
+          public.users AS u
+        WHERE
+          u.id = $1;`;
         const [result] = await query<DbUser>(getUserByIdSql, [rep.body.id]);
 
         dbUser = result;
@@ -440,7 +449,12 @@ describe(`${fileNumber} - Users`, () => {
         expect(res.statusCode).toBe(201);
         expect(res.body.email).toBe(baseEmail);
 
-        const getUserByIdSql = 'SELECT u.email FROM public.users AS u WHERE u.id = $1';
+        const getUserByIdSql = `SELECT
+          u.email
+        FROM
+          public.users AS u
+        WHERE
+          u.id = $1;`;
         const [dbUser] = await query<{ email: string }>(getUserByIdSql, [res.body.id]);
 
         expect(dbUser.email).toBe(baseEmail);
@@ -582,7 +596,14 @@ describe(`${fileNumber} - Users`, () => {
       beforeAll(async () => {
         rep = await getResponse(validUserId, validRequestBody);
 
-        const getUserSql = 'SELECT u.id, u.full_name, u.known_as FROM public.users AS u WHERE u.id = $1';
+        const getUserSql = `SELECT
+          u.id
+          , u.full_name
+          , u.known_as
+        FROM
+          public.users AS u
+        WHERE
+          u.id = $1;`;
         const [result] = await query<DbUser>(getUserSql, [validUserId]);
         dbUser = result;
 
@@ -770,7 +791,13 @@ describe(`${fileNumber} - Users`, () => {
 
         rep = await getResponse(targetUserId, validRequestBody);
 
-        const getUserSql = 'SELECT u.id, u.email FROM public.users AS u WHERE u.id = $1';
+        const getUserSql = `SELECT
+          u.id
+          , u.email
+        FROM
+          public.users AS u
+        WHERE
+          u.id = $1;`;
         const [result] = await query<DbUser>(getUserSql, [targetUserId]);
         dbUser = result;
 
@@ -814,7 +841,12 @@ describe(`${fileNumber} - Users`, () => {
         expect(res.statusCode).toBe(200);
         expect(res.body.email).toBe(baseEmail);
 
-        const getUserSql = 'SELECT u.email FROM public.users AS u WHERE u.id = $1';
+        const getUserSql = `SELECT
+          u.email
+        FROM
+          public.users AS u
+        WHERE
+          u.id = $1;`;
         const [dbResult] = await query<{ email: string }>(getUserSql, [targetUserId]);
 
         expect(dbResult.email).toBe(baseEmail);
@@ -908,7 +940,12 @@ describe(`${fileNumber} - Users`, () => {
       });
 
       test('User is removed from the database', async () => {
-        const getDeletedUserSql = 'SELECT id FROM public.users WHERE id = $1';
+        const getDeletedUserSql = `SELECT
+          id
+        FROM
+          public.users
+        WHERE
+          id = $1;`;
         const [result] = await query<DbUser>(getDeletedUserSql, [createdUserId]);
 
         expect(result).toBeUndefined();
@@ -994,7 +1031,7 @@ describe(`${fileNumber} - Users`, () => {
         id: string;
         status: string;
         password_hash: string;
-        token_refresh_hash: string | null;
+        refresh_token_hash: string | null;
       }
 
       let activeUserId: string;
@@ -1007,7 +1044,16 @@ describe(`${fileNumber} - Users`, () => {
           userId: activeUserId,
         } = await createRandomUser({ status: 'ACTIVE' }));
 
-        const getUserSql = 'SELECT u.id, u.status, u.password_hash, u.token_refresh_hash FROM public.users AS u WHERE u.id = $1';
+        const getUserSql = `SELECT
+          u.id
+          , u.status
+          , a.password_hash
+          , a.refresh_token_hash
+        FROM
+          public.users AS u
+          INNER JOIN public.users_authentication AS a ON a.user_id = u.id
+        WHERE
+          u.id = $1;`;
         const [original] = await query<DbUser>(getUserSql, [activeUserId]);
         originalPasswordHash = original.password_hash;
 
@@ -1033,8 +1079,8 @@ describe(`${fileNumber} - Users`, () => {
         expect(dbUser.password_hash).not.toBe(originalPasswordHash);
       });
 
-      test('User token_refresh_hash is null in the database', () => {
-        expect(dbUser.token_refresh_hash).toBeNull();
+      test('User refresh_token_hash is null in the database', () => {
+        expect(dbUser.refresh_token_hash).toBeNull();
       });
     });
   });

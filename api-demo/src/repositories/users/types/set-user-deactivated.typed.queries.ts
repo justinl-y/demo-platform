@@ -18,23 +18,34 @@ export interface IUsersSetUserDeactivatedQuery {
   result: IUsersSetUserDeactivatedResult;
 }
 
-const usersSetUserDeactivatedIR: any = {"usedParamSet":{"newPasswordHash":true,"userId":true},"params":[{"name":"newPasswordHash","required":true,"transform":{"type":"scalar"},"locs":[{"a":133,"b":149}]},{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":194,"b":201}]}],"statement":"                                                             \nUPDATE\n  public.users\nSET\n  deactivated_at = NOW()\n  , password_hash = :newPasswordHash!\n  , token_refresh_hash = NULL\nWHERE\n  id = :userId!\n  AND status = 'ACTIVE'\nRETURNING\n  id"};
+const usersSetUserDeactivatedIR: any = {"usedParamSet":{"userId":true,"newPasswordHash":true},"params":[{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":160,"b":167}]},{"name":"newPasswordHash","required":true,"transform":{"type":"scalar"},"locs":[{"a":280,"b":296}]}],"statement":"                                                             \nWITH deactivated AS (\n  UPDATE\n    public.users\n  SET\n    deactivated_at = NOW()\n  WHERE\n    id = :userId!\n    AND status = 'ACTIVE'\n  RETURNING\n    id\n)\nUPDATE\n  public.users_authentication AS a\nSET\n  password_hash = :newPasswordHash!\n  , refresh_token_hash = NULL\nFROM\n  deactivated AS d\nWHERE\n  a.user_id = d.id\nRETURNING\n  a.user_id AS id"};
 
 /**
  * Query generated from SQL:
  * ```
  *                                                              
+ * WITH deactivated AS (
+ *   UPDATE
+ *     public.users
+ *   SET
+ *     deactivated_at = NOW()
+ *   WHERE
+ *     id = :userId!
+ *     AND status = 'ACTIVE'
+ *   RETURNING
+ *     id
+ * )
  * UPDATE
- *   public.users
+ *   public.users_authentication AS a
  * SET
- *   deactivated_at = NOW()
- *   , password_hash = :newPasswordHash!
- *   , token_refresh_hash = NULL
+ *   password_hash = :newPasswordHash!
+ *   , refresh_token_hash = NULL
+ * FROM
+ *   deactivated AS d
  * WHERE
- *   id = :userId!
- *   AND status = 'ACTIVE'
+ *   a.user_id = d.id
  * RETURNING
- *   id
+ *   a.user_id AS id
  * ```
  */
 export const usersSetUserDeactivated = new PreparedQuery<IUsersSetUserDeactivatedParams,IUsersSetUserDeactivatedResult>(usersSetUserDeactivatedIR);

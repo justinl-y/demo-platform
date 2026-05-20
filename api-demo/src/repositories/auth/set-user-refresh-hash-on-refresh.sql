@@ -1,10 +1,13 @@
 UPDATE
-  public.users
+  public.users_authentication AS a
 SET
-  token_refresh_hash = $newTokenRefreshHash!
+  refresh_token_hash = $newRefreshTokenHash!
+FROM
+  public.users AS u
 WHERE
-  id = $userId!
-  AND status = 'ACTIVE'
+  a.user_id = $userId!
+  AND u.id = a.user_id
+  AND u.status = 'ACTIVE'
 RETURNING
-  id
+  a.user_id AS id
 ;

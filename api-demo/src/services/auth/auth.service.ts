@@ -59,11 +59,11 @@ async function login(repository: AuthRepository, jwt: JWT, params: LoginParams):
 
   if (!validPassword) throw new UnauthorizedError('Authentication failed');
 
-  const hashedTokenRefresh = await bcryptHash(refreshToken);
+  const hashedRefreshToken = await bcryptHash(refreshToken);
 
   const setUserRefreshTokenOnLoginParams = {
     userId,
-    hashedTokenRefresh,
+    hashedRefreshToken,
   };
 
   await repository.setUserRefreshTokenOnLogin(setUserRefreshTokenOnLoginParams);
@@ -117,17 +117,17 @@ async function refresh(repository: AuthRepository, jwt: JWT, params: RefreshPara
   const user = await repository.getUserWithRefreshToken({ userId });
   if (!user) throw new UnauthorizedError('Authentication failed');
 
-  const validRefreshToken = await bcryptCompare(tokenRefresh, user.token_refresh_hash);
+  const validRefreshToken = await bcryptCompare(tokenRefresh, user.refresh_token_hash);
   if (!validRefreshToken) throw new UnauthorizedError('Authentication failed');
 
   const newAccessToken = generateJwt(jwt, userId, userEmail, accessTokenJwt);
   const newRefreshToken = generateJwt(jwt, userId, userEmail, refreshTokenJwt);
 
-  const newTokenRefreshHash = await bcryptHash(newRefreshToken);
+  const newRefreshTokenHash = await bcryptHash(newRefreshToken);
 
   const setUserTokenOnRefreshParams = {
     userId,
-    newTokenRefreshHash,
+    newRefreshTokenHash,
   };
 
   await repository.setUserTokenOnRefresh(setUserTokenOnRefreshParams);
@@ -178,7 +178,7 @@ async function logout(repository: AuthRepository, jwt: JWT, params: LogoutParams
   if (!user) return nullReturnedUserId;
 
   // ensure the presented refresh token matches the persisted hash before clearing it (potential DoS)
-  const validRefreshToken = await bcryptCompare(tokenRefresh, user.token_refresh_hash);
+  const validRefreshToken = await bcryptCompare(tokenRefresh, user.refresh_token_hash);
   if (!validRefreshToken) return nullReturnedUserId;
 
   // delete refresh token

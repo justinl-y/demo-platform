@@ -1,10 +1,10 @@
 UPDATE
-  public.users
+  public.users_authentication
 SET
-  token_refresh_hash = NULL
+  refresh_token_hash = NULL
 WHERE
-  id = $userId!
-  AND token_refresh_hash IS NOT NULL
+  user_id = $userId!
+  AND refresh_token_hash IS NOT NULL
 RETURNING
-  id
+  user_id AS id
 ;

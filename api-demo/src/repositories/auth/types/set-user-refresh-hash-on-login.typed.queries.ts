@@ -3,7 +3,7 @@ import { PreparedQuery } from '@pgtyped/runtime';
 
 /** 'AuthSetUserRefreshHashOnLogin' parameters type */
 export interface IAuthSetUserRefreshHashOnLoginParams {
-  hashedTokenRefresh: string;
+  hashedRefreshToken: string;
   userId: string;
 }
 
@@ -18,22 +18,25 @@ export interface IAuthSetUserRefreshHashOnLoginQuery {
   result: IAuthSetUserRefreshHashOnLoginResult;
 }
 
-const authSetUserRefreshHashOnLoginIR: any = {"usedParamSet":{"hashedTokenRefresh":true,"userId":true},"params":[{"name":"hashedTokenRefresh","required":true,"transform":{"type":"scalar"},"locs":[{"a":111,"b":130}]},{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":180,"b":187}]}],"statement":"                                                             \nUPDATE\n  public.users\nSET\n  token_refresh_hash = :hashedTokenRefresh!\n  , last_login = CURRENT_TIMESTAMP\nWHERE\n  id = :userId!\n  AND status = 'ACTIVE'\nRETURNING\n  id"};
+const authSetUserRefreshHashOnLoginIR: any = {"usedParamSet":{"hashedRefreshToken":true,"userId":true},"params":[{"name":"hashedRefreshToken","required":true,"transform":{"type":"scalar"},"locs":[{"a":131,"b":150}]},{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":232,"b":239}]}],"statement":"                                                             \nUPDATE\n  public.users_authentication AS a\nSET\n  refresh_token_hash = :hashedRefreshToken!\n  , last_login = CURRENT_TIMESTAMP\nFROM\n  public.users AS u\nWHERE\n  a.user_id = :userId!\n  AND u.id = a.user_id\n  AND u.status = 'ACTIVE'\nRETURNING\n  a.user_id AS id"};
 
 /**
  * Query generated from SQL:
  * ```
  *                                                              
  * UPDATE
- *   public.users
+ *   public.users_authentication AS a
  * SET
- *   token_refresh_hash = :hashedTokenRefresh!
+ *   refresh_token_hash = :hashedRefreshToken!
  *   , last_login = CURRENT_TIMESTAMP
+ * FROM
+ *   public.users AS u
  * WHERE
- *   id = :userId!
- *   AND status = 'ACTIVE'
+ *   a.user_id = :userId!
+ *   AND u.id = a.user_id
+ *   AND u.status = 'ACTIVE'
  * RETURNING
- *   id
+ *   a.user_id AS id
  * ```
  */
 export const authSetUserRefreshHashOnLogin = new PreparedQuery<IAuthSetUserRefreshHashOnLoginParams,IAuthSetUserRefreshHashOnLoginResult>(authSetUserRefreshHashOnLoginIR);
