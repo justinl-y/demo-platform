@@ -348,7 +348,7 @@ describe(`${fileNumber} - Auth`, () => {
     });
   });
 
-  describe('PUT /logout', () => {
+  describe('POST /logout', () => {
     let logoutUserId: string;
     let logoutUserEmail: string;
 
@@ -359,7 +359,7 @@ describe(`${fileNumber} - Auth`, () => {
     });
 
     const getResponse = (cookieString?: string) =>
-      noAuthAPI.put('/logout', {}, cookieString ? { Cookie: cookieString } : {});
+      noAuthAPI.post('/logout', {}, cookieString ? { Cookie: cookieString } : {});
 
     describe('Request Failure', () => {
       let accessTokenValue: string;
