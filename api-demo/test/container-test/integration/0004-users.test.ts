@@ -484,100 +484,6 @@ describe(`${fileNumber} - Users`, () => {
     });
   });
 
-  describe('DELETE /users/:user_id', () => {
-    const getResponse = (userId: string) => authAPI.del(`/users/${userId}`);
-
-    describe('Request Failure', () => {
-      test('Non-UUID "user_id" returns 400', async () => {
-        const res = await getResponse('not-a-uuid');
-
-        expect(res.statusCode).toBe(400);
-        expect(res.body.message).toBe('params/user_id must match format "uuid"');
-      });
-
-      test('Integer "user_id" returns 400', async () => {
-        const res = await getResponse('12345');
-
-        expect(res.statusCode).toBe(400);
-        expect(res.body.message).toBe('params/user_id must match format "uuid"');
-      });
-
-      test('Unknown UUID returns 400', async () => {
-        const unknownUuid = '00000000-0000-0000-0000-000000000000';
-        const res = await getResponse(unknownUuid);
-
-        expect(res.statusCode).toBe(400);
-        expect(res.body.message).toBe('Invalid user id or user status');
-      });
-
-      test('User with ACTIVE status returns 400', async () => {
-        const {
-          userId,
-        } = await createRandomUser({ status: 'ACTIVE' });
-
-        const res = await getResponse(userId);
-
-        expect(res.statusCode).toBe(400);
-        expect(res.body.message).toBe('Invalid user id or user status');
-      });
-
-      test('User with DEACTIVATED status returns 400', async () => {
-        const {
-          userId,
-        } = await createRandomUser({ status: 'DEACTIVATED' });
-
-        const res = await getResponse(userId);
-
-        expect(res.statusCode).toBe(400);
-        expect(res.body.message).toBe('Invalid user id or user status');
-      });
-
-      test('Already-deleted user returns 400', async () => {
-        const {
-          userId,
-        } = await createRandomUser({ status: 'CREATED' });
-        await getResponse(userId);
-
-        const res = await getResponse(userId);
-
-        expect(res.statusCode).toBe(400);
-        expect(res.body.message).toBe('Invalid user id or user status');
-      });
-    });
-
-    describe('Request Success', () => {
-      interface DbUser {
-        id: string;
-      }
-
-      let createdUserId: string;
-      let rep: Supertest.Response;
-
-      beforeAll(async () => {
-        ({
-          userId: createdUserId,
-        } = await createRandomUser({ status: 'CREATED' }));
-
-        rep = await getResponse(createdUserId);
-      });
-
-      test('Success response returns 204', () => {
-        expect(rep.statusCode).toBe(204);
-      });
-
-      test('Response body is empty', () => {
-        expect(rep.body).toEqual({});
-      });
-
-      test('User is removed from the database', async () => {
-        const getDeletedUserSql = 'SELECT id FROM public.users WHERE id = $1';
-        const [result] = await query<DbUser>(getDeletedUserSql, [createdUserId]);
-
-        expect(result).toBeUndefined();
-      });
-    });
-  });
-
   describe('PUT /users/:user_id', () => {
     const getResponse = (userId: string, reqBody: RequestBody) => authAPI.put(`/users/${userId}`, reqBody);
 
@@ -755,8 +661,263 @@ describe(`${fileNumber} - Users`, () => {
     });
   });
 
-  describe('PATCH /users/deactivate/:userId', () => {
-    const getResponse = (userId: string) => authAPI.patch(`/users/deactivate/${userId}`);
+  describe('PATCH /users/:user_id/email', () => {
+    const getResponse = (userId: string, reqBody: RequestBody) => authAPI.patch(`/users/${userId}/email`, reqBody);
+
+    let validUserId: string;
+    let validRequestBody = {} as RequestBody;
+
+    beforeAll(async () => {
+      ({
+        userId: validUserId,
+      } = await createRandomUser());
+
+      validRequestBody = {
+        new_email: faker.internet.email().toLowerCase(),
+      };
+    });
+
+    describe('Request Failure', () => {
+      test('Non-UUID "user_id" returns 400', async () => {
+        const res = await getResponse('not-a-uuid', validRequestBody);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('params/user_id must match format "uuid"');
+      });
+
+      test('Integer "user_id" returns 400', async () => {
+        const res = await getResponse('12345', validRequestBody);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('params/user_id must match format "uuid"');
+      });
+
+      test('Unknown UUID returns 400', async () => {
+        const unknownUuid = '00000000-0000-0000-0000-000000000000';
+        const res = await getResponse(unknownUuid, validRequestBody);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid user id');
+      });
+
+      test('Absent required body "new_email" returns 400', async () => {
+        const res = await getResponse(validUserId, {} as RequestBody);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe(`body must have required property 'new_email'`);
+      });
+
+      test('Invalid type body "new_email" returns 400', async () => {
+        const res = await getResponse(validUserId, { new_email: 1234 } as unknown as RequestBody);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('body/new_email must be string');
+      });
+
+      test('Invalid format body "new_email" returns 400', async () => {
+        const res = await getResponse(validUserId, { new_email: 'not-an-email' } as RequestBody);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('body/new_email must match format "email"');
+      });
+
+      test('Duplicate "new_email" returns 400', async () => {
+        const {
+          email,
+        } = await createRandomUser();
+        const res = await getResponse(validUserId, { new_email: email } as RequestBody);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Supplied user email is not unique');
+      });
+
+      test('Duplicate "new_email" differing only by case returns 400', async () => {
+        const {
+          email,
+        } = await createRandomUser();
+        const res = await getResponse(validUserId, { new_email: email.toUpperCase() } as RequestBody);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Supplied user email is not unique');
+      });
+
+      test('Duplicate "new_email" differing only by whitespace returns 400', async () => {
+        const {
+          email,
+        } = await createRandomUser();
+        const res = await getResponse(validUserId, { new_email: `  ${email}  ` } as RequestBody);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Supplied user email is not unique');
+      });
+    });
+
+    describe('Request Success', () => {
+      interface DbUser {
+        id: string;
+        email: string;
+      }
+
+      let targetUserId: string;
+      let rep: Supertest.Response;
+      let dbUser: DbUser;
+      let responseBody: DbUser;
+
+      beforeAll(async () => {
+        ({
+          userId: targetUserId,
+        } = await createRandomUser());
+
+        rep = await getResponse(targetUserId, validRequestBody);
+
+        const getUserSql = 'SELECT u.id, u.email FROM public.users AS u WHERE u.id = $1';
+        const [result] = await query<DbUser>(getUserSql, [targetUserId]);
+        dbUser = result;
+
+        ({
+          body: responseBody,
+        } = rep);
+      });
+
+      test('Success response returns 200', () => {
+        expect(rep.statusCode).toBe(200);
+      });
+
+      test('Response body has correct shape', () => {
+        expect(responseBody).toHaveProperty('id');
+        expect(responseBody).toHaveProperty('email');
+      });
+
+      test('Response "id" matches the user', () => {
+        expect(responseBody.id).toBe(targetUserId);
+      });
+
+      test('Response "email" matches request', () => {
+        expect(responseBody.email).toBe(validRequestBody.new_email);
+      });
+
+      test('Email is persisted in the database', () => {
+        expect(dbUser.email).toBe(validRequestBody.new_email);
+      });
+
+      test('Patching with the current email returns 200', async () => {
+        const res = await getResponse(targetUserId, { new_email: validRequestBody.new_email } as RequestBody);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.email).toBe(validRequestBody.new_email);
+      });
+
+      test('"new_email" with mixed case and whitespace is normalized in response and database', async () => {
+        const baseEmail = faker.internet.email().toLowerCase();
+        const res = await getResponse(targetUserId, { new_email: `  ${baseEmail.toUpperCase()}  ` } as RequestBody);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.email).toBe(baseEmail);
+
+        const getUserSql = 'SELECT u.email FROM public.users AS u WHERE u.id = $1';
+        const [dbResult] = await query<{ email: string }>(getUserSql, [targetUserId]);
+
+        expect(dbResult.email).toBe(baseEmail);
+      });
+    });
+  });
+
+  describe('DELETE /users/:user_id', () => {
+    const getResponse = (userId: string) => authAPI.del(`/users/${userId}`);
+
+    describe('Request Failure', () => {
+      test('Non-UUID "user_id" returns 400', async () => {
+        const res = await getResponse('not-a-uuid');
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('params/user_id must match format "uuid"');
+      });
+
+      test('Integer "user_id" returns 400', async () => {
+        const res = await getResponse('12345');
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('params/user_id must match format "uuid"');
+      });
+
+      test('Unknown UUID returns 400', async () => {
+        const unknownUuid = '00000000-0000-0000-0000-000000000000';
+        const res = await getResponse(unknownUuid);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid user id or user status');
+      });
+
+      test('User with ACTIVE status returns 400', async () => {
+        const {
+          userId,
+        } = await createRandomUser({ status: 'ACTIVE' });
+
+        const res = await getResponse(userId);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid user id or user status');
+      });
+
+      test('User with DEACTIVATED status returns 400', async () => {
+        const {
+          userId,
+        } = await createRandomUser({ status: 'DEACTIVATED' });
+
+        const res = await getResponse(userId);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid user id or user status');
+      });
+
+      test('Already-deleted user returns 400', async () => {
+        const {
+          userId,
+        } = await createRandomUser({ status: 'CREATED' });
+        await getResponse(userId);
+
+        const res = await getResponse(userId);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid user id or user status');
+      });
+    });
+
+    describe('Request Success', () => {
+      interface DbUser {
+        id: string;
+      }
+
+      let createdUserId: string;
+      let rep: Supertest.Response;
+
+      beforeAll(async () => {
+        ({
+          userId: createdUserId,
+        } = await createRandomUser({ status: 'CREATED' }));
+
+        rep = await getResponse(createdUserId);
+      });
+
+      test('Success response returns 204', () => {
+        expect(rep.statusCode).toBe(204);
+      });
+
+      test('Response body is empty', () => {
+        expect(rep.body).toEqual({});
+      });
+
+      test('User is removed from the database', async () => {
+        const getDeletedUserSql = 'SELECT id FROM public.users WHERE id = $1';
+        const [result] = await query<DbUser>(getDeletedUserSql, [createdUserId]);
+
+        expect(result).toBeUndefined();
+      });
+    });
+  });
+
+  describe('PATCH /users/:user_id/deactivate', () => {
+    const getResponse = (userId: string) => authAPI.patch(`/users/${userId}/deactivate`);
 
     describe('Request Failure', () => {
       test('Non-UUID "user_id" returns 400', async () => {

@@ -1,0 +1,36 @@
+import { patchUsersEmail as patchUsersEmailService } from '#services/users/users.service';
+
+import type { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
+
+interface Request {
+  Params: {
+    user_id: string;
+  };
+  Body: {
+    new_email: string;
+  };
+}
+
+async function patchUsersEmail(this: FastifyInstance, request: FastifyRequest<Request>, reply: FastifyReply) {
+  const {
+    params: {
+      user_id: userId,
+    },
+    body: {
+      new_email: newEmail,
+    },
+  } = request;
+
+  const patchUsersEmailParams = {
+    userId,
+    newEmail,
+  };
+
+  const result = await patchUsersEmailService(this.repositories.users, patchUsersEmailParams);
+
+  return reply
+    .send(result)
+  ;
+}
+
+export default patchUsersEmail;

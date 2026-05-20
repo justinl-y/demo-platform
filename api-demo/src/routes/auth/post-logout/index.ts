@@ -4,7 +4,7 @@ import { logout } from '#services/auth/auth.service';
 
 import type { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 
-async function putLogout(this: FastifyInstance, request: FastifyRequest, reply: FastifyReply) {
+async function postLogout(this: FastifyInstance, request: FastifyRequest, reply: FastifyReply) {
   const {
     accessTokenCookie,
     refreshTokenCookie,
@@ -33,4 +33,4 @@ async function putLogout(this: FastifyInstance, request: FastifyRequest, reply: 
   ;
 }
 
-export default putLogout;
+export default postLogout;

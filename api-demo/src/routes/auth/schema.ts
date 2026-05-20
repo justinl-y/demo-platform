@@ -1,11 +1,11 @@
 import postLogin from './post-login/schema.ts';
 import postRefresh from './post-refresh/schema.ts';
-import putLogout from './put-logout/schema.ts';
+import postLogout from './post-logout/schema.ts';
 
 const schema = {
   postLogin,
   postRefresh,
-  putLogout,
+  postLogout,
 };
 
 export default schema;
