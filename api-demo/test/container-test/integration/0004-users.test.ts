@@ -800,6 +800,13 @@ describe(`${fileNumber} - Users`, () => {
         expect(dbUser.email).toBe(validRequestBody.new_email);
       });
 
+      test('Patching with the current email returns 200', async () => {
+        const res = await getResponse(targetUserId, { new_email: validRequestBody.new_email } as RequestBody);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.email).toBe(validRequestBody.new_email);
+      });
+
       test('"new_email" with mixed case and whitespace is normalized in response and database', async () => {
         const baseEmail = faker.internet.email().toLowerCase();
         const res = await getResponse(targetUserId, { new_email: `  ${baseEmail.toUpperCase()}  ` } as RequestBody);

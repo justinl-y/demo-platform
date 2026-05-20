@@ -151,7 +151,7 @@ async function patchUsersEmail(repository: UsersRepository, params: PatchUsersEm
   } = params;
 
   const existing = await repository.getUserByEmail({ email: newEmail });
-  if (existing) throw new BadRequestError('Supplied user email is not unique');
+  if (existing && existing.id !== userId) throw new BadRequestError('Supplied user email is not unique');
 
   const updateUserEmailParams = {
     userId,
