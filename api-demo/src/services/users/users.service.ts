@@ -78,7 +78,6 @@ async function postUsers(repository: UsersRepository, params: PostUsersParams): 
     knownAs,
   } = params;
 
-  // check email is unique
   const existing = await repository.getUserByEmail({ email });
   if (existing) throw new BadRequestError('Supplied user email is not unique');
 
@@ -91,30 +90,6 @@ async function postUsers(repository: UsersRepository, params: PostUsersParams): 
   });
 
   return newUser;
-}
-
-interface DeleteUsersParams {
-  userId: string;
-}
-
-interface DeleteUsersResult {
-  id: string;
-}
-
-async function deleteUsers(repository: UsersRepository, params: DeleteUsersParams): Promise<DeleteUsersResult> {
-  const {
-    userId,
-  } = params;
-
-  const {
-    user: deletedUser,
-  } = await repository.removeUser({
-    userId,
-  });
-
-  if (!deletedUser) throw new BadRequestError(`Invalid user id or user status`);
-
-  return deletedUser;
 }
 
 interface PutUsersParams {
@@ -149,6 +124,63 @@ async function putUsers(repository: UsersRepository, params: PutUsersParams): Pr
   if (!updatedUser) throw new BadRequestError('Invalid user id');
 
   return updatedUser;
+}
+
+interface DeleteUsersParams {
+  userId: string;
+}
+
+interface DeleteUsersResult {
+  id: string;
+}
+
+interface PatchUsersEmailParams {
+  userId: string;
+  newEmail: string;
+}
+
+interface PatchUsersEmailResult {
+  id: string;
+  email: string;
+}
+
+async function patchUsersEmail(repository: UsersRepository, params: PatchUsersEmailParams): Promise<PatchUsersEmailResult> {
+  const {
+    userId,
+    newEmail,
+  } = params;
+
+  const existing = await repository.getUserByEmail({ email: newEmail });
+  if (existing) throw new BadRequestError('Supplied user email is not unique');
+
+  const updateUserEmailParams = {
+    userId,
+    newEmail,
+  };
+
+  const {
+    user: changedUser,
+  } = await repository.updateUserEmail(updateUserEmailParams);
+
+  if (!changedUser) throw new BadRequestError('Invalid user id');
+
+  return changedUser;
+}
+
+async function deleteUsers(repository: UsersRepository, params: DeleteUsersParams): Promise<DeleteUsersResult> {
+  const {
+    userId,
+  } = params;
+
+  const {
+    user: deletedUser,
+  } = await repository.removeUser({
+    userId,
+  });
+
+  if (!deletedUser) throw new BadRequestError(`Invalid user id or user status`);
+
+  return deletedUser;
 }
 
 interface PatchUsersDeactivateParams {
@@ -189,7 +221,8 @@ async function patchUsersDeactivate(repository: UsersRepository, params: PatchUs
 export {
   getUsers,
   postUsers,
-  deleteUsers,
   putUsers,
+  patchUsersEmail,
+  deleteUsers,
   patchUsersDeactivate,
 };

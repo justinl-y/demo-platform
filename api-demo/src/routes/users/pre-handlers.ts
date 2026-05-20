@@ -9,8 +9,9 @@ function preHandler(this: FastifyInstance, key: RouteKey) {
   const routePreHandler = {
     getUsers: routePropertiesPrehandler([]),
     postUsers: routePropertiesPrehandler([]),
-    deleteUsers: routePropertiesPrehandler([]),
     putUsers: routePropertiesPrehandler([]),
+    patchUsersEmail: routePropertiesPrehandler([]),
+    deleteUsers: routePropertiesPrehandler([]),
     patchUsersDeactivate: routePropertiesPrehandler([]),
   };
 

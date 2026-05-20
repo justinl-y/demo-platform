@@ -5,17 +5,19 @@ import type { IUsersGetUsersParams, IUsersGetUsersResult } from './types/get-use
 import type { IUsersGetUserByEmailParams, IUsersGetUserByEmailResult } from './types/get-user-by-email.typed.queries.ts';
 import type { IUsersGetUserByStatusParams, IUsersGetUserByStatusResult } from './types/get-user-by-status.typed.queries.ts';
 import type { IUsersAddUserParams, IUsersAddUserResult } from './types/add-user.typed.queries.ts';
-import type { IUsersRemoveUserParams, IUsersRemoveUserResult } from './types/remove-user.typed.queries.ts';
 import type { IUsersSetUserParams, IUsersSetUserResult } from './types/set-user.typed.queries.ts';
+import type { IUsersSetUserEmailParams, IUsersSetUserEmailResult } from './types/set-user-email.typed.queries.ts';
 import type { IUsersSetUserDeactivatedParams, IUsersSetUserDeactivatedResult } from './types/set-user-deactivated.typed.queries.ts';
+import type { IUsersRemoveUserParams, IUsersRemoveUserResult } from './types/remove-user.typed.queries.ts';
 
 const relPath = import.meta.dirname;
 const getUsersQuery = cwd('get-users', relPath);
 const getUserByEmailQuery = cwd('get-user-by-email', relPath);
 const getUserByStatusQuery = cwd('get-user-by-status', relPath);
 const addUserQuery = cwd('add-user', relPath);
-const removeUserQuery = cwd('remove-user', relPath);
 const updateUserQuery = cwd('set-user', relPath);
+const updateUserEmailQuery = cwd('set-user-email', relPath);
+const removeUserQuery = cwd('remove-user', relPath);
 const deactivateUserQuery = cwd('set-user-deactivated', relPath);
 
 function createUsersRepository(db: DatabaseDecorator) {
@@ -75,23 +77,6 @@ function createUsersRepository(db: DatabaseDecorator) {
       };
     },
 
-    removeUser: async ({
-      userId,
-    }: IUsersRemoveUserParams): Promise<{ user: IUsersRemoveUserResult | undefined }> => {
-      const [userResult] = await db.transaction()
-        .add<IUsersRemoveUserResult>({
-          files: [removeUserQuery],
-          params: {
-            userId,
-          },
-        })
-        .execute();
-
-      return {
-        user: userResult[0],
-      };
-    },
-
     updateUser: async ({
       userId,
       fullName,
@@ -104,6 +89,42 @@ function createUsersRepository(db: DatabaseDecorator) {
             userId,
             fullName,
             knownAs,
+          },
+        })
+        .execute();
+
+      return {
+        user: userResult[0],
+      };
+    },
+
+    updateUserEmail: async ({
+      userId,
+      newEmail,
+    }: IUsersSetUserEmailParams): Promise<{ user: IUsersSetUserEmailResult | undefined }> => {
+      const [userResult] = await db.transaction()
+        .add<IUsersSetUserEmailResult>({
+          files: [updateUserEmailQuery],
+          params: {
+            userId,
+            newEmail,
+          },
+        })
+        .execute();
+
+      return {
+        user: userResult[0],
+      };
+    },
+
+    removeUser: async ({
+      userId,
+    }: IUsersRemoveUserParams): Promise<{ user: IUsersRemoveUserResult | undefined }> => {
+      const [userResult] = await db.transaction()
+        .add<IUsersRemoveUserResult>({
+          files: [removeUserQuery],
+          params: {
+            userId,
           },
         })
         .execute();
