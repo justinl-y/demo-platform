@@ -11,8 +11,8 @@ export interface IUsersSetUserParams {
 /** 'UsersSetUser' return type */
 export interface IUsersSetUserResult {
   full_name: string;
-  id: string;
   known_as: string | null;
+  user_id: string;
 }
 
 /** 'UsersSetUser' query type */
@@ -21,7 +21,7 @@ export interface IUsersSetUserQuery {
   result: IUsersSetUserResult;
 }
 
-const usersSetUserIR: any = {"usedParamSet":{"fullName":true,"knownAs":true,"userId":true},"params":[{"name":"fullName","required":true,"transform":{"type":"scalar"},"locs":[{"a":102,"b":111}]},{"name":"knownAs","required":false,"transform":{"type":"scalar"},"locs":[{"a":128,"b":135}]},{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":150,"b":157}]}],"statement":"                                                             \nUPDATE\n  public.users\nSET\n  full_name = :fullName!\n  , known_as = :knownAs\nWHERE\n  id = :userId!\nRETURNING\n  id\n  , full_name\n  , known_as"};
+const usersSetUserIR: any = {"usedParamSet":{"fullName":true,"knownAs":true,"userId":true},"params":[{"name":"fullName","required":true,"transform":{"type":"scalar"},"locs":[{"a":102,"b":111}]},{"name":"knownAs","required":false,"transform":{"type":"scalar"},"locs":[{"a":128,"b":135}]},{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":150,"b":157}]}],"statement":"                                                             \nUPDATE\n  public.users\nSET\n  full_name = :fullName!\n  , known_as = :knownAs\nWHERE\n  id = :userId!\nRETURNING\n  id AS user_id\n  , full_name\n  , known_as"};
 
 /**
  * Query generated from SQL:
@@ -35,7 +35,7 @@ const usersSetUserIR: any = {"usedParamSet":{"fullName":true,"knownAs":true,"use
  * WHERE
  *   id = :userId!
  * RETURNING
- *   id
+ *   id AS user_id
  *   , full_name
  *   , known_as
  * ```

@@ -10,7 +10,7 @@ export interface IUsersSetUserEmailParams {
 /** 'UsersSetUserEmail' return type */
 export interface IUsersSetUserEmailResult {
   email: string;
-  id: string;
+  user_id: string;
 }
 
 /** 'UsersSetUserEmail' query type */
@@ -19,7 +19,7 @@ export interface IUsersSetUserEmailQuery {
   result: IUsersSetUserEmailResult;
 }
 
-const usersSetUserEmailIR: any = {"usedParamSet":{"newEmail":true,"userId":true},"params":[{"name":"newEmail","required":true,"transform":{"type":"scalar"},"locs":[{"a":98,"b":107}]},{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":122,"b":129}]}],"statement":"                                                             \nUPDATE\n  public.users\nSET\n  email = :newEmail!\nWHERE\n  id = :userId!\nRETURNING\n  id\n  , email"};
+const usersSetUserEmailIR: any = {"usedParamSet":{"newEmail":true,"userId":true},"params":[{"name":"newEmail","required":true,"transform":{"type":"scalar"},"locs":[{"a":98,"b":107}]},{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":122,"b":129}]}],"statement":"                                                             \nUPDATE\n  public.users\nSET\n  email = :newEmail!\nWHERE\n  id = :userId!\nRETURNING\n  id AS user_id\n  , email"};
 
 /**
  * Query generated from SQL:
@@ -32,7 +32,7 @@ const usersSetUserEmailIR: any = {"usedParamSet":{"newEmail":true,"userId":true}
  * WHERE
  *   id = :userId!
  * RETURNING
- *   id
+ *   id AS user_id
  *   , email
  * ```
  */

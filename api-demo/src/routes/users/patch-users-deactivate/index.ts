@@ -19,11 +19,10 @@ async function patchUsersDeactivate(this: FastifyInstance, request: FastifyReque
     userId,
   };
 
-  await patchUsersDeactivateService(this.repositories.users, patchUsersDeactivateParams);
+  const result = await patchUsersDeactivateService(this.repositories.users, patchUsersDeactivateParams);
 
   return reply
-    .code(204)
-    .send()
+    .send(result)
   ;
 }
 

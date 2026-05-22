@@ -12,6 +12,8 @@ function preHandler(this: FastifyInstance, key: RouteKey) {
     putUsers: routePropertiesPrehandler([]),
     patchUsersEmail: routePropertiesPrehandler([]),
     deleteUsers: routePropertiesPrehandler([]),
+    postUsersActivate: routePropertiesPrehandler([]),
+    patchUsersInvite: routePropertiesPrehandler([]),
     patchUsersDeactivate: routePropertiesPrehandler([]),
   };
 

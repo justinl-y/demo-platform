@@ -1,6 +1,7 @@
 SELECT
-	id
-FROM public.users
+	u.id AS user_id
+FROM
+	public.users AS u
 WHERE
-	email = $email!
+	u.email = $email!
 ;

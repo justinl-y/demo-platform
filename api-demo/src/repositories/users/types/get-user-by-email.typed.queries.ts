@@ -8,7 +8,7 @@ export interface IUsersGetUserByEmailParams {
 
 /** 'UsersGetUserByEmail' return type */
 export interface IUsersGetUserByEmailResult {
-  id: string;
+  user_id: string;
 }
 
 /** 'UsersGetUserByEmail' query type */
@@ -17,17 +17,18 @@ export interface IUsersGetUserByEmailQuery {
   result: IUsersGetUserByEmailResult;
 }
 
-const usersGetUserByEmailIR: any = {"usedParamSet":{"email":true},"params":[{"name":"email","required":true,"transform":{"type":"scalar"},"locs":[{"a":106,"b":112}]}],"statement":"                                                             \nSELECT\n\tid\nFROM public.users\nWHERE\n\temail = :email!"};
+const usersGetUserByEmailIR: any = {"usedParamSet":{"email":true},"params":[{"name":"email","required":true,"transform":{"type":"scalar"},"locs":[{"a":127,"b":133}]}],"statement":"                                                             \nSELECT\n\tu.id AS user_id\nFROM\n\tpublic.users AS u\nWHERE\n\tu.email = :email!"};
 
 /**
  * Query generated from SQL:
  * ```
  *                                                              
  * SELECT
- * 	id
- * FROM public.users
+ * 	u.id AS user_id
+ * FROM
+ * 	public.users AS u
  * WHERE
- * 	email = :email!
+ * 	u.email = :email!
  * ```
  */
 export const usersGetUserByEmail = new PreparedQuery<IUsersGetUserByEmailParams,IUsersGetUserByEmailResult>(usersGetUserByEmailIR);

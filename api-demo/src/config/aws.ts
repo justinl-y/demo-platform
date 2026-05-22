@@ -9,6 +9,12 @@ const awsConfig = {
   region: 'us-west-2',
 } as const;
 
+const sesConfig = {
+  // Verified SES sender identity for transactional emails (e.g. invitations).
+  senderEmail: 'noreply@discovered-check.ca',
+} as const;
+
 export {
   awsConfig,
+  sesConfig,
 };

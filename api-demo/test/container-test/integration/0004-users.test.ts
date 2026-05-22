@@ -366,7 +366,7 @@ describe(`${fileNumber} - Users`, () => {
 
     describe('Request Success', () => {
       interface DbUser {
-        id: string;
+        user_id: string;
         email: string;
         full_name: string;
         known_as: string | null;
@@ -381,7 +381,7 @@ describe(`${fileNumber} - Users`, () => {
         rep = await getResponse(validRequestBody);
 
         const getUserByIdSql = `SELECT
-          u.id
+          u.id AS user_id
           , u.email
           , u.full_name
           , u.known_as
@@ -390,7 +390,7 @@ describe(`${fileNumber} - Users`, () => {
           public.users AS u
         WHERE
           u.id = $1;`;
-        const [result] = await query<DbUser>(getUserByIdSql, [rep.body.id]);
+        const [result] = await query<DbUser>(getUserByIdSql, [rep.body.user_id]);
 
         dbUser = result;
 
@@ -404,15 +404,15 @@ describe(`${fileNumber} - Users`, () => {
       });
 
       test('Response body has correct shape', () => {
-        expect(responseBody).toHaveProperty('id');
+        expect(responseBody).toHaveProperty('user_id');
         expect(responseBody).toHaveProperty('email');
         expect(responseBody).toHaveProperty('full_name');
         expect(responseBody).toHaveProperty('known_as');
         expect(responseBody).toHaveProperty('status');
       });
 
-      test('Response "id" is a UUID', () => {
-        expect(responseBody.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+      test('Response "user_id" is a UUID', () => {
+        expect(responseBody.user_id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
       });
 
       test('Response "email" matches request', () => {
@@ -455,7 +455,7 @@ describe(`${fileNumber} - Users`, () => {
           public.users AS u
         WHERE
           u.id = $1;`;
-        const [dbUser] = await query<{ email: string }>(getUserByIdSql, [res.body.id]);
+        const [dbUser] = await query<{ email: string }>(getUserByIdSql, [res.body.user_id]);
 
         expect(dbUser.email).toBe(baseEmail);
       });
@@ -584,7 +584,7 @@ describe(`${fileNumber} - Users`, () => {
 
     describe('Request Success', () => {
       interface DbUser {
-        id: string;
+        user_id: string;
         full_name: string;
         known_as: string | null;
       }
@@ -597,7 +597,7 @@ describe(`${fileNumber} - Users`, () => {
         rep = await getResponse(validUserId, validRequestBody);
 
         const getUserSql = `SELECT
-          u.id
+          u.id AS user_id
           , u.full_name
           , u.known_as
         FROM
@@ -617,13 +617,13 @@ describe(`${fileNumber} - Users`, () => {
       });
 
       test('Response body has correct shape', () => {
-        expect(responseBody).toHaveProperty('id');
+        expect(responseBody).toHaveProperty('user_id');
         expect(responseBody).toHaveProperty('full_name');
         expect(responseBody).toHaveProperty('known_as');
       });
 
-      test('Response "id" matches the user', () => {
-        expect(responseBody.id).toBe(validUserId);
+      test('Response "user_id" matches the user', () => {
+        expect(responseBody.user_id).toBe(validUserId);
       });
 
       test('Response "full_name" matches request', () => {
@@ -775,7 +775,7 @@ describe(`${fileNumber} - Users`, () => {
 
     describe('Request Success', () => {
       interface DbUser {
-        id: string;
+        user_id: string;
         email: string;
       }
 
@@ -792,7 +792,7 @@ describe(`${fileNumber} - Users`, () => {
         rep = await getResponse(targetUserId, validRequestBody);
 
         const getUserSql = `SELECT
-          u.id
+          u.id AS user_id
           , u.email
         FROM
           public.users AS u
@@ -811,12 +811,12 @@ describe(`${fileNumber} - Users`, () => {
       });
 
       test('Response body has correct shape', () => {
-        expect(responseBody).toHaveProperty('id');
+        expect(responseBody).toHaveProperty('user_id');
         expect(responseBody).toHaveProperty('email');
       });
 
-      test('Response "id" matches the user', () => {
-        expect(responseBody.id).toBe(targetUserId);
+      test('Response "user_id" matches the user', () => {
+        expect(responseBody.user_id).toBe(targetUserId);
       });
 
       test('Response "email" matches request', () => {
@@ -953,6 +953,10 @@ describe(`${fileNumber} - Users`, () => {
     });
   });
 
+  describe.skip('PATCH /users/:user_id/invite', () => {});
+
+  describe.skip('POST /users/activate', () => {});
+
   describe('PATCH /users/:user_id/deactivate', () => {
     const getResponse = (userId: string) => authAPI.patch(`/users/${userId}/deactivate`);
 
@@ -1063,12 +1067,21 @@ describe(`${fileNumber} - Users`, () => {
         dbUser = result;
       });
 
-      test('Success response returns 204', () => {
-        expect(rep.statusCode).toBe(204);
+      test('Success response returns 200', () => {
+        expect(rep.statusCode).toBe(200);
       });
 
-      test('Response body is empty', () => {
-        expect(rep.body).toEqual({});
+      test('Response body has correct shape', () => {
+        expect(rep.body).toHaveProperty('user_id');
+        expect(rep.body).toHaveProperty('status');
+      });
+
+      test('Response "user_id" matches the user', () => {
+        expect(rep.body.user_id).toBe(activeUserId);
+      });
+
+      test('Response "status" is "DEACTIVATED"', () => {
+        expect(rep.body.status).toBe('DEACTIVATED');
       });
 
       test('User status is DEACTIVATED in the database', () => {

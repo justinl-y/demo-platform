@@ -1,7 +1,9 @@
 import { BadRequestError } from 'http-errors-enhanced';
 
-import { paginationOffset, paginationCount, paginationPages, randomAlphaNumeric } from '#utils/functions';
+import { paginationOffset, paginationCount, paginationPages, randomAlphaNumeric, sha256Hex } from '#utils/functions';
 import { bcryptHash } from '#lib/authentication';
+import { sendInvitationEmail } from '#lib/mailer';
+import { Config } from '#config/index';
 
 import type { UsersRepository } from '#repositories/users/users.repository';
 import type { GetResult, UserStatus } from '../../types/general.ts';
@@ -21,7 +23,9 @@ interface UserItem {
 }
 
 interface GetUsersResult extends GetResult {
-  output: { [id: string]: UserItem };
+  output: {
+    [user_id: string]: UserItem;
+  };
 }
 
 async function getUsers(repository: UsersRepository, params: GetUsersParams): Promise<GetUsersResult> {
@@ -64,7 +68,7 @@ interface PostUsersParams {
 }
 
 interface PostUsersResult {
-  id: string;
+  user_id: string;
   email: string;
   full_name: string;
   known_as: string | null;
@@ -99,7 +103,7 @@ interface PutUsersParams {
 }
 
 interface PutUsersResult {
-  id: string;
+  user_id: string;
   full_name: string;
   known_as: string | null;
 }
@@ -126,21 +130,13 @@ async function putUsers(repository: UsersRepository, params: PutUsersParams): Pr
   return updatedUser;
 }
 
-interface DeleteUsersParams {
-  userId: string;
-}
-
-interface DeleteUsersResult {
-  id: string;
-}
-
 interface PatchUsersEmailParams {
   userId: string;
   newEmail: string;
 }
 
 interface PatchUsersEmailResult {
-  id: string;
+  user_id: string;
   email: string;
 }
 
@@ -151,7 +147,7 @@ async function patchUsersEmail(repository: UsersRepository, params: PatchUsersEm
   } = params;
 
   const existing = await repository.getUserByEmail({ email: newEmail });
-  if (existing && existing.id !== userId) throw new BadRequestError('Supplied user email is not unique');
+  if (existing && existing.user_id !== userId) throw new BadRequestError('Supplied user email is not unique');
 
   const updateUserEmailParams = {
     userId,
@@ -165,6 +161,14 @@ async function patchUsersEmail(repository: UsersRepository, params: PatchUsersEm
   if (!changedUser) throw new BadRequestError('Invalid user id');
 
   return changedUser;
+}
+
+interface DeleteUsersParams {
+  userId: string;
+}
+
+interface DeleteUsersResult {
+  user_id: string;
 }
 
 async function deleteUsers(repository: UsersRepository, params: DeleteUsersParams): Promise<DeleteUsersResult> {
@@ -183,12 +187,105 @@ async function deleteUsers(repository: UsersRepository, params: DeleteUsersParam
   return deletedUser;
 }
 
+interface PatchUsersInviteParams {
+  userId: string;
+}
+
+interface PatchUsersInviteResult {
+  user_id: string;
+  status: UserStatus;
+}
+
+async function patchUsersInvite(repository: UsersRepository, params: PatchUsersInviteParams): Promise<PatchUsersInviteResult> {
+  const {
+    userId,
+  } = params;
+
+  const validUserParams = {
+    userId,
+    status: ['CREATED', 'INVITED', 'DEACTIVATED'] as UserStatus[],
+  };
+
+  const validUser = await repository.getUserByStatus(validUserParams);
+  if (!validUser) throw new BadRequestError('Invalid user id or user status');
+
+  const {
+    invitationTokenExpirationDays,
+    password: {
+      randomBytesLength,
+    },
+  } = Config.authConfig();
+  const {
+    appBaseUrl,
+  } = Config;
+
+  // The raw token travels in the email link; only its hash is persisted.
+  const inviteToken = randomAlphaNumeric(randomBytesLength);
+  const inviteTokenHash = sha256Hex(inviteToken);
+
+  const {
+    user: invitedUser,
+  } = await repository.inviteUser({
+    userId,
+    inviteTokenHash,
+    inviteTokenExpiryDays: invitationTokenExpirationDays,
+  });
+
+  if (!invitedUser) throw new BadRequestError('Invalid user id or user status');
+
+  const activationUrl = `${appBaseUrl}/users/activate?token=${inviteToken}`;
+
+  try {
+    await sendInvitationEmail({
+      toEmail: invitedUser.email,
+      activationUrl,
+    });
+  }
+  catch (error) {
+    // The invitation is already persisted; a delivery failure must not fail the
+    // request. Logged so ops can investigate or re-invite.
+    console.error(error, `Invitation email delivery failed for ${invitedUser.email}`);
+  }
+
+  return {
+    user_id: invitedUser.user_id,
+    status: invitedUser.status,
+  };
+}
+
+interface PostUsersActivateParams {
+  token: string;
+  password: string;
+}
+
+async function postUsersActivate(repository: UsersRepository, params: PostUsersActivateParams): Promise<void> {
+  const {
+    token,
+    password,
+  } = params;
+
+  const inviteTokenHash = sha256Hex(token);
+  const passwordHash = await bcryptHash(password);
+
+  // Activation is a single atomic statement — it matches the user by token hash,
+  // expiry and status, so no row returned means an invalid, expired or used token.
+  const {
+    user: activatedUser,
+  } = await repository.activateUser({
+    inviteTokenHash,
+    passwordHash,
+  });
+
+  if (!activatedUser) throw new BadRequestError('Invalid or expired invitation');
+}
+
 interface PatchUsersDeactivateParams {
   userId: string;
 }
 
 interface PatchUsersDeactivateResult {
-  id: string;
+  user_id: string;
+  status: UserStatus;
 }
 
 async function patchUsersDeactivate(repository: UsersRepository, params: PatchUsersDeactivateParams): Promise<PatchUsersDeactivateResult> {
@@ -198,13 +295,19 @@ async function patchUsersDeactivate(repository: UsersRepository, params: PatchUs
 
   const validUserParams = {
     userId,
-    status: 'ACTIVE' as UserStatus,
+    status: ['ACTIVE'] as UserStatus[],
   };
 
   const validUser = await repository.getUserByStatus(validUserParams);
   if (!validUser) throw new BadRequestError('Invalid user id or user status');
 
-  const newPasswordHash = await bcryptHash(randomAlphaNumeric());
+  const {
+    password: {
+      randomBytesLength,
+    },
+  } = Config.authConfig();
+
+  const newPasswordHash = await bcryptHash(randomAlphaNumeric(randomBytesLength));
 
   const {
     user: deactivatedUser,
@@ -224,5 +327,7 @@ export {
   putUsers,
   patchUsersEmail,
   deleteUsers,
+  patchUsersInvite,
+  postUsersActivate,
   patchUsersDeactivate,
 };

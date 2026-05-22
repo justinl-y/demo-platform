@@ -10,9 +10,16 @@ let _cache: ReturnType<typeof buildAuthConfig> | undefined;
 
 function buildAuthConfig() {
   return {
+    invitationTokenExpirationDays: 7,
+    encryptSaltWorkFactor: 10,
+    password: {
+      expirationDays: 7,
+      passwordLengthMin: 10,
+      passwordLengthMax: 40,
+      randomBytesLength: 30,
+    },
     audience: secretValues.AUTH_AUDIENCE,
     secret: secretValues.AUTH_SECRET,
-    saltWorkFactor: 10,
     accessTokenJwt: 'access',
     accessTokenJwtExpiration: `${accessJwtExpirationMinutes}m`,
     accessTokenCookie: 'access_token',

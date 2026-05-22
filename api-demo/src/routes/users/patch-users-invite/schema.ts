@@ -4,8 +4,8 @@ import {
 
 const route = {
   tags: ['users'],
-  summary: 'Change a user\'s email',
-  description: 'Change a user\'s email',
+  summary: 'Invite a user',
+  description: 'Invites a user; only with a status of CREATED, INVITED (for re-invite) or DEACTIVATED (for re-activation)',
   security: [{ cookieAuth: [] }],
 };
 
@@ -22,20 +22,6 @@ const params = {
   additionalProperties: false,
 };
 
-const body = {
-  type: 'object',
-  properties: {
-    new_email: {
-      type: 'string',
-      format: 'email',
-      transform: ['trim', 'toLowerCase'],
-      description: 'New user\'s email address, must be unique',
-    },
-  },
-  required: ['new_email'],
-  additionalProperties: false,
-};
-
 const response = {
   200: {
     type: 'object',
@@ -43,19 +29,18 @@ const response = {
       user_id: {
         type: 'string',
         format: 'uuid',
-        description: 'User ID',
+        description: 'User\'s id',
         example: '7acd58cc-4ae5-4046-9037-383a057e4970',
       },
-      email: {
+      status: {
         type: 'string',
-        format: 'email',
-        description: 'User new email',
-        example: 'john.doe@email.com',
+        description: `User's changes status: 'INVITED'`,
+        example: 'INVITED',
       },
     },
     required: [
       'user_id',
-      'email',
+      'status',
     ],
     additionalProperties: false,
   },
@@ -64,6 +49,5 @@ const response = {
 export default routeSchema({
   route,
   params,
-  body,
   response,
 });

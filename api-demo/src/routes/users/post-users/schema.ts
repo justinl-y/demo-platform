@@ -40,7 +40,7 @@ const response = {
   201: {
     type: 'object',
     properties: {
-      id: {
+      user_id: {
         type: 'string',
         format: 'uuid',
         description: 'User ID',
@@ -71,7 +71,7 @@ const response = {
       },
     },
     required: [
-      'id',
+      'user_id',
       'email',
       'full_name',
       'known_as',

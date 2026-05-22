@@ -8,7 +8,7 @@ SET
 WHERE
   id = :userId!
 RETURNING
-  id
+  id AS user_id
   , full_name
   , known_as
 ;
