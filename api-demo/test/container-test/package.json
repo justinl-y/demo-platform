@@ -10,6 +10,7 @@
   "type": "module",
   "scripts": {},
   "dependencies": {
+    "@aws-sdk/client-ses": "^3.1053.0",
     "@faker-js/faker": "^10.4.0",
     "aws-sdk-client-mock": "^4.1.0",
     "aws-sdk-client-mock-jest": "^4.1.0",

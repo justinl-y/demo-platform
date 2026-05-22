@@ -6,12 +6,14 @@ import {
 } from 'vitest';
 import _ from 'lodash';
 import { faker } from '@faker-js/faker/locale/en';
+import bcrypt from 'bcryptjs';
 
 import { query } from '../lib/db.ts';
-import { authAPI } from '../lib/api.ts';
+import { authAPI, noAuthAPI } from '../lib/api.ts';
 import {
   createRandomUser,
   getFileNumber,
+  sha256Hex,
 } from '../lib/functions.ts';
 
 import type Supertest from 'supertest';
@@ -953,9 +955,343 @@ describe(`${fileNumber} - Users`, () => {
     });
   });
 
-  describe.skip('PATCH /users/:user_id/invite', () => {});
+  describe('PATCH /users/:user_id/invite', () => {
+    const getResponse = (userId: string) => authAPI.patch(`/users/${userId}/invite`);
 
-  describe.skip('POST /users/activate', () => {});
+    describe('Request Failure', () => {
+      test('Non-UUID "user_id" returns 400', async () => {
+        const res = await getResponse('not-a-uuid');
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('params/user_id must match format "uuid"');
+      });
+
+      test('Integer "user_id" returns 400', async () => {
+        const res = await getResponse('12345');
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('params/user_id must match format "uuid"');
+      });
+
+      test('Unknown UUID returns 400', async () => {
+        const unknownUuid = '00000000-0000-0000-0000-000000000000';
+
+        const res = await getResponse(unknownUuid);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid user id or user status');
+      });
+
+      test('User with ACTIVE status returns 400', async () => {
+        const {
+          userId,
+        } = await createRandomUser({ status: 'ACTIVE' });
+
+        const res = await getResponse(userId);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid user id or user status');
+      });
+    });
+
+    describe('Request Success', () => {
+      interface DbInvite {
+        status: string;
+        invite_token_hash: string | null;
+        invite_token_expiry_at: Date | null;
+      }
+
+      const getInviteSql = `SELECT
+        u.status
+        , a.invite_token_hash
+        , a.invite_token_expiry_at
+      FROM
+        public.users AS u
+        INNER JOIN public.users_authentication AS a ON a.user_id = u.id
+      WHERE
+        u.id = $1;`;
+
+      let createdUserId: string;
+      let rep: Supertest.Response;
+      let dbInvite: DbInvite;
+
+      beforeAll(async () => {
+        ({
+          userId: createdUserId,
+        } = await createRandomUser({ status: 'CREATED' }));
+
+        rep = await getResponse(createdUserId);
+
+        const [result] = await query<DbInvite>(getInviteSql, [createdUserId]);
+        dbInvite = result;
+      });
+
+      test('Success response returns 200', () => {
+        expect(rep.statusCode).toBe(200);
+      });
+
+      test('Response body has correct shape', () => {
+        expect(rep.body).toHaveProperty('user_id');
+        expect(rep.body).toHaveProperty('status');
+      });
+
+      test('Response "user_id" matches the user', () => {
+        expect(rep.body.user_id).toBe(createdUserId);
+      });
+
+      test('Response "status" is "INVITED"', () => {
+        expect(rep.body.status).toBe('INVITED');
+      });
+
+      test('User status is INVITED in the database', () => {
+        expect(dbInvite.status).toBe('INVITED');
+      });
+
+      test('Invite token hash is persisted as a SHA-256 hex digest', () => {
+        expect(dbInvite.invite_token_hash).toMatch(/^[0-9a-f]{64}$/);
+      });
+
+      test('Invite token expiry is set roughly seven days ahead', () => {
+        expect(dbInvite.invite_token_expiry_at).not.toBeNull();
+
+        const expiryDays = (new Date(dbInvite.invite_token_expiry_at as Date).getTime() - Date.now())
+          / (1000 * 60 * 60 * 24);
+
+        expect(expiryDays).toBeGreaterThan(6.5);
+        expect(expiryDays).toBeLessThan(7.5);
+      });
+
+      test('Re-inviting an INVITED user returns 200 and rotates the token', async () => {
+        const tokenSql = `SELECT
+          a.invite_token_hash
+        FROM
+          public.users_authentication AS a
+        WHERE
+          a.user_id = $1;`;
+        const [before] = await query<{ invite_token_hash: string }>(tokenSql, [createdUserId]);
+
+        const res = await getResponse(createdUserId);
+        const [after] = await query<{ invite_token_hash: string }>(tokenSql, [createdUserId]);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.status).toBe('INVITED');
+        expect(after.invite_token_hash).not.toBe(before.invite_token_hash);
+      });
+
+      test('Inviting a DEACTIVATED user returns 200', async () => {
+        const {
+          userId,
+        } = await createRandomUser({ status: 'DEACTIVATED' });
+
+        const res = await getResponse(userId);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.status).toBe('INVITED');
+      });
+    });
+  });
+
+  describe('POST /users/activate', () => {
+    const getResponse = (body: RequestBody) => noAuthAPI.post('/users/activate', body);
+
+    const validPassword = 'TestPass123!@#abc';
+
+    // Seed an INVITED user with a known token hash + expiry. Activation tokens
+    // are only ever known to the email recipient in production, so an integration
+    // test seeds the persisted hash directly to drive the activate endpoint.
+    async function seedInvitedUserWithToken({
+      rawToken,
+      expiresAt,
+    }: {
+      rawToken: string;
+      expiresAt?: Date;
+    }) {
+      const {
+        userId,
+      } = await createRandomUser({ status: 'INVITED' });
+
+      const inviteTokenHash = sha256Hex(rawToken);
+      const inviteExpiresAt = expiresAt ?? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+      const updateUsersAuthenticationSql = `UPDATE
+        public.users_authentication
+      SET
+        invite_token_hash = $1
+        , invite_token_expiry_at = $2
+      WHERE
+        user_id = $3
+      ;`;
+
+      await query(updateUsersAuthenticationSql, [inviteTokenHash, inviteExpiresAt, userId]);
+
+      return { userId };
+    }
+
+    describe('Request Failure', () => {
+      test('Absent required body "token" returns 400', async () => {
+        const res = await getResponse({ password: validPassword });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe(`body must have required property 'token'`);
+      });
+
+      test('Absent required body "password" returns 400', async () => {
+        const res = await getResponse({ token: 'some-token' });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe(`body must have required property 'password'`);
+      });
+
+      test('Invalid type body "token" returns 400', async () => {
+        const res = await getResponse({
+          token: 1234,
+          password: validPassword,
+        } as unknown as RequestBody);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('body/token must be string');
+      });
+
+      test('Invalid type body "password" returns 400', async () => {
+        const res = await getResponse({
+          token: 'some-token',
+          password: 1234,
+        } as unknown as RequestBody);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('body/password must be string');
+      });
+
+      test('Password shorter than the minimum returns 400', async () => {
+        const res = await getResponse({
+          token: 'some-token',
+          password: 'short',
+        });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('body/password must NOT have fewer than 10 characters');
+      });
+
+      test('Password longer than the maximum returns 400', async () => {
+        const res = await getResponse({
+          token: 'some-token',
+          password: 'a'.repeat(41),
+        });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('body/password must NOT have more than 40 characters');
+      });
+
+      test('Unknown token returns 400', async () => {
+        const res = await getResponse({
+          token: 'never-issued-token',
+          password: validPassword,
+        });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid or expired invitation');
+      });
+
+      test('Expired token returns 400', async () => {
+        const rawToken = `expired-${faker.string.alphanumeric(20)}`;
+        await seedInvitedUserWithToken({
+          rawToken,
+          expiresAt: new Date(Date.now() - 1000),
+        });
+
+        const res = await getResponse({
+          token: rawToken,
+          password: validPassword,
+        });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid or expired invitation');
+      });
+
+      test('Already-used token returns 400 on the second activation', async () => {
+        const rawToken = `used-${faker.string.alphanumeric(20)}`;
+        await seedInvitedUserWithToken({ rawToken });
+
+        const first = await getResponse({
+          token: rawToken,
+          password: validPassword,
+        });
+        const second = await getResponse({
+          token: rawToken,
+          password: validPassword,
+        });
+
+        expect(first.statusCode).toBe(204);
+        expect(second.statusCode).toBe(400);
+        expect(second.body.message).toBe('Invalid or expired invitation');
+      });
+    });
+
+    describe('Request Success', () => {
+      interface DbActivated {
+        status: string;
+        password_hash: string | null;
+        invite_token_hash: string | null;
+        invite_token_expiry_at: Date | null;
+      }
+
+      const getActivatedSql = `SELECT
+        u.status
+        , a.password_hash
+        , a.invite_token_hash
+        , a.invite_token_expiry_at
+      FROM
+        public.users AS u
+        INNER JOIN public.users_authentication AS a ON a.user_id = u.id
+      WHERE
+        u.id = $1;`;
+
+      let activatedUserId: string;
+      let rawToken: string;
+      let rep: Supertest.Response;
+      let dbActivated: DbActivated;
+
+      beforeAll(async () => {
+        rawToken = `valid-${faker.string.alphanumeric(20)}`;
+        ({
+          userId: activatedUserId,
+        } = await seedInvitedUserWithToken({ rawToken }));
+
+        rep = await getResponse({
+          token: rawToken,
+          password: validPassword,
+        });
+
+        const [result] = await query<DbActivated>(getActivatedSql, [activatedUserId]);
+        dbActivated = result;
+      });
+
+      test('Success response returns 204', () => {
+        expect(rep.statusCode).toBe(204);
+      });
+
+      test('Response body is empty', () => {
+        expect(rep.body).toEqual({});
+      });
+
+      test('User status is ACTIVE in the database', () => {
+        expect(dbActivated.status).toBe('ACTIVE');
+      });
+
+      test('Password is persisted as a bcrypt hash of the supplied password', async () => {
+        expect(dbActivated.password_hash).not.toBeNull();
+        expect(await bcrypt.compare(validPassword, dbActivated.password_hash as string)).toBe(true);
+      });
+
+      test('Invite token hash is cleared in the database', () => {
+        expect(dbActivated.invite_token_hash).toBeNull();
+      });
+
+      test('Invite token expiry is cleared in the database', () => {
+        expect(dbActivated.invite_token_expiry_at).toBeNull();
+      });
+    });
+  });
 
   describe('PATCH /users/:user_id/deactivate', () => {
     const getResponse = (userId: string) => authAPI.patch(`/users/${userId}/deactivate`);

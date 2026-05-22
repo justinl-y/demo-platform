@@ -68,6 +68,10 @@ function toBase64Url(input: string | Buffer): string {
     : Buffer.from(input).toString('base64url');
 }
 
+function sha256Hex(value: string): string {
+  return crypto.createHash('sha256').update(value).digest('hex');
+}
+
 function getFileNumber(relativePath: string) {
   const fileName = path.basename(fileURLToPath(relativePath));
 
@@ -108,4 +112,5 @@ export {
   generateTestCookie,
   getFileNumber,
   setCookies,
+  sha256Hex,
 };
