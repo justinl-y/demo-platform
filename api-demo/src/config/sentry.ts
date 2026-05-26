@@ -1,4 +1,4 @@
-import { secretValues } from '#lib/secrets-manager';
+import { secretValues } from '#lib/api-secrets';
 
 const sentryConfig = {
   getDsn: () => secretValues.SENTRY_DSN,

@@ -2,11 +2,11 @@ import _ from 'lodash';
 
 import {
   getSqlBlob,
-} from './database-sql-loader.ts';
+} from './sql-loader.ts';
 
 import type {
   SqlParams,
-} from '../types/database.ts';
+} from '../../types/database.ts';
 
 interface FlattenedInstruction {
   file: string;

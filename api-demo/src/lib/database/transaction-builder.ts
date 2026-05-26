@@ -2,7 +2,7 @@ import type {
   QueryRow,
   TransactionInstruction,
   TransactionResult,
-} from '../types/database.ts';
+} from '../../types/database.ts';
 
 type ExecFn = (instructions: TransactionInstruction[], dryRun?: boolean) => Promise<TransactionResult>;
 

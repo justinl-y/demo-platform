@@ -9,20 +9,20 @@ import {
 import {
   errorsToHandle,
   getErrorDetails,
-} from './database-errors.ts';
-import { pgConnect } from './database-pg-client.ts';
+} from './errors.ts';
+import { pgConnect } from './pg-client.ts';
 import {
   getSqlBlob,
-} from './database-sql-loader.ts';
+} from './sql-loader.ts';
 import {
   flattenInstruction,
-} from './database-transaction-instruction-flattener.ts';
+} from './transaction-instruction-flattener.ts';
 import {
   TransactionBuilder,
-} from './database-transaction-builder.ts';
+} from './transaction-builder.ts';
 import {
   MISSING_PARAMS_ERROR,
-} from './database-pg-named.ts';
+} from './pg-named.ts';
 
 import type {
   Pool,
@@ -34,11 +34,11 @@ import type {
   QueryOutputFormat,
   QueryResult,
   TransactionResult,
-} from '../types/database.ts';
+} from '../../types/database.ts';
 import type {
   FlattenedInstruction,
-} from './database-transaction-instruction-flattener.ts';
-import type { PatchedPgClient } from './database-pg-client.ts';
+} from './transaction-instruction-flattener.ts';
+import type { PatchedPgClient } from './pg-client.ts';
 
 const logger = createLogger();
 // Guardrail for read-path usage: write statements must go through transaction().

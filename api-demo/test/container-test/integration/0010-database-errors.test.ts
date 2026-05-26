@@ -6,7 +6,7 @@ import {
 
 import {
   errorsToHandle,
-} from '#lib/database-errors';
+} from '#lib/database/errors';
 
 describe('0010 - database-errors', () => {
   test('maps missing parameter errors to a standardized message', () => {

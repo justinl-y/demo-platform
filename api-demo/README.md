@@ -187,20 +187,20 @@ Coverage is collected via Node.js V8 instrumentation and reported using **c8**, 
 
 ----
 
-## 🗄️ Database Library — `src/lib/database.ts`
+## 🗄️ Database Library — `src/lib/database/`
 
 API-Demo contains a bespoke database interaction library built on top of `node-postgres`. It exposes two methods on a `db` object decorated onto the Fastify instance by the Postgres plugin:
 
 - `db.query` — SQL data query language (DQL): `SELECT`
 - `db.transaction` — SQL data manipulation language (DML): `INSERT` / `UPDATE` / `DELETE`
 
-Internally, the database library is split into focused modules:
+Internally, the database library is split into focused modules under `src/lib/database/` (imported as `#lib/database` via the folder's `index.ts` entry point):
 
-- `src/lib/database.ts` — query/transaction orchestration and error flow
-- `src/lib/database-errors.ts` — error normalization + PG/system-to-HTTP mapping
-- `src/lib/database-pg-client.ts` and `src/lib/database-pg-named.ts` — PG client patching and named-parameter interpolation
-- `src/lib/database-sql-loader.ts` — SQL file loading with optional environment-aware caching
-- `src/lib/database-transaction-builder.ts` and `src/lib/database-transaction-instruction-flattener.ts` — fluent transaction API and instruction expansion
+- `index.ts` — query/transaction orchestration and error flow
+- `errors.ts` — error normalization + PG/system-to-HTTP mapping
+- `pg-client.ts` and `pg-named.ts` — PG client patching and named-parameter interpolation
+- `sql-loader.ts` — SQL file loading with optional environment-aware caching
+- `transaction-builder.ts` and `transaction-instruction-flattener.ts` — fluent transaction API and instruction expansion
 
 Both methods return promises and work with `async/await`. Each SQL file must contain a **single statement** — this keeps operations modular and reusable and avoids the prepared-statement limitation that prevents multiple DML commands in one call. Multiple operations within a single statement are supported via CTEs.
 
