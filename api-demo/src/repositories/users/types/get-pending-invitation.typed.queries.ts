@@ -17,10 +17,23 @@ export interface IUsersGetPendingInvitationQuery {
   result: IUsersGetPendingInvitationResult;
 }
 
-const usersGetPendingInvitationIR: any = {"usedParamSet":{"inviteTokenHash":true},"params":[{"name":"inviteTokenHash","required":true,"transform":{"type":"scalar"},"locs":[{"a":0,"b":0}]}],"statement":""};
+const usersGetPendingInvitationIR: any = {"usedParamSet":{"inviteTokenHash":true},"params":[{"name":"inviteTokenHash","required":true,"transform":{"type":"scalar"},"locs":[{"a":206,"b":222}]}],"statement":"                                                             \nSELECT\n  ua.user_id\nFROM\n  public.users_authentication AS ua\n  INNER JOIN public.users AS u ON u.id = ua.user_id\nWHERE\n  ua.invite_token_hash = :inviteTokenHash!\n  AND ua.invite_token_expiry_at > NOW()\n  AND u.status = 'INVITED'"};
 
 /**
- * Placeholder generated alongside get-pending-invitation.sql.
- * Run `npm run sql:types` to regenerate with the proper IR.
+ * Query generated from SQL:
+ * ```
+ *                                                              
+ * SELECT
+ *   ua.user_id
+ * FROM
+ *   public.users_authentication AS ua
+ *   INNER JOIN public.users AS u ON u.id = ua.user_id
+ * WHERE
+ *   ua.invite_token_hash = :inviteTokenHash!
+ *   AND ua.invite_token_expiry_at > NOW()
+ *   AND u.status = 'INVITED'
+ * ```
  */
 export const usersGetPendingInvitation = new PreparedQuery<IUsersGetPendingInvitationParams,IUsersGetPendingInvitationResult>(usersGetPendingInvitationIR);
+
+
