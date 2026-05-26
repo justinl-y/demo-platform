@@ -9,6 +9,7 @@ import type { IUsersSetUserParams, IUsersSetUserResult } from './types/set-user.
 import type { IUsersSetUserEmailParams, IUsersSetUserEmailResult } from './types/set-user-email.typed.queries.ts';
 import type { IUsersRemoveUserParams, IUsersRemoveUserResult } from './types/remove-user.typed.queries.ts';
 import type { IUsersSetUserInvitedParams, IUsersSetUserInvitedResult } from './types/set-user-invited.typed.queries.ts';
+import type { IUsersGetPendingInvitationParams, IUsersGetPendingInvitationResult } from './types/get-pending-invitation.typed.queries.ts';
 import type { IUsersSetUserActiveParams, IUsersSetUserActiveResult } from './types/set-user-active.typed.queries.ts';
 import type { IUsersSetUserDeactivatedParams, IUsersSetUserDeactivatedResult } from './types/set-user-deactivated.typed.queries.ts';
 
@@ -21,6 +22,7 @@ const updateUserQuery = cwd('set-user', relPath);
 const updateUserEmailQuery = cwd('set-user-email', relPath);
 const removeUserQuery = cwd('remove-user', relPath);
 const inviteUserQuery = cwd('set-user-invited', relPath);
+const getPendingInvitationQuery = cwd('get-pending-invitation', relPath);
 const activateUserQuery = cwd('set-user-active', relPath);
 const deactivateUserQuery = cwd('set-user-deactivated', relPath);
 
@@ -157,6 +159,12 @@ function createUsersRepository(db: DatabaseDecorator) {
       return {
         user: userResult[0],
       };
+    },
+
+    getPendingInvitation: ({
+      inviteTokenHash,
+    }: IUsersGetPendingInvitationParams) => {
+      return db.query<IUsersGetPendingInvitationResult>(getPendingInvitationQuery, { inviteTokenHash }, 'one');
     },
 
     activateUser: async ({

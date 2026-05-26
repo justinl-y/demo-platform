@@ -272,10 +272,16 @@ async function postUsersActivate(repository: UsersRepository, params: PostUsersA
   } = params;
 
   const inviteTokenHash = sha256Hex(token);
+
+  // Cheap pre-check first so bcrypt is not paid for arbitrary or expired tokens
+  // on this unauthenticated endpoint.
+  const pendingInvitation = await repository.getPendingInvitation({ inviteTokenHash });
+  if (!pendingInvitation) throw new BadRequestError('Invalid or expired invitation');
+
   const passwordHash = await bcryptHash(password);
 
-  // Activation is a single atomic statement — it matches the user by token hash,
-  // expiry and status, so no row returned means an invalid, expired or used token.
+  // The atomic UPDATE re-checks the same token/expiry/status predicates so a
+  // concurrent revoke or activate between the pre-check and here is still caught.
   const {
     user: activatedUser,
   } = await repository.activateUser({
