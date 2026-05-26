@@ -154,8 +154,20 @@ function processSentryError(
   }
 }
 
+function captureSentryException(err: unknown): void {
+  if (Config.apiEnv === 'TEST') return;
+
+  try {
+    Sentry.captureException(err);
+  }
+  catch {
+    // Sentry failure must not affect the caller
+  }
+}
+
 export {
   initSentry,
   setSentryUser,
   processSentryError,
+  captureSentryException,
 };

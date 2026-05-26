@@ -2,7 +2,7 @@ import { Config } from '#config/index';
 
 const localHost = `http://localhost:${Config.externalPort}`;
 
-const HTTP_METHODS = {
+const httpMethods = {
   GET: 'get',
   POST: 'post',
   PUT: 'put',
@@ -10,7 +10,15 @@ const HTTP_METHODS = {
   PATCH: 'patch',
 } as const;
 
+// Verified SES sender identity for transactional emails (e.g. invitations).
+const defaultSenderEmailAddress = 'noreply@discovered-check.ca' as const;
+
+// route definition here to allow for sharing across multiple services
+const postUsersActivateRoute = '/users/activate' as const;
+
 export {
   localHost,
-  HTTP_METHODS,
+  httpMethods,
+  defaultSenderEmailAddress,
+  postUsersActivateRoute,
 };

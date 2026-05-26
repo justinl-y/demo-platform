@@ -1,18 +1,13 @@
 import {
-  SESClient,
+  getSesClient,
   SendEmailCommand,
-} from '@aws-sdk/client-ses';
+} from './aws/ses.ts';
+
+import { defaultSenderEmailAddress } from '#utils/constants';
 
 import {
   Config,
 } from '#config/index';
-
-// Lazily instantiated so the SDK client is created once and shared across calls.
-let sesClient: SESClient | undefined;
-
-function getSesClient(): SESClient {
-  return (sesClient ??= new SESClient(Config.awsConfig));
-}
 
 interface InvitationEmail {
   toEmail: string;
@@ -30,27 +25,31 @@ async function sendInvitationEmail({
     return;
   }
 
-  const command = new SendEmailCommand({
-    Source: Config.sesConfig.senderEmail,
+  const sendCommandEmailParams = {
     Destination: {
       ToAddresses: [toEmail],
     },
     Message: {
-      Subject: {
-        Data: 'You have been invited to Demo Platform',
-      },
       Body: {
         Html: {
-          Data: `<p>You have been invited to Demo Platform.</p><p><a href="${activationUrl}">Activate your account</a> to set a password and sign in.</p>`,
+          Data: `<p>You have been invited to Demo Platform - ${Config.apiEnv}.</p><p><a href="${activationUrl}">Activate your account</a> to set a password and sign in.</p>`,
         },
         Text: {
           Data: `You have been invited to Demo Platform. Activate your account to set a password and sign in: ${activationUrl}`,
         },
       },
+      Subject: {
+        Data: `You have been invited to Demo Platform - ${Config.apiEnv}`,
+      },
     },
-  });
+    Source: defaultSenderEmailAddress,
+  };
 
-  await getSesClient().send(command);
+  const sendEmailCommand = new SendEmailCommand(sendCommandEmailParams);
+
+  await getSesClient()
+    .send(sendEmailCommand)
+  ;
 }
 
 export {

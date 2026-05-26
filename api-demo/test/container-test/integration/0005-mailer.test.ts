@@ -15,10 +15,11 @@ vi.mock('#config/index', () => ({
     awsConfig: {
       region: 'us-west-2',
     },
-    sesConfig: {
-      senderEmail: 'noreply@demo.test',
-    },
   },
+}));
+
+vi.mock('#utils/constants', () => ({
+  defaultSenderEmailAddress: 'noreply@demo.test',
 }));
 
 import { mockClient } from 'aws-sdk-client-mock';

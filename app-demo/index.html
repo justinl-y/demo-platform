@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>demo-stage.discovered.check.ca — Coming Soon</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="aurora" aria-hidden="true">
+      <span class="blob blob--a"></span>
+      <span class="blob blob--b"></span>
+      <span class="blob blob--c"></span>
+    </div>
+
+    <main class="stage">
+      <div class="card">
+        <span class="badge">
+          <span class="badge__dot"></span>
+          Staging environment
+        </span>
+
+        <h1 class="domain" aria-label="demo-stage.discovered.check.ca">
+          <span class="domain__part">demo-stage</span><span class="domain__sep">.</span><span class="domain__part">discovered</span><span class="domain__sep">.</span><span class="domain__part">check</span><span class="domain__sep">.</span><span class="domain__part">ca</span>
+        </h1>
+
+        <p class="tagline">
+          <span class="cursor">▍</span>
+          <span id="typed"></span>
+        </p>
+
+        <div class="meta">
+          <div class="meta__item">
+            <span class="meta__label">Status</span>
+            <span class="meta__value">
+              <span class="pulse"></span>
+              Provisioning
+            </span>
+          </div>
+          <div class="meta__item">
+            <span class="meta__label">Local time</span>
+            <span class="meta__value" id="clock">--:--:--</span>
+          </div>
+          <div class="meta__item">
+            <span class="meta__label">Build</span>
+            <span class="meta__value" id="build">—</span>
+          </div>
+        </div>
+      </div>
+
+      <footer class="foot">
+        <span>&copy; <span id="year"></span> discovered.check.ca</span>
+      </footer>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>

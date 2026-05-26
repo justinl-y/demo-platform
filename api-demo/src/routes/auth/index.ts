@@ -1,5 +1,5 @@
 import {
-  HTTP_METHODS,
+  httpMethods,
 } from '#utils/constants';
 import {
   routePropertiesCore,
@@ -16,7 +16,7 @@ import type {
 
 const {
   POST,
-} = HTTP_METHODS;
+} = httpMethods;
 
 const routes = {
   postLogin: routePropertiesCore(POST, '/login', postLogin as RouteHandlerMethod),

@@ -1,9 +1,14 @@
 import { BadRequestError } from 'http-errors-enhanced';
 
 import { paginationOffset, paginationCount, paginationPages, randomAlphaNumeric, sha256Hex } from '#utils/functions';
+import { postUsersActivateRoute } from '#utils/constants';
 import { bcryptHash } from '#lib/authentication';
 import { sendInvitationEmail } from '#lib/mailer';
 import { Config } from '#config/index';
+
+import {
+  captureSentryException,
+} from '#lib/sentry-instrument';
 
 import type { UsersRepository } from '#repositories/users/users.repository';
 import type { GetResult, UserStatus } from '../../types/general.ts';
@@ -233,7 +238,7 @@ async function patchUsersInvite(repository: UsersRepository, params: PatchUsersI
 
   if (!invitedUser) throw new BadRequestError('Invalid user id or user status');
 
-  const activationUrl = `${appBaseUrl}/users/activate?token=${inviteToken}`;
+  const activationUrl = `${appBaseUrl}${postUsersActivateRoute}?token=${inviteToken}`;
 
   try {
     await sendInvitationEmail({
@@ -241,10 +246,12 @@ async function patchUsersInvite(repository: UsersRepository, params: PatchUsersI
       activationUrl,
     });
   }
-  catch (error) {
-    // The invitation is already persisted; a delivery failure must not fail the
-    // request. Logged so ops can investigate or re-invite.
-    console.error(error, `Invitation email delivery failed for ${invitedUser.email}`);
+  catch (err) {
+    // The invitation is already persisted; a delivery failure must not fail the request.
+    // Logged to Sentry for investigation or re-invite
+    captureSentryException(err);
+
+    console.error(err, `Invitation email delivery failed for ${invitedUser.email}`);
   }
 
   return {
