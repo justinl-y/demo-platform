@@ -305,6 +305,29 @@ async function postUsersActivate(repository: UsersRepository, params: PostUsersA
   if (!activatedUser) throw new BadRequestError('Invalid or expired invitation');
 }
 
+interface DeleteUsersInviteParams {
+  userId: string;
+}
+
+interface DeleteUsersInviteResult {
+  user_id: string;
+  status: UserStatus;
+}
+
+async function deleteUsersInvite(repository: UsersRepository, params: DeleteUsersInviteParams): Promise<DeleteUsersInviteResult> {
+  const {
+    userId,
+  } = params;
+
+  const {
+    user: cancelledUser,
+  } = await repository.cancelUserInvite({ userId });
+
+  if (!cancelledUser) throw new BadRequestError('Invalid user id or user status');
+
+  return cancelledUser;
+}
+
 interface PatchUsersDeactivateParams {
   userId: string;
 }
@@ -354,6 +377,7 @@ export {
   patchUsersEmail,
   deleteUsers,
   patchUsersInvite,
+  deleteUsersInvite,
   postUsersActivate,
   patchUsersDeactivate,
 };

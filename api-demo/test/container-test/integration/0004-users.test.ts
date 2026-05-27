@@ -1161,6 +1161,156 @@ describe(`${fileNumber} - Users`, () => {
     });
   });
 
+  describe('DELETE /users/:user_id/invite', () => {
+    const cancelInvite = (userId: string) => authAPI.del(`/users/${userId}/invite`);
+
+    describe('Request Failure', () => {
+      test('Non-UUID "user_id" returns 400', async () => {
+        const res = await cancelInvite('not-a-uuid');
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('params/user_id must match format "uuid"');
+      });
+
+      test('Integer "user_id" returns 400', async () => {
+        const res = await cancelInvite('12345');
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('params/user_id must match format "uuid"');
+      });
+
+      test('Unknown UUID returns 400', async () => {
+        const unknownUuid = '00000000-0000-0000-0000-000000000000';
+
+        const res = await cancelInvite(unknownUuid);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid user id or user status');
+      });
+
+      test('User with CREATED status returns 400', async () => {
+        const {
+          userId,
+        } = await createRandomUser({ status: 'CREATED' });
+
+        const res = await cancelInvite(userId);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid user id or user status');
+      });
+
+      test('User with ACTIVE status returns 400', async () => {
+        const {
+          userId,
+        } = await createRandomUser({ status: 'ACTIVE' });
+
+        const res = await cancelInvite(userId);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid user id or user status');
+      });
+
+      test('User with DEACTIVATED status returns 400', async () => {
+        const {
+          userId,
+        } = await createRandomUser({ status: 'DEACTIVATED' });
+
+        const res = await cancelInvite(userId);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid user id or user status');
+      });
+    });
+
+    describe('Request Success', () => {
+      interface DbInvite {
+        status: string;
+        invite_token_hash: string | null;
+        invite_token_expiry_at: Date | null;
+        invite_email_sent_at: Date | null;
+      }
+
+      const getInviteSql = `SELECT
+        u.status
+        , a.invite_token_hash
+        , a.invite_token_expiry_at
+        , a.invite_email_sent_at
+      FROM
+        public.users AS u
+        INNER JOIN public.users_authentication AS a ON a.user_id = u.id
+      WHERE
+        u.id = $1;`;
+
+      let invitedUserId: string;
+      let rep: Supertest.Response;
+      let dbInvite: DbInvite;
+
+      beforeAll(async () => {
+        ({
+          userId: invitedUserId,
+        } = await createRandomUser({ status: 'INVITED' }));
+
+        // Seed the auth row so the "field was cleared" assertions are meaningful
+        // (NULL → NULL would otherwise pass trivially). Values are arbitrary —
+        // the cancel SQL doesn't validate them, only nulls them.
+        const seedAuthSql = `UPDATE
+          public.users_authentication
+        SET
+          invite_token_hash = $1
+          , invite_token_expiry_at = $2
+          , invite_email_sent_at = $3
+        WHERE
+          user_id = $4
+        ;`;
+
+        await query(seedAuthSql, [
+          sha256Hex('seeded-token'),
+          new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          new Date(),
+          invitedUserId,
+        ]);
+
+        rep = await cancelInvite(invitedUserId);
+
+        const [result] = await query<DbInvite>(getInviteSql, [invitedUserId]);
+        dbInvite = result;
+      });
+
+      test('Success response returns 200', () => {
+        expect(rep.statusCode).toBe(200);
+      });
+
+      test('Response body has correct shape', () => {
+        expect(rep.body).toHaveProperty('user_id');
+        expect(rep.body).toHaveProperty('status');
+      });
+
+      test('Response "user_id" matches the user', () => {
+        expect(rep.body.user_id).toBe(invitedUserId);
+      });
+
+      test('Response "status" is "CREATED"', () => {
+        expect(rep.body.status).toBe('CREATED');
+      });
+
+      test('User status is CREATED in the database', () => {
+        expect(dbInvite.status).toBe('CREATED');
+      });
+
+      test('Invite token hash is cleared in the database', () => {
+        expect(dbInvite.invite_token_hash).toBeNull();
+      });
+
+      test('Invite token expiry is cleared in the database', () => {
+        expect(dbInvite.invite_token_expiry_at).toBeNull();
+      });
+
+      test('Invite email-sent timestamp is cleared in the database', () => {
+        expect(dbInvite.invite_email_sent_at).toBeNull();
+      });
+    });
+  });
+
   describe('POST /users/activate', () => {
     const getResponse = (body: RequestBody) => noAuthAPI.post('/users/activate', body);
 

@@ -12,6 +12,7 @@ function onRequest(this: FastifyInstance, key: RouteKey) {
     deleteUsers: routePropertiesOnRequest([this.authenticate]),
     postUsersActivate: routePropertiesOnRequest([]),
     patchUsersInvite: routePropertiesOnRequest([this.authenticate]),
+    deleteUsersInvite: routePropertiesOnRequest([this.authenticate]),
     patchUsersDeactivate: routePropertiesOnRequest([this.authenticate]),
   };
 
