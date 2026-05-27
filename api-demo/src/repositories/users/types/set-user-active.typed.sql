@@ -22,6 +22,7 @@ SET
   password_hash = :passwordHash!
   , invite_token_hash = NULL
   , invite_token_expiry_at = NULL
+  , invite_email_sent_at = NULL
 FROM
   t_activated
 WHERE

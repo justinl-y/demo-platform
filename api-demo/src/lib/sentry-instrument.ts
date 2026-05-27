@@ -27,6 +27,7 @@ async function initSentry() {
 
   if (Config.apiEnv === 'TEST' || !sentryDsn) {
     console.info('... Sentry disabled');
+
     return;
   }
 

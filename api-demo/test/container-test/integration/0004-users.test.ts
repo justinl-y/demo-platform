@@ -999,12 +999,14 @@ describe(`${fileNumber} - Users`, () => {
         status: string;
         invite_token_hash: string | null;
         invite_token_expiry_at: Date | null;
+        invite_email_sent_at: Date | null;
       }
 
       const getInviteSql = `SELECT
         u.status
         , a.invite_token_hash
         , a.invite_token_expiry_at
+        , a.invite_email_sent_at
       FROM
         public.users AS u
         INNER JOIN public.users_authentication AS a ON a.user_id = u.id
@@ -1033,6 +1035,7 @@ describe(`${fileNumber} - Users`, () => {
       test('Response body has correct shape', () => {
         expect(rep.body).toHaveProperty('user_id');
         expect(rep.body).toHaveProperty('status');
+        expect(rep.body).toHaveProperty('invite_email_sent');
       });
 
       test('Response "user_id" matches the user', () => {
@@ -1045,6 +1048,14 @@ describe(`${fileNumber} - Users`, () => {
 
       test('User status is INVITED in the database', () => {
         expect(dbInvite.status).toBe('INVITED');
+      });
+
+      test('Response "invite_email_sent" is true', () => {
+        expect(rep.body.invite_email_sent).toBe(true);
+      });
+
+      test('Email "invite_email_sent_at" is persisted in the database', () => {
+        expect(dbInvite.invite_email_sent_at).not.toBeNull();
       });
 
       test('Invite token hash is persisted as a SHA-256 hex digest', () => {
@@ -1087,6 +1098,65 @@ describe(`${fileNumber} - Users`, () => {
 
         expect(res.statusCode).toBe(200);
         expect(res.body.status).toBe('INVITED');
+      });
+    });
+
+    describe('Email delivery failure', () => {
+      interface DbInvite {
+        invite_token_hash: string | null;
+        invite_token_expiry_at: Date | null;
+        invite_email_sent_at: Date | null;
+      }
+
+      const getInviteSql = `SELECT
+        a.invite_token_hash
+        , a.invite_token_expiry_at
+        , a.invite_email_sent_at
+      FROM
+        public.users_authentication AS a
+      WHERE
+        a.user_id = $1;`;
+
+      let failUserId: string;
+      let rep: Supertest.Response;
+      let dbInvite: DbInvite;
+
+      // The mailer test seam in src/lib/mailer.ts throws on this sentinel domain (RFC 2606 .test TLD).
+      const failEmail = `fail-${faker.string.alphanumeric(10).toLowerCase()}@mailer-fail.test`;
+
+      beforeAll(async () => {
+        ({
+          userId: failUserId,
+        } = await createRandomUser({
+          status: 'CREATED',
+          email: failEmail,
+        }));
+
+        rep = await getResponse(failUserId);
+
+        const [result] = await query<DbInvite>(getInviteSql, [failUserId]);
+        dbInvite = result;
+      });
+
+      test('Response returns 200 even when the email delivery fails', () => {
+        expect(rep.statusCode).toBe(200);
+      });
+
+      test('Response "status" is still "INVITED"', () => {
+        expect(rep.body.status).toBe('INVITED');
+      });
+
+      test('Response "invite_email_sent" is false', () => {
+        expect(rep.body.invite_email_sent).toBe(false);
+      });
+
+      test('Invitation row is still persisted on email failure', () => {
+        expect(dbInvite.invite_token_hash).toMatch(/^[0-9a-f]{64}$/);
+        expect(dbInvite.invite_token_expiry_at).not.toBeNull();
+      });
+
+      test('Database "invite_email_sent_at" remains NULL on failure', () => {
+        expect(dbInvite.invite_email_sent_at).toBeNull();
       });
     });
   });

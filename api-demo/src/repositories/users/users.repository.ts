@@ -7,6 +7,7 @@ import type { IUsersGetUserByStatusParams, IUsersGetUserByStatusResult } from '.
 import type { IUsersAddUserParams, IUsersAddUserResult } from './types/add-user.typed.queries.ts';
 import type { IUsersSetUserParams, IUsersSetUserResult } from './types/set-user.typed.queries.ts';
 import type { IUsersSetUserEmailParams, IUsersSetUserEmailResult } from './types/set-user-email.typed.queries.ts';
+import type { IUsersSetUserInviteEmailSentParams, IUsersSetUserInviteEmailSentResult } from './types/set-user-invite-email-sent.typed.queries.ts';
 import type { IUsersRemoveUserParams, IUsersRemoveUserResult } from './types/remove-user.typed.queries.ts';
 import type { IUsersSetUserInvitedParams, IUsersSetUserInvitedResult } from './types/set-user-invited.typed.queries.ts';
 import type { IUsersGetPendingInvitationParams, IUsersGetPendingInvitationResult } from './types/get-pending-invitation.typed.queries.ts';
@@ -20,6 +21,7 @@ const getUserByStatusQuery = cwd('get-user-by-status', relPath);
 const addUserQuery = cwd('add-user', relPath);
 const updateUserQuery = cwd('set-user', relPath);
 const updateUserEmailQuery = cwd('set-user-email', relPath);
+const updateUserInviteEmailSent = cwd('set-user-invite-email-sent', relPath);
 const removeUserQuery = cwd('remove-user', relPath);
 const inviteUserQuery = cwd('set-user-invited', relPath);
 const getPendingInvitationQuery = cwd('get-pending-invitation', relPath);
@@ -60,6 +62,12 @@ function createUsersRepository(db: DatabaseDecorator) {
       };
 
       return db.query<IUsersGetUserByStatusResult>(getUserByStatusQuery, queryParams, 'one');
+    },
+
+    getPendingInvitation: ({
+      inviteTokenHash,
+    }: IUsersGetPendingInvitationParams) => {
+      return db.query<IUsersGetPendingInvitationResult>(getPendingInvitationQuery, { inviteTokenHash }, 'one');
     },
 
     addUser: async ({
@@ -123,6 +131,23 @@ function createUsersRepository(db: DatabaseDecorator) {
       };
     },
 
+    updateUserInviteEmailSent: async ({
+      userId,
+    }: IUsersSetUserInviteEmailSentParams): Promise<{ user: IUsersSetUserInviteEmailSentResult | undefined }> => {
+      const [userResult] = await db.transaction()
+        .add<IUsersSetUserInviteEmailSentResult>({
+          files: [updateUserInviteEmailSent],
+          params: {
+            userId,
+          },
+        })
+        .execute();
+
+      return {
+        user: userResult[0],
+      };
+    },
+
     removeUser: async ({
       userId,
     }: IUsersRemoveUserParams): Promise<{ user: IUsersRemoveUserResult | undefined }> => {
@@ -159,12 +184,6 @@ function createUsersRepository(db: DatabaseDecorator) {
       return {
         user: userResult[0],
       };
-    },
-
-    getPendingInvitation: ({
-      inviteTokenHash,
-    }: IUsersGetPendingInvitationParams) => {
-      return db.query<IUsersGetPendingInvitationResult>(getPendingInvitationQuery, { inviteTokenHash }, 'one');
     },
 
     activateUser: async ({

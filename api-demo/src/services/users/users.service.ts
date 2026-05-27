@@ -199,6 +199,7 @@ interface PatchUsersInviteParams {
 interface PatchUsersInviteResult {
   user_id: string;
   status: UserStatus;
+  invite_email_sent: boolean;
 }
 
 async function patchUsersInvite(repository: UsersRepository, params: PatchUsersInviteParams): Promise<PatchUsersInviteResult> {
@@ -235,16 +236,24 @@ async function patchUsersInvite(repository: UsersRepository, params: PatchUsersI
     inviteTokenHash,
     inviteTokenExpiryDays: invitationTokenExpirationDays,
   });
-
   if (!invitedUser) throw new BadRequestError('Invalid user id or user status');
 
   const activationUrl = `${appBaseUrl}${postUsersActivateRoute}?token=${inviteToken}`;
 
+  let emailSent: boolean = false;
+
   try {
-    await sendInvitationEmail({
+    const sentInvitationEmailParams = {
       toEmail: invitedUser.email,
       activationUrl,
-    });
+    };
+
+    await sendInvitationEmail(sentInvitationEmailParams);
+
+    const {
+      user: stamped,
+    } = await repository.updateUserInviteEmailSent({ userId: invitedUser.user_id });
+    if (stamped) emailSent = true;
   }
   catch (err) {
     // The invitation is already persisted; a delivery failure must not fail the request.
@@ -257,6 +266,7 @@ async function patchUsersInvite(repository: UsersRepository, params: PatchUsersI
   return {
     user_id: invitedUser.user_id,
     status: invitedUser.status,
+    invite_email_sent: emailSent,
   };
 }
 

@@ -18,10 +18,13 @@ async function sendInvitationEmail({
   toEmail,
   activationUrl,
 }: InvitationEmail): Promise<void> {
-  // Integration tests run without AWS credentials — log the link instead of sending.
   if (Config.apiEnv === 'TEST') {
+    // Test seam: an RFC 2606 reserved-domain sentinel forces the failure path
+    // so the route's catch branch (Sentry capture, invite_email_sent: false) has integration coverage.
+    if (toEmail.endsWith('@mailer-fail.test')) {
+      throw new Error('TEST: forced mailer failure');
+    }
     console.info(`... Invitation email skipped (TEST) — ${toEmail}: ${activationUrl}`);
-
     return;
   }
 

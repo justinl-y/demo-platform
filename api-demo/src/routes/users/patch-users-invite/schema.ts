@@ -37,10 +37,16 @@ const response = {
         description: `User's changed status: 'INVITED'`,
         example: 'INVITED',
       },
+      invite_email_sent: {
+        type: 'boolean',
+        description: 'The sent status of the invite email',
+        example: true,
+      },
     },
     required: [
       'user_id',
       'status',
+      'invite_email_sent',
     ],
     additionalProperties: false,
   },

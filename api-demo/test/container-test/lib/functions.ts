@@ -30,12 +30,14 @@ type UserStatus = 'CREATED' | 'INVITED' | 'ACTIVE' | 'DEACTIVATED';
 
 async function createRandomUser({
   status = 'ACTIVE',
+  email: emailOverride,
 }: {
   status?: UserStatus;
+  email?: string;
 } = {}) {
   const firstName = removeSingleQuotes(faker.person.firstName());
   const lastName = removeSingleQuotes(faker.person.lastName());
-  const email = removeSingleQuotes(faker.internet.email({
+  const email = emailOverride ?? removeSingleQuotes(faker.internet.email({
     firstName,
     lastName,
   }).toLowerCase());
