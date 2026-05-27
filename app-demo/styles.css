@@ -162,7 +162,7 @@ body {
 
 .domain {
   font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: clamp(16px, 4.8vw, 44px);
+  font-size: clamp(13px, 4vw, 44px);
   font-weight: 500;
   line-height: 1.1;
   letter-spacing: -0.03em;
@@ -249,7 +249,7 @@ body {
 
 @media (max-width: 640px) {
   .card {
-    padding: 36px 28px 32px;
+    padding: 32px 20px 28px;
     border-radius: 20px;
   }
   .meta {

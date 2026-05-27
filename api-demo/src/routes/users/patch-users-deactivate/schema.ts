@@ -34,7 +34,7 @@ const response = {
       },
       status: {
         type: 'string',
-        description: `User's changes status: 'DEACTIVATED'`,
+        description: `User's changed status: 'DEACTIVATED'`,
         example: 'DEACTIVATED',
       },
     },

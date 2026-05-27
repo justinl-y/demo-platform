@@ -34,7 +34,7 @@ const response = {
       },
       status: {
         type: 'string',
-        description: `User's changes status: 'INVITED'`,
+        description: `User's changed status: 'INVITED'`,
         example: 'INVITED',
       },
     },
