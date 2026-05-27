@@ -17,6 +17,7 @@
     "paths": {
       "#utils/*": ["./src/utils/*.ts"],
       "#config/*": ["./src/config/*.ts"],
+      "#lib/database": ["./src/lib/database/index.ts"],
       "#lib/*": ["./src/lib/*.ts"],
       "#decorators/*": ["./src/decorators/*.ts"],
       "#repositories/*": ["./src/repositories/*.ts"],

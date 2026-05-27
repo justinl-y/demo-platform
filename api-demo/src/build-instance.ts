@@ -9,7 +9,7 @@ import {
 } from './hooks/index.ts';
 import {
   batchGetSecretValue,
-} from '#lib/secrets-manager';
+} from '#lib/api-secrets';
 import {
   Config,
 } from '#config/index';

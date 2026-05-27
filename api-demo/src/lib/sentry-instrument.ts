@@ -27,6 +27,7 @@ async function initSentry() {
 
   if (Config.apiEnv === 'TEST' || !sentryDsn) {
     console.info('... Sentry disabled');
+
     return;
   }
 
@@ -154,8 +155,20 @@ function processSentryError(
   }
 }
 
+function captureSentryException(err: unknown): void {
+  if (Config.apiEnv === 'TEST') return;
+
+  try {
+    Sentry.captureException(err);
+  }
+  catch {
+    // Sentry failure must not affect the caller
+  }
+}
+
 export {
   initSentry,
   setSentryUser,
   processSentryError,
+  captureSentryException,
 };

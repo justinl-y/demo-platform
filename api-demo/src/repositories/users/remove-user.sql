@@ -4,5 +4,5 @@ WHERE
   id = $userId!
   AND status = 'CREATED'
 RETURNING
-  id
+  id AS user_id
 ;

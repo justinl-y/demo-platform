@@ -1,6 +1,6 @@
 import type {
   SqlParams,
-} from '../types/database.ts';
+} from '../../types/database.ts';
 
 interface NumericQuery {
   sql: string;

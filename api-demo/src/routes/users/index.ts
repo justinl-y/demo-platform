@@ -1,5 +1,6 @@
 import {
-  HTTP_METHODS,
+  httpMethods,
+  postUsersActivateRoute,
 } from '#utils/constants';
 import {
   routePropertiesCore,
@@ -13,6 +14,9 @@ import postUsers from './post-users/index.ts';
 import putUsers from './put-users/index.ts';
 import patchUsersEmail from './patch-users-email/index.ts';
 import deleteUsers from './delete-users/index.ts';
+import postUsersActivate from './post-user-activate/index.ts';
+import patchUsersInvite from './patch-users-invite/index.ts';
+import deleteUsersInvite from './delete-users-invite/index.ts';
 import patchUsersDeactivate from './patch-users-deactivate/index.ts';
 
 import type {
@@ -26,7 +30,7 @@ const {
   DELETE,
   PATCH,
   PUT,
-} = HTTP_METHODS;
+} = httpMethods;
 
 const routes = {
   getUsers: routePropertiesCore(GET, '/users', getUsers as RouteHandlerMethod),
@@ -34,7 +38,9 @@ const routes = {
   putUsers: routePropertiesCore(PUT, '/users/:user_id', putUsers as RouteHandlerMethod),
   patchUsersEmail: routePropertiesCore(PATCH, '/users/:user_id/email', patchUsersEmail as RouteHandlerMethod),
   deleteUsers: routePropertiesCore(DELETE, '/users/:user_id', deleteUsers as RouteHandlerMethod),
-  // patchUsersInvite: routePropertiesCore(PATCH, '/users/:user_id/invite', patchUsersInvite as RouteHandlerMethod),
+  patchUsersInvite: routePropertiesCore(PATCH, '/users/:user_id/invite', patchUsersInvite as RouteHandlerMethod),
+  deleteUsersInvite: routePropertiesCore(DELETE, '/users/:user_id/invite', deleteUsersInvite as RouteHandlerMethod),
+  postUsersActivate: routePropertiesCore(POST, postUsersActivateRoute, postUsersActivate as RouteHandlerMethod),
   patchUsersDeactivate: routePropertiesCore(PATCH, '/users/:user_id/deactivate', patchUsersDeactivate as RouteHandlerMethod),
 };
 

@@ -3,6 +3,9 @@ import postUsers from './post-users/schema.ts';
 import putUsers from './put-users/schema.ts';
 import patchUsersEmail from './patch-users-email/schema.ts';
 import deleteUsers from './delete-users/schema.ts';
+import postUsersActivate from './post-user-activate/schema.ts';
+import patchUsersInvite from './patch-users-invite/schema.ts';
+import deleteUsersInvite from './delete-users-invite/schema.ts';
 import patchUsersDeactivate from './patch-users-deactivate/schema.ts';
 
 const schema = {
@@ -10,8 +13,11 @@ const schema = {
   postUsers,
   putUsers,
   patchUsersEmail,
-  patchUsersDeactivate,
   deleteUsers,
+  postUsersActivate,
+  patchUsersInvite,
+  deleteUsersInvite,
+  patchUsersDeactivate,
 };
 
 export default schema;

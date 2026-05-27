@@ -118,6 +118,12 @@ function randomAlphaNumeric(length: number = 30): string {
   return result.slice(0, length);
 }
 
+// Deterministic hash for single-use tokens (e.g. invitation tokens) so the hash
+// can be looked up by equality. Not for passwords — use bcrypt for those.
+function sha256Hex(value: string): string {
+  return crypto.createHash('sha256').update(value).digest('hex');
+}
+
 export {
   routePropertiesCore,
   routePropertiesOnRequest,
@@ -129,4 +135,5 @@ export {
   paginationCount,
   paginationPages,
   randomAlphaNumeric,
+  sha256Hex,
 };

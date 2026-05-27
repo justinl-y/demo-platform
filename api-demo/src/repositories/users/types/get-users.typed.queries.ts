@@ -29,7 +29,7 @@ export interface IUsersGetUsersQuery {
   result: IUsersGetUsersResult;
 }
 
-const usersGetUsersIR: any = {"usedParamSet":{"status":true,"userId":true,"limit":true,"offset":true},"params":[{"name":"status","required":false,"transform":{"type":"scalar"},"locs":[{"a":245,"b":251}]},{"name":"userId","required":false,"transform":{"type":"scalar"},"locs":[{"a":285,"b":291}]},{"name":"limit","required":true,"transform":{"type":"scalar"},"locs":[{"a":372,"b":378}]},{"name":"offset","required":true,"transform":{"type":"scalar"},"locs":[{"a":390,"b":397}]}],"statement":"                                                             \nWITH t_users AS (\n\tSELECT\n\t  u.id\n\t  , u.email\n\t  , u.full_name\n\t  , u.known_as\n\t\t, u.status\n\t\t, COUNT(*) OVER () AS total\n\tFROM\n\t  public.users AS u\n\tWHERE\n\t\tCOALESCE(u.status = ANY(:status), TRUE)\n\t  AND COALESCE((u.id = :userId), TRUE)\n\tORDER BY\n\t\tsplit_part(u.full_name, ' ', -1) ASC\n\t\t, u.id ASC\n\tLIMIT\n\t\t:limit!\n\tOFFSET\n\t\t:offset!\n)\nSELECT\n\tjson_object_agg(\n\t\ttu.id\n\t\t,json_build_object(\n\t\t\t'email', tu.email\n\t\t\t, 'full_name', tu.full_name\n\t\t\t, 'known_as', tu.known_as\n\t\t\t, 'status', tu.status\n\t\t)\n\t) AS users\n\t, COALESCE(MAX(tu.total), 0)::int AS total\nFROM\n\tt_users AS tu"};
+const usersGetUsersIR: any = {"usedParamSet":{"status":true,"userId":true,"limit":true,"offset":true},"params":[{"name":"status","required":false,"transform":{"type":"scalar"},"locs":[{"a":256,"b":262}]},{"name":"userId","required":false,"transform":{"type":"scalar"},"locs":[{"a":296,"b":302}]},{"name":"limit","required":true,"transform":{"type":"scalar"},"locs":[{"a":383,"b":389}]},{"name":"offset","required":true,"transform":{"type":"scalar"},"locs":[{"a":401,"b":408}]}],"statement":"                                                             \nWITH t_users AS (\n\tSELECT\n\t  u.id AS user_id\n\t  , u.email\n\t  , u.full_name\n\t  , u.known_as\n\t\t, u.status\n\t\t, COUNT(*) OVER () AS total\n\tFROM\n\t  public.users AS u\n\tWHERE\n\t\tCOALESCE(u.status = ANY(:status), TRUE)\n\t  AND COALESCE((u.id = :userId), TRUE)\n\tORDER BY\n\t\tsplit_part(u.full_name, ' ', -1) ASC\n\t\t, u.id ASC\n\tLIMIT\n\t\t:limit!\n\tOFFSET\n\t\t:offset!\n)\nSELECT\n\tjson_object_agg(\n\t\ttu.user_id\n\t\t,json_build_object(\n\t\t\t'email', tu.email\n\t\t\t, 'full_name', tu.full_name\n\t\t\t, 'known_as', tu.known_as\n\t\t\t, 'status', tu.status\n\t\t)\n\t) AS users\n\t, COALESCE(MAX(tu.total), 0)::int AS total\nFROM\n\tt_users AS tu"};
 
 /**
  * Query generated from SQL:
@@ -37,7 +37,7 @@ const usersGetUsersIR: any = {"usedParamSet":{"status":true,"userId":true,"limit
  *                                                              
  * WITH t_users AS (
  * 	SELECT
- * 	  u.id
+ * 	  u.id AS user_id
  * 	  , u.email
  * 	  , u.full_name
  * 	  , u.known_as
@@ -58,7 +58,7 @@ const usersGetUsersIR: any = {"usedParamSet":{"status":true,"userId":true,"limit
  * )
  * SELECT
  * 	json_object_agg(
- * 		tu.id
+ * 		tu.user_id
  * 		,json_build_object(
  * 			'email', tu.email
  * 			, 'full_name', tu.full_name

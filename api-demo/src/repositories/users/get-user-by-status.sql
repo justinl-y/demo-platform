@@ -1,8 +1,8 @@
 SELECT
-  u.id
+  u.id AS user_id
 FROM
   public.users AS u
 WHERE
   u.id = $userId!
-  AND u.status = $status!
+  AND u.status = ANY($status!)
 ;

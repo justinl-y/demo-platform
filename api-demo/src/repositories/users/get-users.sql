@@ -1,6 +1,6 @@
 WITH t_users AS (
 	SELECT
-	  u.id
+	  u.id AS user_id
 	  , u.email
 	  , u.full_name
 	  , u.known_as
@@ -21,7 +21,7 @@ WITH t_users AS (
 )
 SELECT
 	json_object_agg(
-		tu.id
+		tu.user_id
 		,json_build_object(
 			'email', tu.email
 			, 'full_name', tu.full_name

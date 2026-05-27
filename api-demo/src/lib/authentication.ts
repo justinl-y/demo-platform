@@ -33,9 +33,9 @@ class AuthUtils {
   @SetWithSpan()
   static async bcryptHash(secret: string): Promise<string> {
     const {
-      saltWorkFactor,
+      encryptSaltWorkFactor,
     } = Config.authConfig();
-    const salt = await bcrypt.genSalt(saltWorkFactor);
+    const salt = await bcrypt.genSalt(encryptSaltWorkFactor);
     return bcrypt.hash(secret, salt);
   }
 

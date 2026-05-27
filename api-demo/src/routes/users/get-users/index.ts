@@ -36,7 +36,9 @@ async function getUsers(this: FastifyInstance, request: FastifyRequest<Request>,
 
   const result = await getUsersService(this.repositories.users, getUsersParams);
 
-  return reply.send(result);
+  return reply
+    .send(result)
+  ;
 }
 
 export default getUsers;

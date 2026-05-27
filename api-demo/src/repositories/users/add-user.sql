@@ -11,7 +11,7 @@ VALUES
 		, $knownAs
 	)
 RETURNING
-	id
+	id AS user_id
 	, email
 	, full_name
 	, known_as

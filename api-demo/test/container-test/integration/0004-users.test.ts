@@ -6,12 +6,14 @@ import {
 } from 'vitest';
 import _ from 'lodash';
 import { faker } from '@faker-js/faker/locale/en';
+import bcrypt from 'bcryptjs';
 
 import { query } from '../lib/db.ts';
-import { authAPI } from '../lib/api.ts';
+import { authAPI, noAuthAPI } from '../lib/api.ts';
 import {
   createRandomUser,
   getFileNumber,
+  sha256Hex,
 } from '../lib/functions.ts';
 
 import type Supertest from 'supertest';
@@ -366,7 +368,7 @@ describe(`${fileNumber} - Users`, () => {
 
     describe('Request Success', () => {
       interface DbUser {
-        id: string;
+        user_id: string;
         email: string;
         full_name: string;
         known_as: string | null;
@@ -381,7 +383,7 @@ describe(`${fileNumber} - Users`, () => {
         rep = await getResponse(validRequestBody);
 
         const getUserByIdSql = `SELECT
-          u.id
+          u.id AS user_id
           , u.email
           , u.full_name
           , u.known_as
@@ -390,7 +392,7 @@ describe(`${fileNumber} - Users`, () => {
           public.users AS u
         WHERE
           u.id = $1;`;
-        const [result] = await query<DbUser>(getUserByIdSql, [rep.body.id]);
+        const [result] = await query<DbUser>(getUserByIdSql, [rep.body.user_id]);
 
         dbUser = result;
 
@@ -404,15 +406,15 @@ describe(`${fileNumber} - Users`, () => {
       });
 
       test('Response body has correct shape', () => {
-        expect(responseBody).toHaveProperty('id');
+        expect(responseBody).toHaveProperty('user_id');
         expect(responseBody).toHaveProperty('email');
         expect(responseBody).toHaveProperty('full_name');
         expect(responseBody).toHaveProperty('known_as');
         expect(responseBody).toHaveProperty('status');
       });
 
-      test('Response "id" is a UUID', () => {
-        expect(responseBody.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+      test('Response "user_id" is a UUID', () => {
+        expect(responseBody.user_id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
       });
 
       test('Response "email" matches request', () => {
@@ -455,7 +457,7 @@ describe(`${fileNumber} - Users`, () => {
           public.users AS u
         WHERE
           u.id = $1;`;
-        const [dbUser] = await query<{ email: string }>(getUserByIdSql, [res.body.id]);
+        const [dbUser] = await query<{ email: string }>(getUserByIdSql, [res.body.user_id]);
 
         expect(dbUser.email).toBe(baseEmail);
       });
@@ -584,7 +586,7 @@ describe(`${fileNumber} - Users`, () => {
 
     describe('Request Success', () => {
       interface DbUser {
-        id: string;
+        user_id: string;
         full_name: string;
         known_as: string | null;
       }
@@ -597,7 +599,7 @@ describe(`${fileNumber} - Users`, () => {
         rep = await getResponse(validUserId, validRequestBody);
 
         const getUserSql = `SELECT
-          u.id
+          u.id AS user_id
           , u.full_name
           , u.known_as
         FROM
@@ -617,13 +619,13 @@ describe(`${fileNumber} - Users`, () => {
       });
 
       test('Response body has correct shape', () => {
-        expect(responseBody).toHaveProperty('id');
+        expect(responseBody).toHaveProperty('user_id');
         expect(responseBody).toHaveProperty('full_name');
         expect(responseBody).toHaveProperty('known_as');
       });
 
-      test('Response "id" matches the user', () => {
-        expect(responseBody.id).toBe(validUserId);
+      test('Response "user_id" matches the user', () => {
+        expect(responseBody.user_id).toBe(validUserId);
       });
 
       test('Response "full_name" matches request', () => {
@@ -775,7 +777,7 @@ describe(`${fileNumber} - Users`, () => {
 
     describe('Request Success', () => {
       interface DbUser {
-        id: string;
+        user_id: string;
         email: string;
       }
 
@@ -792,7 +794,7 @@ describe(`${fileNumber} - Users`, () => {
         rep = await getResponse(targetUserId, validRequestBody);
 
         const getUserSql = `SELECT
-          u.id
+          u.id AS user_id
           , u.email
         FROM
           public.users AS u
@@ -811,12 +813,12 @@ describe(`${fileNumber} - Users`, () => {
       });
 
       test('Response body has correct shape', () => {
-        expect(responseBody).toHaveProperty('id');
+        expect(responseBody).toHaveProperty('user_id');
         expect(responseBody).toHaveProperty('email');
       });
 
-      test('Response "id" matches the user', () => {
-        expect(responseBody.id).toBe(targetUserId);
+      test('Response "user_id" matches the user', () => {
+        expect(responseBody.user_id).toBe(targetUserId);
       });
 
       test('Response "email" matches request', () => {
@@ -953,6 +955,564 @@ describe(`${fileNumber} - Users`, () => {
     });
   });
 
+  describe('PATCH /users/:user_id/invite', () => {
+    const getResponse = (userId: string) => authAPI.patch(`/users/${userId}/invite`);
+
+    describe('Request Failure', () => {
+      test('Non-UUID "user_id" returns 400', async () => {
+        const res = await getResponse('not-a-uuid');
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('params/user_id must match format "uuid"');
+      });
+
+      test('Integer "user_id" returns 400', async () => {
+        const res = await getResponse('12345');
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('params/user_id must match format "uuid"');
+      });
+
+      test('Unknown UUID returns 400', async () => {
+        const unknownUuid = '00000000-0000-0000-0000-000000000000';
+
+        const res = await getResponse(unknownUuid);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid user id or user status');
+      });
+
+      test('User with ACTIVE status returns 400', async () => {
+        const {
+          userId,
+        } = await createRandomUser({ status: 'ACTIVE' });
+
+        const res = await getResponse(userId);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid user id or user status');
+      });
+    });
+
+    describe('Request Success', () => {
+      interface DbInvite {
+        status: string;
+        invite_token_hash: string | null;
+        invite_token_expiry_at: Date | null;
+        invite_email_sent_at: Date | null;
+      }
+
+      const getInviteSql = `SELECT
+        u.status
+        , a.invite_token_hash
+        , a.invite_token_expiry_at
+        , a.invite_email_sent_at
+      FROM
+        public.users AS u
+        INNER JOIN public.users_authentication AS a ON a.user_id = u.id
+      WHERE
+        u.id = $1;`;
+
+      let createdUserId: string;
+      let rep: Supertest.Response;
+      let dbInvite: DbInvite;
+
+      beforeAll(async () => {
+        ({
+          userId: createdUserId,
+        } = await createRandomUser({ status: 'CREATED' }));
+
+        rep = await getResponse(createdUserId);
+
+        const [result] = await query<DbInvite>(getInviteSql, [createdUserId]);
+        dbInvite = result;
+      });
+
+      test('Success response returns 200', () => {
+        expect(rep.statusCode).toBe(200);
+      });
+
+      test('Response body has correct shape', () => {
+        expect(rep.body).toHaveProperty('user_id');
+        expect(rep.body).toHaveProperty('status');
+        expect(rep.body).toHaveProperty('invite_email_sent');
+      });
+
+      test('Response "user_id" matches the user', () => {
+        expect(rep.body.user_id).toBe(createdUserId);
+      });
+
+      test('Response "status" is "INVITED"', () => {
+        expect(rep.body.status).toBe('INVITED');
+      });
+
+      test('User status is INVITED in the database', () => {
+        expect(dbInvite.status).toBe('INVITED');
+      });
+
+      test('Response "invite_email_sent" is true', () => {
+        expect(rep.body.invite_email_sent).toBe(true);
+      });
+
+      test('Email "invite_email_sent_at" is persisted in the database', () => {
+        expect(dbInvite.invite_email_sent_at).not.toBeNull();
+      });
+
+      test('Invite token hash is persisted as a SHA-256 hex digest', () => {
+        expect(dbInvite.invite_token_hash).toMatch(/^[0-9a-f]{64}$/);
+      });
+
+      test('Invite token expiry is set roughly seven days ahead', () => {
+        expect(dbInvite.invite_token_expiry_at).not.toBeNull();
+
+        const expiryDays = (new Date(dbInvite.invite_token_expiry_at as Date).getTime() - Date.now())
+          / (1000 * 60 * 60 * 24);
+
+        expect(expiryDays).toBeGreaterThan(6.5);
+        expect(expiryDays).toBeLessThan(7.5);
+      });
+
+      test('Re-inviting an INVITED user returns 200 and rotates the token', async () => {
+        const tokenSql = `SELECT
+          a.invite_token_hash
+        FROM
+          public.users_authentication AS a
+        WHERE
+          a.user_id = $1;`;
+        const [before] = await query<{ invite_token_hash: string }>(tokenSql, [createdUserId]);
+
+        const res = await getResponse(createdUserId);
+        const [after] = await query<{ invite_token_hash: string }>(tokenSql, [createdUserId]);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.status).toBe('INVITED');
+        expect(after.invite_token_hash).not.toBe(before.invite_token_hash);
+      });
+
+      test('Inviting a DEACTIVATED user returns 200', async () => {
+        const {
+          userId,
+        } = await createRandomUser({ status: 'DEACTIVATED' });
+
+        const res = await getResponse(userId);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.status).toBe('INVITED');
+      });
+    });
+
+    describe('Email delivery failure', () => {
+      interface DbInvite {
+        invite_token_hash: string | null;
+        invite_token_expiry_at: Date | null;
+        invite_email_sent_at: Date | null;
+      }
+
+      const getInviteSql = `SELECT
+        a.invite_token_hash
+        , a.invite_token_expiry_at
+        , a.invite_email_sent_at
+      FROM
+        public.users_authentication AS a
+      WHERE
+        a.user_id = $1;`;
+
+      let failUserId: string;
+      let rep: Supertest.Response;
+      let dbInvite: DbInvite;
+
+      // The mailer test seam in src/lib/mailer.ts throws on this sentinel domain (RFC 2606 .test TLD).
+      const failEmail = `fail-${faker.string.alphanumeric(10).toLowerCase()}@mailer-fail.test`;
+
+      beforeAll(async () => {
+        ({
+          userId: failUserId,
+        } = await createRandomUser({
+          status: 'CREATED',
+          email: failEmail,
+        }));
+
+        rep = await getResponse(failUserId);
+
+        const [result] = await query<DbInvite>(getInviteSql, [failUserId]);
+        dbInvite = result;
+      });
+
+      test('Response returns 200 even when the email delivery fails', () => {
+        expect(rep.statusCode).toBe(200);
+      });
+
+      test('Response "status" is still "INVITED"', () => {
+        expect(rep.body.status).toBe('INVITED');
+      });
+
+      test('Response "invite_email_sent" is false', () => {
+        expect(rep.body.invite_email_sent).toBe(false);
+      });
+
+      test('Invitation row is still persisted on email failure', () => {
+        expect(dbInvite.invite_token_hash).toMatch(/^[0-9a-f]{64}$/);
+        expect(dbInvite.invite_token_expiry_at).not.toBeNull();
+      });
+
+      test('Database "invite_email_sent_at" remains NULL on failure', () => {
+        expect(dbInvite.invite_email_sent_at).toBeNull();
+      });
+    });
+  });
+
+  describe('DELETE /users/:user_id/invite', () => {
+    const cancelInvite = (userId: string) => authAPI.del(`/users/${userId}/invite`);
+
+    describe('Request Failure', () => {
+      test('Non-UUID "user_id" returns 400', async () => {
+        const res = await cancelInvite('not-a-uuid');
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('params/user_id must match format "uuid"');
+      });
+
+      test('Integer "user_id" returns 400', async () => {
+        const res = await cancelInvite('12345');
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('params/user_id must match format "uuid"');
+      });
+
+      test('Unknown UUID returns 400', async () => {
+        const unknownUuid = '00000000-0000-0000-0000-000000000000';
+
+        const res = await cancelInvite(unknownUuid);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid user id or user status');
+      });
+
+      test('User with CREATED status returns 400', async () => {
+        const {
+          userId,
+        } = await createRandomUser({ status: 'CREATED' });
+
+        const res = await cancelInvite(userId);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid user id or user status');
+      });
+
+      test('User with ACTIVE status returns 400', async () => {
+        const {
+          userId,
+        } = await createRandomUser({ status: 'ACTIVE' });
+
+        const res = await cancelInvite(userId);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid user id or user status');
+      });
+
+      test('User with DEACTIVATED status returns 400', async () => {
+        const {
+          userId,
+        } = await createRandomUser({ status: 'DEACTIVATED' });
+
+        const res = await cancelInvite(userId);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid user id or user status');
+      });
+    });
+
+    describe('Request Success', () => {
+      interface DbInvite {
+        status: string;
+        invite_token_hash: string | null;
+        invite_token_expiry_at: Date | null;
+        invite_email_sent_at: Date | null;
+      }
+
+      const getInviteSql = `SELECT
+        u.status
+        , a.invite_token_hash
+        , a.invite_token_expiry_at
+        , a.invite_email_sent_at
+      FROM
+        public.users AS u
+        INNER JOIN public.users_authentication AS a ON a.user_id = u.id
+      WHERE
+        u.id = $1;`;
+
+      let invitedUserId: string;
+      let rep: Supertest.Response;
+      let dbInvite: DbInvite;
+
+      beforeAll(async () => {
+        ({
+          userId: invitedUserId,
+        } = await createRandomUser({ status: 'INVITED' }));
+
+        // Seed the auth row so the "field was cleared" assertions are meaningful
+        // (NULL → NULL would otherwise pass trivially). Values are arbitrary —
+        // the cancel SQL doesn't validate them, only nulls them.
+        const seedAuthSql = `UPDATE
+          public.users_authentication
+        SET
+          invite_token_hash = $1
+          , invite_token_expiry_at = $2
+          , invite_email_sent_at = $3
+        WHERE
+          user_id = $4
+        ;`;
+
+        await query(seedAuthSql, [
+          sha256Hex('seeded-token'),
+          new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          new Date(),
+          invitedUserId,
+        ]);
+
+        rep = await cancelInvite(invitedUserId);
+
+        const [result] = await query<DbInvite>(getInviteSql, [invitedUserId]);
+        dbInvite = result;
+      });
+
+      test('Success response returns 200', () => {
+        expect(rep.statusCode).toBe(200);
+      });
+
+      test('Response body has correct shape', () => {
+        expect(rep.body).toHaveProperty('user_id');
+        expect(rep.body).toHaveProperty('status');
+      });
+
+      test('Response "user_id" matches the user', () => {
+        expect(rep.body.user_id).toBe(invitedUserId);
+      });
+
+      test('Response "status" is "CREATED"', () => {
+        expect(rep.body.status).toBe('CREATED');
+      });
+
+      test('User status is CREATED in the database', () => {
+        expect(dbInvite.status).toBe('CREATED');
+      });
+
+      test('Invite token hash is cleared in the database', () => {
+        expect(dbInvite.invite_token_hash).toBeNull();
+      });
+
+      test('Invite token expiry is cleared in the database', () => {
+        expect(dbInvite.invite_token_expiry_at).toBeNull();
+      });
+
+      test('Invite email-sent timestamp is cleared in the database', () => {
+        expect(dbInvite.invite_email_sent_at).toBeNull();
+      });
+    });
+  });
+
+  describe('POST /users/activate', () => {
+    const getResponse = (body: RequestBody) => noAuthAPI.post('/users/activate', body);
+
+    const validPassword = 'TestPass123!@#abc';
+
+    // Seed an INVITED user with a known token hash + expiry. Activation tokens
+    // are only ever known to the email recipient in production, so an integration
+    // test seeds the persisted hash directly to drive the activate endpoint.
+    async function seedInvitedUserWithToken({
+      rawToken,
+      expiresAt,
+    }: {
+      rawToken: string;
+      expiresAt?: Date;
+    }) {
+      const {
+        userId,
+      } = await createRandomUser({ status: 'INVITED' });
+
+      const inviteTokenHash = sha256Hex(rawToken);
+      const inviteExpiresAt = expiresAt ?? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+      const updateUsersAuthenticationSql = `UPDATE
+        public.users_authentication
+      SET
+        invite_token_hash = $1
+        , invite_token_expiry_at = $2
+      WHERE
+        user_id = $3
+      ;`;
+
+      await query(updateUsersAuthenticationSql, [inviteTokenHash, inviteExpiresAt, userId]);
+
+      return { userId };
+    }
+
+    describe('Request Failure', () => {
+      test('Absent required body "token" returns 400', async () => {
+        const res = await getResponse({ password: validPassword });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe(`body must have required property 'token'`);
+      });
+
+      test('Absent required body "password" returns 400', async () => {
+        const res = await getResponse({ token: 'some-token' });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe(`body must have required property 'password'`);
+      });
+
+      test('Invalid type body "token" returns 400', async () => {
+        const res = await getResponse({
+          token: 1234,
+          password: validPassword,
+        } as unknown as RequestBody);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('body/token must be string');
+      });
+
+      test('Invalid type body "password" returns 400', async () => {
+        const res = await getResponse({
+          token: 'some-token',
+          password: 1234,
+        } as unknown as RequestBody);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('body/password must be string');
+      });
+
+      test('Password shorter than the minimum returns 400', async () => {
+        const res = await getResponse({
+          token: 'some-token',
+          password: 'short',
+        });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('body/password must NOT have fewer than 10 characters');
+      });
+
+      test('Password longer than the maximum returns 400', async () => {
+        const res = await getResponse({
+          token: 'some-token',
+          password: 'a'.repeat(41),
+        });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('body/password must NOT have more than 40 characters');
+      });
+
+      test('Unknown token returns 400', async () => {
+        const res = await getResponse({
+          token: 'never-issued-token',
+          password: validPassword,
+        });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid or expired invitation');
+      });
+
+      test('Expired token returns 400', async () => {
+        const rawToken = `expired-${faker.string.alphanumeric(20)}`;
+        await seedInvitedUserWithToken({
+          rawToken,
+          expiresAt: new Date(Date.now() - 1000),
+        });
+
+        const res = await getResponse({
+          token: rawToken,
+          password: validPassword,
+        });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid or expired invitation');
+      });
+
+      test('Already-used token returns 400 on the second activation', async () => {
+        const rawToken = `used-${faker.string.alphanumeric(20)}`;
+        await seedInvitedUserWithToken({ rawToken });
+
+        const first = await getResponse({
+          token: rawToken,
+          password: validPassword,
+        });
+        const second = await getResponse({
+          token: rawToken,
+          password: validPassword,
+        });
+
+        expect(first.statusCode).toBe(204);
+        expect(second.statusCode).toBe(400);
+        expect(second.body.message).toBe('Invalid or expired invitation');
+      });
+    });
+
+    describe('Request Success', () => {
+      interface DbActivated {
+        status: string;
+        password_hash: string | null;
+        invite_token_hash: string | null;
+        invite_token_expiry_at: Date | null;
+      }
+
+      const getActivatedSql = `SELECT
+        u.status
+        , a.password_hash
+        , a.invite_token_hash
+        , a.invite_token_expiry_at
+      FROM
+        public.users AS u
+        INNER JOIN public.users_authentication AS a ON a.user_id = u.id
+      WHERE
+        u.id = $1;`;
+
+      let activatedUserId: string;
+      let rawToken: string;
+      let rep: Supertest.Response;
+      let dbActivated: DbActivated;
+
+      beforeAll(async () => {
+        rawToken = `valid-${faker.string.alphanumeric(20)}`;
+        ({
+          userId: activatedUserId,
+        } = await seedInvitedUserWithToken({ rawToken }));
+
+        rep = await getResponse({
+          token: rawToken,
+          password: validPassword,
+        });
+
+        const [result] = await query<DbActivated>(getActivatedSql, [activatedUserId]);
+        dbActivated = result;
+      });
+
+      test('Success response returns 204', () => {
+        expect(rep.statusCode).toBe(204);
+      });
+
+      test('Response body is empty', () => {
+        expect(rep.body).toEqual({});
+      });
+
+      test('User status is ACTIVE in the database', () => {
+        expect(dbActivated.status).toBe('ACTIVE');
+      });
+
+      test('Password is persisted as a bcrypt hash of the supplied password', async () => {
+        expect(dbActivated.password_hash).not.toBeNull();
+        expect(await bcrypt.compare(validPassword, dbActivated.password_hash as string)).toBe(true);
+      });
+
+      test('Invite token hash is cleared in the database', () => {
+        expect(dbActivated.invite_token_hash).toBeNull();
+      });
+
+      test('Invite token expiry is cleared in the database', () => {
+        expect(dbActivated.invite_token_expiry_at).toBeNull();
+      });
+    });
+  });
+
   describe('PATCH /users/:user_id/deactivate', () => {
     const getResponse = (userId: string) => authAPI.patch(`/users/${userId}/deactivate`);
 
@@ -1063,12 +1623,21 @@ describe(`${fileNumber} - Users`, () => {
         dbUser = result;
       });
 
-      test('Success response returns 204', () => {
-        expect(rep.statusCode).toBe(204);
+      test('Success response returns 200', () => {
+        expect(rep.statusCode).toBe(200);
       });
 
-      test('Response body is empty', () => {
-        expect(rep.body).toEqual({});
+      test('Response body has correct shape', () => {
+        expect(rep.body).toHaveProperty('user_id');
+        expect(rep.body).toHaveProperty('status');
+      });
+
+      test('Response "user_id" matches the user', () => {
+        expect(rep.body.user_id).toBe(activeUserId);
+      });
+
+      test('Response "status" is "DEACTIVATED"', () => {
+        expect(rep.body.status).toBe('DEACTIVATED');
       });
 
       test('User status is DEACTIVATED in the database', () => {

@@ -1,5 +1,5 @@
 import {
-  HTTP_METHODS,
+  httpMethods,
 } from '#utils/constants';
 import {
   routePropertiesCore,
@@ -12,7 +12,7 @@ import type { FastifyInstance } from 'fastify';
 
 const {
   GET,
-} = HTTP_METHODS;
+} = httpMethods;
 
 const routes = {
   getHealthDB: routePropertiesCore(GET, '/health_db', getHealthDB),

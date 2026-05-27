@@ -56,43 +56,32 @@ const serverConfig = {
   host: '0.0.0.0',
 } as const;
 
-const userConfig = {
-  allowedCountries: [
-    'UNITED STATES',
-    'CANADA',
-  ],
-  password: {
-    passLength: 8,
-    saltWorkFactor: 10,
-    expirationTime: '30d',
-  },
-  phoneLength: 10,
-  resetPassword: {
-    randomBytesLength: 20,
-    expirationTime: '28d',
-  },
-  zipCodeLength: 5,
-} as const;
+// Base URL of the frontend app — used to build the activation link in invitation emails.
+let appBaseUrl: string;
 
 if (apiEnv === 'PROD') {
+  appBaseUrl = 'https://demo.discovered-check.ca';
   corsConfig.origin = [
-    'https://demo.discovered-check.ca',
+    appBaseUrl,
   ];
 }
 else if (apiEnv === 'STAGE') {
+  appBaseUrl = 'https://demo-stage.discovered-check.ca';
   corsConfig.origin = [
-    'https://demo-stage.discovered-check.ca',
+    appBaseUrl,
   ];
 }
 else {
+  appBaseUrl = 'http://localhost:3000';
   corsConfig.origin = [
-    'http://localhost:3000',
+    appBaseUrl,
   ];
 }
 
 export {
   apiEnv,
   apiResourceEnv,
+  appBaseUrl,
   compressConfig,
   corsConfig,
   externalPort,
@@ -100,5 +89,4 @@ export {
   liveEnvironments,
   rateLimitConfig,
   serverConfig,
-  userConfig,
 };

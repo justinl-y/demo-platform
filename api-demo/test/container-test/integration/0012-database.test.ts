@@ -15,20 +15,20 @@ vi.mock('#lib/logger', () => ({
   }),
 }));
 
-vi.mock('#lib/database-sql-loader', () => ({
+vi.mock('#lib/database/sql-loader', () => ({
   getSqlBlob: vi.fn(),
 }));
 
-vi.mock('#lib/database-pg-client', () => ({
+vi.mock('#lib/database/pg-client', () => ({
   pgConnect: vi.fn(),
 }));
 
-vi.mock('#lib/database-errors', () => ({
+vi.mock('#lib/database/errors', () => ({
   getErrorDetails: vi.fn(),
   errorsToHandle: vi.fn(),
 }));
 
-vi.mock('#lib/database-transaction-instruction-flattener', () => ({
+vi.mock('#lib/database/transaction-instruction-flattener', () => ({
   flattenInstruction: vi.fn(),
 }));
 
@@ -38,17 +38,17 @@ import {
 } from '#lib/database';
 import {
   getSqlBlob,
-} from '#lib/database-sql-loader';
+} from '#lib/database/sql-loader';
 import {
   pgConnect,
-} from '#lib/database-pg-client';
+} from '#lib/database/pg-client';
 import {
   errorsToHandle,
   getErrorDetails,
-} from '#lib/database-errors';
+} from '#lib/database/errors';
 import {
   flattenInstruction,
-} from '#lib/database-transaction-instruction-flattener';
+} from '#lib/database/transaction-instruction-flattener';
 
 describe('0012 - database', () => {
   const getSqlBlobMock = vi.mocked(getSqlBlob);

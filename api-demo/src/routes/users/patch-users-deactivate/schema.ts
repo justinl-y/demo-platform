@@ -23,8 +23,26 @@ const params = {
 };
 
 const response = {
-  204: {
-    type: 'null',
+  200: {
+    type: 'object',
+    properties: {
+      user_id: {
+        type: 'string',
+        format: 'uuid',
+        description: 'User\'s id',
+        example: '7acd58cc-4ae5-4046-9037-383a057e4970',
+      },
+      status: {
+        type: 'string',
+        description: `User's changed status: 'DEACTIVATED'`,
+        example: 'DEACTIVATED',
+      },
+    },
+    required: [
+      'user_id',
+      'status',
+    ],
+    additionalProperties: false,
   },
 };
 

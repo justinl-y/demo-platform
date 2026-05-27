@@ -1,4 +1,4 @@
-import { pgPatch } from './database-pg-named.ts';
+import { pgPatch } from './pg-named.ts';
 
 import type {
   Pool,
@@ -7,7 +7,7 @@ import type {
 import type {
   QueryRow,
   SqlParams,
-} from '../types/database.ts';
+} from '../../types/database.ts';
 
 type PatchedPgClient = Omit<PoolClient, 'query'> & {
   query: (queryText: string, values?: SqlParams) => Promise<{

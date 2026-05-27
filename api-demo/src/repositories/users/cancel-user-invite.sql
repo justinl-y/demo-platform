@@ -1,0 +1,26 @@
+WITH t_cancelled AS (
+  UPDATE
+    public.users AS u
+  SET
+    invited_at = NULL
+  WHERE
+    u.id = $userId!
+    AND u.status = 'INVITED'
+  RETURNING
+    u.id
+    , u.status
+)
+UPDATE
+  public.users_authentication AS a
+SET
+  invite_token_hash = NULL
+  , invite_token_expiry_at = NULL
+  , invite_email_sent_at = NULL
+FROM
+  t_cancelled
+WHERE
+  a.user_id = t_cancelled.id
+RETURNING
+  a.user_id
+  , t_cancelled.status AS status
+;

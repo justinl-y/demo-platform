@@ -8,6 +8,7 @@ WITH deactivated AS (
     AND status = 'ACTIVE'
   RETURNING
     id
+    , status
 )
 UPDATE
   public.users_authentication AS a
@@ -19,5 +20,6 @@ FROM
 WHERE
   a.user_id = d.id
 RETURNING
-  a.user_id AS id
+  a.user_id
+  , d.status
 ;

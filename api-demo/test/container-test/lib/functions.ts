@@ -9,7 +9,7 @@ import type Supertest from 'supertest';
 
 type TokenType = 'access' | 'refresh';
 
-// Must match AUTH_SECRET in src/lib/secrets-manager.ts (TEST env initializer)
+// Must match AUTH_SECRET in src/lib/api-secrets.ts (TEST env initializer)
 const TEST_JWT_SECRET = '7EK4IwwNr0bPre30jAzLztWfQiIwhP8m';
 
 const TOKEN_EXPIRY_SECONDS = {
@@ -30,12 +30,14 @@ type UserStatus = 'CREATED' | 'INVITED' | 'ACTIVE' | 'DEACTIVATED';
 
 async function createRandomUser({
   status = 'ACTIVE',
+  email: emailOverride,
 }: {
   status?: UserStatus;
+  email?: string;
 } = {}) {
   const firstName = removeSingleQuotes(faker.person.firstName());
   const lastName = removeSingleQuotes(faker.person.lastName());
-  const email = removeSingleQuotes(faker.internet.email({
+  const email = emailOverride ?? removeSingleQuotes(faker.internet.email({
     firstName,
     lastName,
   }).toLowerCase());
@@ -66,6 +68,10 @@ function toBase64Url(input: string | Buffer): string {
   return Buffer.isBuffer(input)
     ? input.toString('base64url')
     : Buffer.from(input).toString('base64url');
+}
+
+function sha256Hex(value: string): string {
+  return crypto.createHash('sha256').update(value).digest('hex');
 }
 
 function getFileNumber(relativePath: string) {
@@ -108,4 +114,5 @@ export {
   generateTestCookie,
   getFileNumber,
   setCookies,
+  sha256Hex,
 };

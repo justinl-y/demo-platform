@@ -2,14 +2,17 @@ import type {
   QueryRow,
   TransactionInstruction,
   TransactionResult,
-} from '../types/database.ts';
+} from '../../types/database.ts';
 
 type ExecFn = (instructions: TransactionInstruction[], dryRun?: boolean) => Promise<TransactionResult>;
 
 class TransactionBuilder<TResults extends object[][] = []> {
   private readonly instructions: TransactionInstruction[] = [];
+  private readonly exec: ExecFn;
 
-  constructor(private readonly exec: ExecFn) {}
+  constructor(exec: ExecFn) {
+    this.exec = exec;
+  }
 
   add<TRow extends object = QueryRow>(instruction: TransactionInstruction): TransactionBuilder<[...TResults, TRow[]]> {
     // Keep instruction order so execute() returns result groups in the same sequence.

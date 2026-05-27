@@ -1,12 +1,16 @@
 import {
-  SecretsManagerClient,
-  BatchGetSecretValueCommand,
-  type BatchGetSecretValueCommandInput,
-  type SecretValueEntry,
-} from '@aws-sdk/client-secrets-manager';
-import {
   Config,
 } from '#config/index';
+
+import {
+  getSecretsManagerClient,
+  BatchGetSecretValueCommand,
+} from './aws/secrets-manager.ts';
+
+import type {
+  BatchGetSecretValueCommandInput,
+  SecretValueEntry,
+} from './aws/secrets-manager.ts';
 
 // initialized with values for env test
 const secretValues = {
@@ -42,10 +46,11 @@ async function batchGetSecretValue() {
 
     if (!Config.apiEnv) {
       console.info('Secrets fetch failed: API_ENV is not set');
+
       return;
     }
 
-    const secretsManagerClient = new SecretsManagerClient(Config.awsConfig);
+    const secretsManagerClient = getSecretsManagerClient();
 
     let envKey: string;
 
