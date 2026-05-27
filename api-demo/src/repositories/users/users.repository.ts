@@ -133,12 +133,14 @@ function createUsersRepository(db: DatabaseDecorator) {
 
     updateUserInviteEmailSent: async ({
       userId,
+      inviteTokenHash,
     }: IUsersSetUserInviteEmailSentParams): Promise<{ user: IUsersSetUserInviteEmailSentResult | undefined }> => {
       const [userResult] = await db.transaction()
         .add<IUsersSetUserInviteEmailSentResult>({
           files: [updateUserInviteEmailSent],
           params: {
             userId,
+            inviteTokenHash,
           },
         })
         .execute();

@@ -252,7 +252,10 @@ async function patchUsersInvite(repository: UsersRepository, params: PatchUsersI
 
     const {
       user: stamped,
-    } = await repository.updateUserInviteEmailSent({ userId: invitedUser.user_id });
+    } = await repository.updateUserInviteEmailSent({
+      userId: invitedUser.user_id,
+      inviteTokenHash,
+    });
     if (stamped) emailSent = true;
   }
   catch (err) {

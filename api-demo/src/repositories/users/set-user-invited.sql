@@ -18,6 +18,7 @@ UPDATE
 SET
   invite_token_hash = $inviteTokenHash!
   , invite_token_expiry_at = NOW() + make_interval(days => $inviteTokenExpiryDays!)
+  , invite_email_sent_at = NULL
 FROM
   t_invited AS i
 WHERE
