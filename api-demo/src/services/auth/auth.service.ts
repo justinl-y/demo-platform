@@ -2,17 +2,23 @@ import {
   BadRequestError,
   UnauthorizedError,
 } from 'http-errors-enhanced';
-
 import {
   bcryptCompare,
   bcryptHash,
   generateJwt,
 } from '#lib/authentication';
+import { sendEmail } from '#lib/mailer';
+import { captureSentryException } from '#lib/sentry-instrument';
+import {
+  randomAlphaNumeric,
+  sha256Hex,
+} from '#utils/functions';
 import { Config } from '#config/index';
 
 import type { JWT } from '@fastify/jwt';
 import type { AuthRepository } from '#repositories/auth/auth.repository';
 import type { JwtUser } from '../../types/jwt.ts';
+import type { SentEmailType } from '../../types/general.ts';
 
 interface LoginParams {
   email: string;
@@ -41,11 +47,10 @@ async function login(repository: AuthRepository, jwt: JWT, params: LoginParams):
   } = params;
 
   const user = await repository.getUserByEmail({ email });
-
   if (!user) throw new UnauthorizedError('Authentication failed');
 
   const {
-    id: userId, full_name: fullName, known_as: knownAs, password_hash: passwordHash,
+    user_id: userId, full_name: fullName, known_as: knownAs, password_hash: passwordHash,
   } = user;
 
   if (!passwordHash) throw new UnauthorizedError('Authentication failed');
@@ -191,8 +196,114 @@ async function logout(repository: AuthRepository, jwt: JWT, params: LogoutParams
   };
 }
 
+interface PasswordForgotParams {
+  email: string;
+}
+
+interface PasswordForgotResult {
+  user_id: string;
+  password_reset_email_sent: boolean;
+}
+
+async function passwordForgot(repository: AuthRepository, params: PasswordForgotParams): Promise<PasswordForgotResult | undefined> {
+  const {
+    email,
+  } = params;
+
+  const validUserParams = {
+    email,
+  };
+
+  const validUser = await repository.getUserByEmail(validUserParams);
+  if (!validUser) return;
+
+  const {
+    user_id: userId,
+  } = validUser;
+
+  const {
+    passwordResetTokenExpirationMinutes,
+    password: {
+      randomBytesLength,
+    },
+  } = Config.authConfig();
+  const {
+    appBaseUrl,
+  } = Config;
+
+  // The raw token travels in the email link; only its hash is persisted.
+  const passwordResetToken = randomAlphaNumeric(randomBytesLength);
+  const passwordResetTokenHash = sha256Hex(passwordResetToken);
+
+  // persist user reset token hash
+  await repository.setUserPasswordReset({
+    userId,
+    passwordResetTokenHash,
+    passwordResetTokenExpiryMinutes: passwordResetTokenExpirationMinutes,
+  });
+
+  const actionUrl = `${appBaseUrl}/password-reset?token=${passwordResetToken}`;
+
+  let emailServiceSuccess: boolean = false;
+
+  // send email via SES
+  try {
+    const sentPasswordResetEmailParams = {
+      toEmail: email,
+      actionUrl,
+      emailType: 'PASSWORD_RESET' as SentEmailType,
+    };
+
+    await sendEmail(sentPasswordResetEmailParams);
+
+    emailServiceSuccess = true;
+  }
+  catch (err) {
+    // Logged to Sentry for investigation
+    captureSentryException(err);
+
+    console.error(err, `Password reset email send failed for ${email}`);
+  }
+
+  let userStamped;
+
+  // set email sent status
+  if (emailServiceSuccess) {
+    ({
+      user: userStamped,
+    } = await repository.setUserPasswordResetEmailSent({
+      userId,
+      passwordResetTokenHash,
+    }));
+  }
+
+  let emailSent: boolean = false;
+
+  if (emailServiceSuccess && userStamped) emailSent = true;
+
+  return {
+    user_id: userId,
+    password_reset_email_sent: emailSent,
+  };
+}
+
+interface PasswordResetParams {
+  passwordResetToken: string;
+  newPassword: string;
+}
+
+interface PasswordResetResult {
+  user_id: string;
+}
+
+async function passwordReset(repository: AuthRepository, params: PasswordResetParams): Promise<PasswordResetResult | null> {
+  return null;
+}
+
 export {
   login,
   refresh,
   logout,
+  passwordForgot,
+  passwordReset,
 };

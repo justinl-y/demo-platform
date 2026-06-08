@@ -1,17 +1,13 @@
 import { BadRequestError } from 'http-errors-enhanced';
 
 import { paginationOffset, paginationCount, paginationPages, randomAlphaNumeric, sha256Hex } from '#utils/functions';
-import { postUsersActivateRoute } from '#utils/constants';
 import { bcryptHash } from '#lib/authentication';
-import { sendInvitationEmail } from '#lib/mailer';
+import { sendEmail } from '#lib/mailer';
+import { captureSentryException } from '#lib/sentry-instrument';
 import { Config } from '#config/index';
 
-import {
-  captureSentryException,
-} from '#lib/sentry-instrument';
-
 import type { UsersRepository } from '#repositories/users/users.repository';
-import type { GetResult, UserStatus } from '../../types/general.ts';
+import type { GetResult, UserStatus, SentEmailType } from '../../types/general.ts';
 
 interface GetUsersParams {
   page: number;
@@ -238,17 +234,18 @@ async function patchUsersInvite(repository: UsersRepository, params: PatchUsersI
   });
   if (!invitedUser) throw new BadRequestError('Invalid user id or user status');
 
-  const activationUrl = `${appBaseUrl}${postUsersActivateRoute}?token=${inviteToken}`;
+  const actionUrl = `${appBaseUrl}/account-activate?token=${inviteToken}`;
 
   let emailSent: boolean = false;
 
   try {
     const sentInvitationEmailParams = {
       toEmail: invitedUser.email,
-      activationUrl,
+      actionUrl,
+      emailType: 'INVITATION' as SentEmailType,
     };
 
-    await sendInvitationEmail(sentInvitationEmailParams);
+    await sendEmail(sentInvitationEmailParams);
 
     const {
       user: stamped,
@@ -256,6 +253,7 @@ async function patchUsersInvite(repository: UsersRepository, params: PatchUsersI
       userId: invitedUser.user_id,
       inviteTokenHash,
     });
+
     if (stamped) emailSent = true;
   }
   catch (err) {

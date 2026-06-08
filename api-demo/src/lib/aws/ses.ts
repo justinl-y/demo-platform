@@ -3,6 +3,10 @@ import {
   SendEmailCommand,
 } from '@aws-sdk/client-ses';
 
+import type {
+  SendEmailCommandInput,
+} from '@aws-sdk/client-ses';
+
 import {
   Config,
 } from '#config/index';
@@ -16,4 +20,8 @@ function getSesClient(): SESClient {
 export {
   getSesClient,
   SendEmailCommand,
+};
+
+export type {
+  SendEmailCommandInput,
 };

@@ -11,6 +11,7 @@ let _cache: ReturnType<typeof buildAuthConfig> | undefined;
 function buildAuthConfig() {
   return {
     invitationTokenExpirationDays: 7,
+    passwordResetTokenExpirationMinutes: 30,
     encryptSaltWorkFactor: 10,
     password: {
       expirationDays: 7,

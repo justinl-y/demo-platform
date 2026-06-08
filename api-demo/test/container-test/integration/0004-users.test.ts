@@ -1315,6 +1315,7 @@ describe(`${fileNumber} - Users`, () => {
     const getResponse = (body: RequestBody) => noAuthAPI.post('/users/activate', body);
 
     const validPassword = 'TestPass123!@#abc';
+    const validTokenLength = 30;
 
     // Seed an INVITED user with a known token hash + expiry. Activation tokens
     // are only ever known to the email recipient in production, so an integration
@@ -1374,7 +1375,7 @@ describe(`${fileNumber} - Users`, () => {
 
       test('Invalid type body "password" returns 400', async () => {
         const res = await getResponse({
-          token: 'some-token',
+          token: faker.string.alphanumeric(30),
           password: 1234,
         } as unknown as RequestBody);
 
@@ -1382,9 +1383,29 @@ describe(`${fileNumber} - Users`, () => {
         expect(res.body.message).toBe('body/password must be string');
       });
 
+      test('Token shorter than the minimum returns 400', async () => {
+        const res = await getResponse({
+          token: faker.string.alphanumeric(10),
+          password: validPassword,
+        });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('body/token must NOT have fewer than 30 characters');
+      });
+
+      test('Token longer than the maximum returns 400', async () => {
+        const res = await getResponse({
+          token: faker.string.alphanumeric(40),
+          password: validPassword,
+        });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('body/token must NOT have more than 30 characters');
+      });
+
       test('Password shorter than the minimum returns 400', async () => {
         const res = await getResponse({
-          token: 'some-token',
+          token: faker.string.alphanumeric(30),
           password: 'short',
         });
 
@@ -1394,7 +1415,7 @@ describe(`${fileNumber} - Users`, () => {
 
       test('Password longer than the maximum returns 400', async () => {
         const res = await getResponse({
-          token: 'some-token',
+          token: faker.string.alphanumeric(validTokenLength),
           password: 'a'.repeat(41),
         });
 
@@ -1404,7 +1425,7 @@ describe(`${fileNumber} - Users`, () => {
 
       test('Unknown token returns 400', async () => {
         const res = await getResponse({
-          token: 'never-issued-token',
+          token: faker.string.alphanumeric(30),
           password: validPassword,
         });
 
@@ -1413,7 +1434,8 @@ describe(`${fileNumber} - Users`, () => {
       });
 
       test('Expired token returns 400', async () => {
-        const rawToken = `expired-${faker.string.alphanumeric(20)}`;
+        const prefix = 'expired-';
+        const rawToken = `${prefix}${faker.string.alphanumeric(validTokenLength - prefix.length)}`;
         await seedInvitedUserWithToken({
           rawToken,
           expiresAt: new Date(Date.now() - 1000),
@@ -1429,7 +1451,8 @@ describe(`${fileNumber} - Users`, () => {
       });
 
       test('Already-used token returns 400 on the second activation', async () => {
-        const rawToken = `used-${faker.string.alphanumeric(20)}`;
+        const prefix = 'used-';
+        const rawToken = `${prefix}${faker.string.alphanumeric(validTokenLength - prefix.length)}`;
         await seedInvitedUserWithToken({ rawToken });
 
         const first = await getResponse({
@@ -1472,7 +1495,9 @@ describe(`${fileNumber} - Users`, () => {
       let dbActivated: DbActivated;
 
       beforeAll(async () => {
-        rawToken = `valid-${faker.string.alphanumeric(20)}`;
+        const prefix = 'valid-';
+        rawToken = `${prefix}${faker.string.alphanumeric(validTokenLength - prefix.length)}`;
+
         ({
           userId: activatedUserId,
         } = await seedInvitedUserWithToken({ rawToken }));

@@ -1,5 +1,5 @@
 SELECT
-  u.id
+  u.id AS user_id
   , u.email
   , u.full_name
   , u.known_as

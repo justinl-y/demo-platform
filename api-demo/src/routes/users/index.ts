@@ -1,6 +1,5 @@
 import {
   httpMethods,
-  postUsersActivateRoute,
 } from '#utils/constants';
 import {
   routePropertiesCore,
@@ -40,7 +39,7 @@ const routes = {
   deleteUsers: routePropertiesCore(DELETE, '/users/:user_id', deleteUsers as RouteHandlerMethod),
   patchUsersInvite: routePropertiesCore(PATCH, '/users/:user_id/invite', patchUsersInvite as RouteHandlerMethod),
   deleteUsersInvite: routePropertiesCore(DELETE, '/users/:user_id/invite', deleteUsersInvite as RouteHandlerMethod),
-  postUsersActivate: routePropertiesCore(POST, postUsersActivateRoute, postUsersActivate as RouteHandlerMethod),
+  postUsersActivate: routePropertiesCore(POST, '/users/activate', postUsersActivate as RouteHandlerMethod),
   patchUsersDeactivate: routePropertiesCore(PATCH, '/users/:user_id/deactivate', patchUsersDeactivate as RouteHandlerMethod),
 };
 

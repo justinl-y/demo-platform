@@ -6,6 +6,7 @@ import {
 } from 'vitest';
 import _ from 'lodash';
 import bcrypt from 'bcryptjs';
+import { faker } from '@faker-js/faker/locale/en';
 
 import { query } from '../lib/db.ts';
 import { noAuthAPI } from '../lib/api.ts';
@@ -481,9 +482,175 @@ describe(`${fileNumber} - Auth`, () => {
     });
   });
 
-  describe.skip('PUT /passwordRecovery', () => {});
+  describe('POST /password/forgot', () => {
+    const getResponse = (reqBody: any) => noAuthAPI.post('/password/forgot', reqBody);
 
-  describe.skip('PUT /passwordReset', () => {});
+    let validRequestBody = {} as RequestBody;
 
-  describe.skip('POST /invite', () => {});
+    beforeAll(() => {
+      validRequestBody = {
+        email: userEmail,
+      } as RequestBody;
+    });
+
+    describe('Request Failure', () => {
+      test('Absent required body "email" returns 400', async () => {
+        const reqBody = _.cloneDeep(validRequestBody);
+        delete reqBody.email;
+
+        const res = await getResponse(reqBody);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe(`body must have required property 'email'`);
+      });
+
+      test('Invalid type body "email" returns 400', async () => {
+        const reqBody = _.cloneDeep(validRequestBody);
+        reqBody.email = 1234;
+
+        const res = await getResponse(reqBody);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe(`body/email must be string`);
+      });
+
+      test('Invalid format body "email" returns 400', async () => {
+        const reqBody = _.cloneDeep(validRequestBody);
+        reqBody.email = 'not-an-email';
+
+        const res = await getResponse(reqBody);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('body/email must match format "email"');
+      });
+    });
+
+    describe('Request Success', () => {
+      interface DbPasswordReset {
+        password_reset_token_hash: string | null;
+        password_reset_token_expiry_at: Date | null;
+        password_reset_email_sent_at: Date | null;
+      }
+
+      const getPasswordResetSql = `SELECT
+          a.password_reset_token_hash
+          , a.password_reset_token_expiry_at
+          , a.password_reset_email_sent_at
+        FROM
+          public.users AS u
+          INNER JOIN public.users_authentication AS a ON a.user_id = u.id
+        WHERE
+          u.email = $1;`;
+
+      let rep: Supertest.Response;
+      let requestTime: Date;
+      let dbPasswordReset: DbPasswordReset;
+
+      beforeAll(async () => {
+        requestTime = new Date();
+        rep = await getResponse(validRequestBody);
+
+        const [result] = await query<DbPasswordReset>(getPasswordResetSql, [userEmail]);
+        dbPasswordReset = result;
+      });
+
+      test('Success response returns 204', () => {
+        expect(rep.statusCode).toBe(204);
+      });
+
+      test('Persists a "password_reset_token_hash" in db', () => {
+        expect(dbPasswordReset.password_reset_token_hash).toMatch(/^[0-9a-f]{64}$/);
+      });
+
+      test('Sets "password_reset_token_expiry_at" approximately 30 minutes in the future', () => {
+        expect(dbPasswordReset.password_reset_token_expiry_at).not.toBeNull();
+
+        const expiry = new Date(dbPasswordReset.password_reset_token_expiry_at!).getTime();
+        const expected = requestTime.getTime() + 30 * 60 * 1000;
+
+        expect(expiry).toBeGreaterThanOrEqual(expected - 5000);
+        expect(expiry).toBeLessThanOrEqual(expected + 5000);
+      });
+
+      test('Stamps "password_reset_email_sent_at" after a successful send', () => {
+        expect(dbPasswordReset.password_reset_email_sent_at).not.toBeNull();
+      });
+
+      test('Unknown email returns 204 without revealing account existence', async () => {
+        const res = await getResponse({
+          email: `unknown-${faker.string.alphanumeric(10).toLowerCase()}@example.com`,
+        });
+
+        expect(res.statusCode).toBe(204);
+      });
+
+      test('"email" with mixed case and whitespace is normalized before matching', async () => {
+        const {
+          email,
+        } = await createRandomUser();
+
+        const res = await getResponse({
+          email: `  ${email.toUpperCase()}  `,
+        });
+
+        expect(res.statusCode).toBe(204);
+
+        const [result] = await query<DbPasswordReset>(getPasswordResetSql, [email]);
+
+        expect(result.password_reset_token_hash).toMatch(/^[0-9a-f]{64}$/);
+      });
+    });
+
+    describe('Request Success - email delivery failure', () => {
+      interface DbPasswordReset {
+        password_reset_token_hash: string | null;
+        password_reset_token_expiry_at: Date | null;
+        password_reset_email_sent_at: Date | null;
+      }
+
+      const getPasswordResetSql = `SELECT
+          a.password_reset_token_hash
+          , a.password_reset_token_expiry_at
+          , a.password_reset_email_sent_at
+        FROM
+          public.users AS u
+          INNER JOIN public.users_authentication AS a ON a.user_id = u.id
+        WHERE
+          u.email = $1;`;
+
+      let rep: Supertest.Response;
+      let dbPasswordReset: DbPasswordReset;
+
+      // The mailer test seam in src/lib/mailer.ts throws on this sentinel domain (RFC 2606 .test TLD).
+      const failEmail = `reset-fail-${faker.string.alphanumeric(10).toLowerCase()}@mailer-fail.test`;
+
+      beforeAll(async () => {
+        await createRandomUser({
+          email: failEmail,
+        });
+
+        rep = await getResponse({
+          email: failEmail,
+        });
+
+        const [result] = await query<DbPasswordReset>(getPasswordResetSql, [failEmail]);
+        dbPasswordReset = result;
+      });
+
+      test('Response returns 204 even when the email delivery fails', () => {
+        expect(rep.statusCode).toBe(204);
+      });
+
+      test('Reset token is still persisted on email failure', () => {
+        expect(dbPasswordReset.password_reset_token_hash).toMatch(/^[0-9a-f]{64}$/);
+        expect(dbPasswordReset.password_reset_token_expiry_at).not.toBeNull();
+      });
+
+      test('Database "password_reset_email_sent_at" remains NULL on failure', () => {
+        expect(dbPasswordReset.password_reset_email_sent_at).toBeNull();
+      });
+    });
+  });
+
+  describe.skip('POST /password/reset', () => {});
 });

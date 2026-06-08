@@ -22,6 +22,7 @@ const body = {
     password: {
       type: 'string',
       description: 'User password',
+      transform: ['trim'],
     },
   },
 };
