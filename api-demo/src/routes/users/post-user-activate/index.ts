@@ -1,4 +1,4 @@
-import { postUsersActivate as postUsersActivateService } from '#services/users/users.service';
+import { activateUser } from '#services/users/users.service';
 
 import type {
   FastifyRequest,
@@ -21,12 +21,12 @@ async function postUsersActivate(this: FastifyInstance, request: FastifyRequest<
     },
   } = request;
 
-  const activateParams = {
+  const activateUserParams = {
     token,
     password,
   };
 
-  await postUsersActivateService(this.repositories.users, activateParams);
+  await activateUser(this.repositories.users, activateUserParams);
 
   return reply
     .code(204)

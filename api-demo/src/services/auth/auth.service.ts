@@ -199,7 +199,7 @@ interface PasswordForgotParams {
   email: string;
 }
 
-interface DeliverPasswordResetEmailParams {
+interface SendPasswordResetEmailParams {
   email: string;
   actionUrl: string;
   userId: string;
@@ -209,7 +209,7 @@ interface DeliverPasswordResetEmailParams {
 // Sends the reset email and stamps the email-sent timestamp on success. Intended
 // to run off the request path (callers do not await it), so it never throws —
 // failures are captured for Sentry and logged instead.
-async function deliverPasswordResetEmail(repository: AuthRepository, params: DeliverPasswordResetEmailParams): Promise<void> {
+async function sendPasswordResetEmail(repository: AuthRepository, params: SendPasswordResetEmailParams): Promise<void> {
   const {
     email,
     actionUrl,
@@ -275,10 +275,13 @@ async function passwordForgot(repository: AuthRepository, params: PasswordForgot
 
   const actionUrl = `${appBaseUrl}/password-reset?token=${passwordResetToken}`;
 
-  // Deliver off the request path so the response time does not depend on whether
-  // the account exists (prevents timing-based user enumeration). Deliberately not
-  // awaited — delivery and the email-sent stamp run in the background.
-  deliverPasswordResetEmail(repository, {
+  // Deliver off the request path — deliberately not awaited — so the slow SES call
+  // does not sit on the response, which is the dominant timing-based enumeration
+  // signal. A small residual delta remains (the known-account path does an extra
+  // SELECT + UPDATE that the unknown path skips); equalizing that would require a
+  // single email-keyed UPDATE or a queue. The send and email-sent stamp run in the
+  // background.
+  sendPasswordResetEmail(repository, {
     email,
     actionUrl,
     userId,

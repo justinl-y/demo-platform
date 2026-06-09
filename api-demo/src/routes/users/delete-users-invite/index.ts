@@ -1,4 +1,4 @@
-import { deleteUsersInvite as deleteUsersInviteService } from '#services/users/users.service';
+import { cancelUserInvite } from '#services/users/users.service';
 
 import type { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 
@@ -15,11 +15,11 @@ async function deleteUsersInvite(this: FastifyInstance, request: FastifyRequest<
     },
   } = request;
 
-  const deleteUsersInviteParams = {
+  const cancelUserInviteParams = {
     userId,
   };
 
-  const result = await deleteUsersInviteService(this.repositories.users, deleteUsersInviteParams);
+  const result = await cancelUserInvite(this.repositories.users, cancelUserInviteParams);
 
   return reply
     .send(result)

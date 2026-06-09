@@ -1,4 +1,4 @@
-import { deleteUsers as deleteUsersService } from '#services/users/users.service';
+import { deleteUser } from '#services/users/users.service';
 
 import type { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 
@@ -15,11 +15,11 @@ async function deleteUsers(this: FastifyInstance, request: FastifyRequest<Reques
     },
   } = request;
 
-  const deleteUsersParams = {
+  const deleteUserParams = {
     userId,
   };
 
-  await deleteUsersService(this.repositories.users, deleteUsersParams);
+  await deleteUser(this.repositories.users, deleteUserParams);
 
   return reply
     .code(204)

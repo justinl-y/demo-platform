@@ -9,7 +9,7 @@ import { Config } from '#config/index';
 import type { UsersRepository } from '#repositories/users/users.repository';
 import type { GetResult, UserStatus } from '../../types/general.ts';
 
-interface GetUsersParams {
+interface FetchUsersParams {
   page: number;
   perPage: number;
   userId: string | null;
@@ -23,13 +23,13 @@ interface UserItem {
   status: UserStatus;
 }
 
-interface GetUsersResult extends GetResult {
+interface FetchUsersResult extends GetResult {
   output: {
     [user_id: string]: UserItem;
   };
 }
 
-async function getUsers(repository: UsersRepository, params: GetUsersParams): Promise<GetUsersResult> {
+async function fetchUsers(repository: UsersRepository, params: FetchUsersParams): Promise<FetchUsersResult> {
   const {
     page,
     perPage,
@@ -62,13 +62,13 @@ async function getUsers(repository: UsersRepository, params: GetUsersParams): Pr
   };
 }
 
-interface PostUsersParams {
+interface CreateUserParams {
   email: string;
   fullName: string;
   knownAs?: string | null;
 }
 
-interface PostUsersResult {
+interface CreateUserResult {
   user_id: string;
   email: string;
   full_name: string;
@@ -76,7 +76,7 @@ interface PostUsersResult {
   status: UserStatus;
 }
 
-async function postUsers(repository: UsersRepository, params: PostUsersParams): Promise<PostUsersResult> {
+async function createUser(repository: UsersRepository, params: CreateUserParams): Promise<CreateUserResult> {
   const {
     email,
     fullName,
@@ -97,19 +97,19 @@ async function postUsers(repository: UsersRepository, params: PostUsersParams): 
   return newUser;
 }
 
-interface PutUsersParams {
+interface EditUserParams {
   userId: string;
   fullName: string;
   knownAs?: string | null;
 }
 
-interface PutUsersResult {
+interface EditUserResult {
   user_id: string;
   full_name: string;
   known_as: string | null;
 }
 
-async function putUsers(repository: UsersRepository, params: PutUsersParams): Promise<PutUsersResult> {
+async function editUser(repository: UsersRepository, params: EditUserParams): Promise<EditUserResult> {
   const {
     userId,
     fullName,
@@ -131,17 +131,17 @@ async function putUsers(repository: UsersRepository, params: PutUsersParams): Pr
   return updatedUser;
 }
 
-interface PatchUsersEmailParams {
+interface EditUserEmailParams {
   userId: string;
   newEmail: string;
 }
 
-interface PatchUsersEmailResult {
+interface EditUserEmailResult {
   user_id: string;
   email: string;
 }
 
-async function patchUsersEmail(repository: UsersRepository, params: PatchUsersEmailParams): Promise<PatchUsersEmailResult> {
+async function editUserEmail(repository: UsersRepository, params: EditUserEmailParams): Promise<EditUserEmailResult> {
   const {
     userId,
     newEmail,
@@ -164,15 +164,15 @@ async function patchUsersEmail(repository: UsersRepository, params: PatchUsersEm
   return changedUser;
 }
 
-interface DeleteUsersParams {
+interface DeleteUserParams {
   userId: string;
 }
 
-interface DeleteUsersResult {
+interface DeleteUserResult {
   user_id: string;
 }
 
-async function deleteUsers(repository: UsersRepository, params: DeleteUsersParams): Promise<DeleteUsersResult> {
+async function deleteUser(repository: UsersRepository, params: DeleteUserParams): Promise<DeleteUserResult> {
   const {
     userId,
   } = params;
@@ -188,17 +188,7 @@ async function deleteUsers(repository: UsersRepository, params: DeleteUsersParam
   return deletedUser;
 }
 
-interface PatchUsersInviteParams {
-  userId: string;
-}
-
-interface PatchUsersInviteResult {
-  user_id: string;
-  status: UserStatus;
-  invite_email_sent: boolean;
-}
-
-interface DeliverInvitationEmailParams {
+interface SentInvitationEmailParams {
   userId: string;
   email: string;
   actionUrl: string;
@@ -209,7 +199,7 @@ interface DeliverInvitationEmailParams {
 // Owns its error handling — the invite is already persisted, so a delivery failure
 // must not fail the request — and returns whether the email was sent so the caller
 // can report it. Never throws.
-async function deliverInvitationEmail(repository: UsersRepository, params: DeliverInvitationEmailParams): Promise<boolean> {
+async function sendInvitationEmail(repository: UsersRepository, params: SentInvitationEmailParams): Promise<boolean> {
   const {
     userId,
     email,
@@ -243,7 +233,17 @@ async function deliverInvitationEmail(repository: UsersRepository, params: Deliv
   }
 }
 
-async function patchUsersInvite(repository: UsersRepository, params: PatchUsersInviteParams): Promise<PatchUsersInviteResult> {
+interface InviteUserParams {
+  userId: string;
+}
+
+interface InviteUserResult {
+  user_id: string;
+  status: UserStatus;
+  invite_email_sent: boolean;
+}
+
+async function inviteUser(repository: UsersRepository, params: InviteUserParams): Promise<InviteUserResult> {
   const {
     userId,
   } = params;
@@ -281,7 +281,7 @@ async function patchUsersInvite(repository: UsersRepository, params: PatchUsersI
 
   const actionUrl = `${appBaseUrl}/account-activate?token=${inviteToken}`;
 
-  const emailSent = await deliverInvitationEmail(repository, {
+  const emailSent = await sendInvitationEmail(repository, {
     userId: invitedUser.user_id,
     email: invitedUser.email,
     actionUrl,
@@ -295,12 +295,12 @@ async function patchUsersInvite(repository: UsersRepository, params: PatchUsersI
   };
 }
 
-interface PostUsersActivateParams {
+interface ActivateUserParams {
   token: string;
   password: string;
 }
 
-async function postUsersActivate(repository: UsersRepository, params: PostUsersActivateParams): Promise<void> {
+async function activateUser(repository: UsersRepository, params: ActivateUserParams): Promise<void> {
   const {
     token,
     password,
@@ -327,16 +327,16 @@ async function postUsersActivate(repository: UsersRepository, params: PostUsersA
   if (!activatedUser) throw new BadRequestError('Invalid or expired invitation');
 }
 
-interface DeleteUsersInviteParams {
+interface CancelUserInviteParams {
   userId: string;
 }
 
-interface DeleteUsersInviteResult {
+interface CancelUserInviteResult {
   user_id: string;
   status: UserStatus;
 }
 
-async function deleteUsersInvite(repository: UsersRepository, params: DeleteUsersInviteParams): Promise<DeleteUsersInviteResult> {
+async function cancelUserInvite(repository: UsersRepository, params: CancelUserInviteParams): Promise<CancelUserInviteResult> {
   const {
     userId,
   } = params;
@@ -350,16 +350,16 @@ async function deleteUsersInvite(repository: UsersRepository, params: DeleteUser
   return cancelledUser;
 }
 
-interface PatchUsersDeactivateParams {
+interface DeactivateUserParams {
   userId: string;
 }
 
-interface PatchUsersDeactivateResult {
+interface DeactivateUserResult {
   user_id: string;
   status: UserStatus;
 }
 
-async function patchUsersDeactivate(repository: UsersRepository, params: PatchUsersDeactivateParams): Promise<PatchUsersDeactivateResult> {
+async function deactivateUser(repository: UsersRepository, params: DeactivateUserParams): Promise<DeactivateUserResult> {
   const {
     userId,
   } = params;
@@ -393,13 +393,13 @@ async function patchUsersDeactivate(repository: UsersRepository, params: PatchUs
 }
 
 export {
-  getUsers,
-  postUsers,
-  putUsers,
-  patchUsersEmail,
-  deleteUsers,
-  patchUsersInvite,
-  deleteUsersInvite,
-  postUsersActivate,
-  patchUsersDeactivate,
+  fetchUsers,
+  createUser,
+  editUser,
+  editUserEmail,
+  deleteUser,
+  inviteUser,
+  cancelUserInvite,
+  activateUser,
+  deactivateUser,
 };

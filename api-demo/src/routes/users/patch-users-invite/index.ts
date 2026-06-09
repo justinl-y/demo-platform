@@ -1,4 +1,4 @@
-import { patchUsersInvite as patchUsersInviteService } from '#services/users/users.service';
+import { inviteUser } from '#services/users/users.service';
 
 import type { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 
@@ -15,11 +15,11 @@ async function patchUsersInvite(this: FastifyInstance, request: FastifyRequest<R
     },
   } = request;
 
-  const patchUsersInviteParams = {
+  const inviteUserParams = {
     userId,
   };
 
-  const result = await patchUsersInviteService(this.repositories.users, patchUsersInviteParams);
+  const result = await inviteUser(this.repositories.users, inviteUserParams);
 
   return reply
     .send(result)
