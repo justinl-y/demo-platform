@@ -6,9 +6,9 @@ import {
 } from '#config/index';
 
 const route = {
-  tags: ['users'],
-  summary: 'Activate an invited user',
-  description: 'Activates an invited user using the token from the activation email and sets the account password',
+  tags: ['auth'],
+  summary: 'User password reset',
+  description: 'Resets a user\'s password using the token from the reset email',
 };
 
 const {
@@ -22,21 +22,24 @@ const {
 const body = {
   type: 'object',
   properties: {
-    token: {
+    password_reset_token: {
       type: 'string',
       minLength: tokenLength,
       maxLength: tokenLength,
-      description: 'Invitation token from the activation email link',
+      description: 'Reset token from the password reset email link',
     },
-    password: {
+    new_password: {
       type: 'string',
       minLength: passwordLengthMin,
       maxLength: passwordLengthMax,
-      description: 'Password to set for the account',
+      description: 'New password to set for the account',
       transform: ['trim'],
     },
   },
-  required: ['token', 'password'],
+  required: [
+    'password_reset_token',
+    'new_password',
+  ],
   additionalProperties: false,
 };
 

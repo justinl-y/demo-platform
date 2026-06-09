@@ -11,12 +11,13 @@ let _cache: ReturnType<typeof buildAuthConfig> | undefined;
 function buildAuthConfig() {
   return {
     invitationTokenExpirationDays: 7,
+    passwordResetTokenExpirationMinutes: 30,
     encryptSaltWorkFactor: 10,
     password: {
       expirationDays: 7,
       passwordLengthMin: 10,
       passwordLengthMax: 40,
-      randomBytesLength: 30,
+      tokenLength: 30,
     },
     audience: secretValues.AUTH_AUDIENCE,
     secret: secretValues.AUTH_SECRET,

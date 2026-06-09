@@ -1,4 +1,4 @@
-import { postUsers as postUsersService } from '#services/users/users.service';
+import { createUser } from '#services/users/users.service';
 
 import type { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 
@@ -19,13 +19,13 @@ async function postUsers(this: FastifyInstance, request: FastifyRequest<Request>
     },
   } = request;
 
-  const postUsersParams = {
+  const createUserParams = {
     email,
     fullName,
     knownAs: knownAs ?? null,
   };
 
-  const result = await postUsersService(this.repositories.users, postUsersParams);
+  const result = await createUser(this.repositories.users, createUserParams);
 
   return reply
     .code(201)

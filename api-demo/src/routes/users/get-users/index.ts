@@ -1,4 +1,4 @@
-import { getUsers as getUsersService } from '#services/users/users.service';
+import { fetchUsers } from '#services/users/users.service';
 
 import type { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 import type { UserStatus } from '../../../types/general.ts';
@@ -27,14 +27,14 @@ async function getUsers(this: FastifyInstance, request: FastifyRequest<Request>,
   const status = statusRaw ? (Array.isArray(statusRaw) ? statusRaw : [statusRaw]) : null;
   const userId = userIdRaw ?? null;
 
-  const getUsersParams = {
+  const fetchUsersParams = {
     page,
     perPage,
     status,
     userId,
   };
 
-  const result = await getUsersService(this.repositories.users, getUsersParams);
+  const result = await fetchUsers(this.repositories.users, fetchUsersParams);
 
   return reply
     .send(result)

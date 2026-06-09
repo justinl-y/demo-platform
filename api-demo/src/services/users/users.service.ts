@@ -1,19 +1,15 @@
 import { BadRequestError } from 'http-errors-enhanced';
 
 import { paginationOffset, paginationCount, paginationPages, randomAlphaNumeric, sha256Hex } from '#utils/functions';
-import { postUsersActivateRoute } from '#utils/constants';
 import { bcryptHash } from '#lib/authentication';
-import { sendInvitationEmail } from '#lib/mailer';
+import { sendEmail } from '#lib/mailer';
+import { captureSentryException } from '#lib/sentry-instrument';
 import { Config } from '#config/index';
-
-import {
-  captureSentryException,
-} from '#lib/sentry-instrument';
 
 import type { UsersRepository } from '#repositories/users/users.repository';
 import type { GetResult, UserStatus } from '../../types/general.ts';
 
-interface GetUsersParams {
+interface FetchUsersParams {
   page: number;
   perPage: number;
   userId: string | null;
@@ -27,13 +23,13 @@ interface UserItem {
   status: UserStatus;
 }
 
-interface GetUsersResult extends GetResult {
+interface FetchUsersResult extends GetResult {
   output: {
     [user_id: string]: UserItem;
   };
 }
 
-async function getUsers(repository: UsersRepository, params: GetUsersParams): Promise<GetUsersResult> {
+async function fetchUsers(repository: UsersRepository, params: FetchUsersParams): Promise<FetchUsersResult> {
   const {
     page,
     perPage,
@@ -66,13 +62,13 @@ async function getUsers(repository: UsersRepository, params: GetUsersParams): Pr
   };
 }
 
-interface PostUsersParams {
+interface CreateUserParams {
   email: string;
   fullName: string;
   knownAs?: string | null;
 }
 
-interface PostUsersResult {
+interface CreateUserResult {
   user_id: string;
   email: string;
   full_name: string;
@@ -80,7 +76,7 @@ interface PostUsersResult {
   status: UserStatus;
 }
 
-async function postUsers(repository: UsersRepository, params: PostUsersParams): Promise<PostUsersResult> {
+async function createUser(repository: UsersRepository, params: CreateUserParams): Promise<CreateUserResult> {
   const {
     email,
     fullName,
@@ -101,19 +97,19 @@ async function postUsers(repository: UsersRepository, params: PostUsersParams): 
   return newUser;
 }
 
-interface PutUsersParams {
+interface EditUserParams {
   userId: string;
   fullName: string;
   knownAs?: string | null;
 }
 
-interface PutUsersResult {
+interface EditUserResult {
   user_id: string;
   full_name: string;
   known_as: string | null;
 }
 
-async function putUsers(repository: UsersRepository, params: PutUsersParams): Promise<PutUsersResult> {
+async function editUser(repository: UsersRepository, params: EditUserParams): Promise<EditUserResult> {
   const {
     userId,
     fullName,
@@ -135,17 +131,17 @@ async function putUsers(repository: UsersRepository, params: PutUsersParams): Pr
   return updatedUser;
 }
 
-interface PatchUsersEmailParams {
+interface EditUserEmailParams {
   userId: string;
   newEmail: string;
 }
 
-interface PatchUsersEmailResult {
+interface EditUserEmailResult {
   user_id: string;
   email: string;
 }
 
-async function patchUsersEmail(repository: UsersRepository, params: PatchUsersEmailParams): Promise<PatchUsersEmailResult> {
+async function editUserEmail(repository: UsersRepository, params: EditUserEmailParams): Promise<EditUserEmailResult> {
   const {
     userId,
     newEmail,
@@ -168,15 +164,15 @@ async function patchUsersEmail(repository: UsersRepository, params: PatchUsersEm
   return changedUser;
 }
 
-interface DeleteUsersParams {
+interface DeleteUserParams {
   userId: string;
 }
 
-interface DeleteUsersResult {
+interface DeleteUserResult {
   user_id: string;
 }
 
-async function deleteUsers(repository: UsersRepository, params: DeleteUsersParams): Promise<DeleteUsersResult> {
+async function deleteUser(repository: UsersRepository, params: DeleteUserParams): Promise<DeleteUserResult> {
   const {
     userId,
   } = params;
@@ -192,17 +188,62 @@ async function deleteUsers(repository: UsersRepository, params: DeleteUsersParam
   return deletedUser;
 }
 
-interface PatchUsersInviteParams {
+interface SentInvitationEmailParams {
+  userId: string;
+  email: string;
+  actionUrl: string;
+  inviteTokenHash: string;
+}
+
+// Sends the invitation email and, on success, stamps the email-sent timestamp.
+// Owns its error handling — the invite is already persisted, so a delivery failure
+// must not fail the request — and returns whether the email was sent so the caller
+// can report it. Never throws.
+async function sendInvitationEmail(repository: UsersRepository, params: SentInvitationEmailParams): Promise<boolean> {
+  const {
+    userId,
+    email,
+    actionUrl,
+    inviteTokenHash,
+  } = params;
+
+  try {
+    await sendEmail({
+      toEmail: email,
+      actionUrl,
+      emailType: 'INVITATION',
+    });
+
+    const {
+      user: stamped,
+    } = await repository.updateUserInviteEmailSent({
+      userId,
+      inviteTokenHash,
+    });
+
+    return Boolean(stamped);
+  }
+  catch (err) {
+    // Logged to Sentry for investigation or re-invite
+    captureSentryException(err);
+
+    console.error(err, `Invitation email delivery failed for ${email}`);
+
+    return false;
+  }
+}
+
+interface InviteUserParams {
   userId: string;
 }
 
-interface PatchUsersInviteResult {
+interface InviteUserResult {
   user_id: string;
   status: UserStatus;
   invite_email_sent: boolean;
 }
 
-async function patchUsersInvite(repository: UsersRepository, params: PatchUsersInviteParams): Promise<PatchUsersInviteResult> {
+async function inviteUser(repository: UsersRepository, params: InviteUserParams): Promise<InviteUserResult> {
   const {
     userId,
   } = params;
@@ -218,7 +259,7 @@ async function patchUsersInvite(repository: UsersRepository, params: PatchUsersI
   const {
     invitationTokenExpirationDays,
     password: {
-      randomBytesLength,
+      tokenLength,
     },
   } = Config.authConfig();
   const {
@@ -226,7 +267,7 @@ async function patchUsersInvite(repository: UsersRepository, params: PatchUsersI
   } = Config;
 
   // The raw token travels in the email link; only its hash is persisted.
-  const inviteToken = randomAlphaNumeric(randomBytesLength);
+  const inviteToken = randomAlphaNumeric(tokenLength);
   const inviteTokenHash = sha256Hex(inviteToken);
 
   const {
@@ -238,33 +279,14 @@ async function patchUsersInvite(repository: UsersRepository, params: PatchUsersI
   });
   if (!invitedUser) throw new BadRequestError('Invalid user id or user status');
 
-  const activationUrl = `${appBaseUrl}${postUsersActivateRoute}?token=${inviteToken}`;
+  const actionUrl = `${appBaseUrl}/account-activate?token=${inviteToken}`;
 
-  let emailSent: boolean = false;
-
-  try {
-    const sentInvitationEmailParams = {
-      toEmail: invitedUser.email,
-      activationUrl,
-    };
-
-    await sendInvitationEmail(sentInvitationEmailParams);
-
-    const {
-      user: stamped,
-    } = await repository.updateUserInviteEmailSent({
-      userId: invitedUser.user_id,
-      inviteTokenHash,
-    });
-    if (stamped) emailSent = true;
-  }
-  catch (err) {
-    // The invitation is already persisted; a delivery failure must not fail the request.
-    // Logged to Sentry for investigation or re-invite
-    captureSentryException(err);
-
-    console.error(err, `Invitation email delivery failed for ${invitedUser.email}`);
-  }
+  const emailSent = await sendInvitationEmail(repository, {
+    userId: invitedUser.user_id,
+    email: invitedUser.email,
+    actionUrl,
+    inviteTokenHash,
+  });
 
   return {
     user_id: invitedUser.user_id,
@@ -273,12 +295,12 @@ async function patchUsersInvite(repository: UsersRepository, params: PatchUsersI
   };
 }
 
-interface PostUsersActivateParams {
+interface ActivateUserParams {
   token: string;
   password: string;
 }
 
-async function postUsersActivate(repository: UsersRepository, params: PostUsersActivateParams): Promise<void> {
+async function activateUser(repository: UsersRepository, params: ActivateUserParams): Promise<void> {
   const {
     token,
     password,
@@ -305,16 +327,16 @@ async function postUsersActivate(repository: UsersRepository, params: PostUsersA
   if (!activatedUser) throw new BadRequestError('Invalid or expired invitation');
 }
 
-interface DeleteUsersInviteParams {
+interface CancelUserInviteParams {
   userId: string;
 }
 
-interface DeleteUsersInviteResult {
+interface CancelUserInviteResult {
   user_id: string;
   status: UserStatus;
 }
 
-async function deleteUsersInvite(repository: UsersRepository, params: DeleteUsersInviteParams): Promise<DeleteUsersInviteResult> {
+async function cancelUserInvite(repository: UsersRepository, params: CancelUserInviteParams): Promise<CancelUserInviteResult> {
   const {
     userId,
   } = params;
@@ -328,16 +350,16 @@ async function deleteUsersInvite(repository: UsersRepository, params: DeleteUser
   return cancelledUser;
 }
 
-interface PatchUsersDeactivateParams {
+interface DeactivateUserParams {
   userId: string;
 }
 
-interface PatchUsersDeactivateResult {
+interface DeactivateUserResult {
   user_id: string;
   status: UserStatus;
 }
 
-async function patchUsersDeactivate(repository: UsersRepository, params: PatchUsersDeactivateParams): Promise<PatchUsersDeactivateResult> {
+async function deactivateUser(repository: UsersRepository, params: DeactivateUserParams): Promise<DeactivateUserResult> {
   const {
     userId,
   } = params;
@@ -352,11 +374,11 @@ async function patchUsersDeactivate(repository: UsersRepository, params: PatchUs
 
   const {
     password: {
-      randomBytesLength,
+      tokenLength,
     },
   } = Config.authConfig();
 
-  const newPasswordHash = await bcryptHash(randomAlphaNumeric(randomBytesLength));
+  const newPasswordHash = await bcryptHash(randomAlphaNumeric(tokenLength));
 
   const {
     user: deactivatedUser,
@@ -371,13 +393,13 @@ async function patchUsersDeactivate(repository: UsersRepository, params: PatchUs
 }
 
 export {
-  getUsers,
-  postUsers,
-  putUsers,
-  patchUsersEmail,
-  deleteUsers,
-  patchUsersInvite,
-  deleteUsersInvite,
-  postUsersActivate,
-  patchUsersDeactivate,
+  fetchUsers,
+  createUser,
+  editUser,
+  editUserEmail,
+  deleteUser,
+  inviteUser,
+  cancelUserInvite,
+  activateUser,
+  deactivateUser,
 };

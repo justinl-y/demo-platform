@@ -6,9 +6,12 @@ interface GetResult {
   };
 }
 
+type SentEmailType = 'INVITATION' | 'PASSWORD_RESET';
+
 type UserStatus = 'CREATED' | 'INVITED' | 'ACTIVE' | 'DEACTIVATED';
 
 export type {
   GetResult,
   UserStatus,
+  SentEmailType,
 };

@@ -1,4 +1,4 @@
-import { putUsers as putUsersService } from '#services/users/users.service';
+import { editUser } from '#services/users/users.service';
 
 import type { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 
@@ -23,13 +23,13 @@ async function putUsers(this: FastifyInstance, request: FastifyRequest<Request>,
     },
   } = request;
 
-  const putUsersParams = {
+  const editUserParams = {
     userId,
     fullName,
     knownAs,
   };
 
-  const result = await putUsersService(this.repositories.users, putUsersParams);
+  const result = await editUser(this.repositories.users, editUserParams);
 
   return reply
     .send(result)

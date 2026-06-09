@@ -1,4 +1,4 @@
-import { patchUsersEmail as patchUsersEmailService } from '#services/users/users.service';
+import { editUserEmail } from '#services/users/users.service';
 
 import type { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 
@@ -21,12 +21,12 @@ async function patchUsersEmail(this: FastifyInstance, request: FastifyRequest<Re
     },
   } = request;
 
-  const patchUsersEmailParams = {
+  const editUserEmailParams = {
     userId,
     newEmail,
   };
 
-  const result = await patchUsersEmailService(this.repositories.users, patchUsersEmailParams);
+  const result = await editUserEmail(this.repositories.users, editUserEmailParams);
 
   return reply
     .send(result)

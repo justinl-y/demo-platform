@@ -8,6 +8,8 @@ import schema from './schema.ts';
 import postLogin from './post-login/index.ts';
 import postRefresh from './post-refresh/index.ts';
 import postLogout from './post-logout/index.ts';
+import postPasswordForgot from './post-password-forgot/index.ts';
+import postPasswordReset from './post-password-reset/index.ts';
 
 import type {
   FastifyInstance,
@@ -22,6 +24,8 @@ const routes = {
   postLogin: routePropertiesCore(POST, '/login', postLogin as RouteHandlerMethod),
   postRefresh: routePropertiesCore(POST, '/refresh', postRefresh),
   postLogout: routePropertiesCore(POST, '/logout', postLogout),
+  postPasswordForgot: routePropertiesCore(POST, '/password/forgot', postPasswordForgot as RouteHandlerMethod),
+  postPasswordReset: routePropertiesCore(POST, '/password/reset', postPasswordReset as RouteHandlerMethod),
 };
 
 export type RouteKey = keyof typeof routes;

@@ -1,4 +1,4 @@
-import { patchUsersDeactivate as patchUsersDeactivateService } from '#services/users/users.service';
+import { deactivateUser } from '#services/users/users.service';
 
 import type { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 
@@ -15,11 +15,11 @@ async function patchUsersDeactivate(this: FastifyInstance, request: FastifyReque
     },
   } = request;
 
-  const patchUsersDeactivateParams = {
+  const deactivateUserParams = {
     userId,
   };
 
-  const result = await patchUsersDeactivateService(this.repositories.users, patchUsersDeactivateParams);
+  const result = await deactivateUser(this.repositories.users, deactivateUserParams);
 
   return reply
     .send(result)
