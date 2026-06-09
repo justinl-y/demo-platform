@@ -8,22 +8,22 @@ import type {
 
 type Request = {
   Body: {
-    new_password: string;
     password_reset_token: string;
+    new_password: string;
   };
 };
 
 async function passwordReset(this: FastifyInstance, request: FastifyRequest<Request>, reply: FastifyReply) {
   const {
     body: {
-      new_password: newPassword,
       password_reset_token: passwordResetToken,
+      new_password: newPassword,
     },
   } = request;
 
   const passwordResetParams = {
-    newPassword,
     passwordResetToken,
+    newPassword,
   };
 
   await passwordResetService(this.repositories.auth, passwordResetParams);

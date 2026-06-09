@@ -7,7 +7,7 @@ import { captureSentryException } from '#lib/sentry-instrument';
 import { Config } from '#config/index';
 
 import type { UsersRepository } from '#repositories/users/users.repository';
-import type { GetResult, UserStatus, SentEmailType } from '../../types/general.ts';
+import type { GetResult, UserStatus } from '../../types/general.ts';
 
 interface GetUsersParams {
   page: number;
@@ -198,6 +198,51 @@ interface PatchUsersInviteResult {
   invite_email_sent: boolean;
 }
 
+interface DeliverInvitationEmailParams {
+  userId: string;
+  email: string;
+  actionUrl: string;
+  inviteTokenHash: string;
+}
+
+// Sends the invitation email and, on success, stamps the email-sent timestamp.
+// Owns its error handling — the invite is already persisted, so a delivery failure
+// must not fail the request — and returns whether the email was sent so the caller
+// can report it. Never throws.
+async function deliverInvitationEmail(repository: UsersRepository, params: DeliverInvitationEmailParams): Promise<boolean> {
+  const {
+    userId,
+    email,
+    actionUrl,
+    inviteTokenHash,
+  } = params;
+
+  try {
+    await sendEmail({
+      toEmail: email,
+      actionUrl,
+      emailType: 'INVITATION',
+    });
+
+    const {
+      user: stamped,
+    } = await repository.updateUserInviteEmailSent({
+      userId,
+      inviteTokenHash,
+    });
+
+    return Boolean(stamped);
+  }
+  catch (err) {
+    // Logged to Sentry for investigation or re-invite
+    captureSentryException(err);
+
+    console.error(err, `Invitation email delivery failed for ${email}`);
+
+    return false;
+  }
+}
+
 async function patchUsersInvite(repository: UsersRepository, params: PatchUsersInviteParams): Promise<PatchUsersInviteResult> {
   const {
     userId,
@@ -214,7 +259,7 @@ async function patchUsersInvite(repository: UsersRepository, params: PatchUsersI
   const {
     invitationTokenExpirationDays,
     password: {
-      randomBytesLength,
+      tokenLength,
     },
   } = Config.authConfig();
   const {
@@ -222,7 +267,7 @@ async function patchUsersInvite(repository: UsersRepository, params: PatchUsersI
   } = Config;
 
   // The raw token travels in the email link; only its hash is persisted.
-  const inviteToken = randomAlphaNumeric(randomBytesLength);
+  const inviteToken = randomAlphaNumeric(tokenLength);
   const inviteTokenHash = sha256Hex(inviteToken);
 
   const {
@@ -236,33 +281,12 @@ async function patchUsersInvite(repository: UsersRepository, params: PatchUsersI
 
   const actionUrl = `${appBaseUrl}/account-activate?token=${inviteToken}`;
 
-  let emailSent: boolean = false;
-
-  try {
-    const sentInvitationEmailParams = {
-      toEmail: invitedUser.email,
-      actionUrl,
-      emailType: 'INVITATION' as SentEmailType,
-    };
-
-    await sendEmail(sentInvitationEmailParams);
-
-    const {
-      user: stamped,
-    } = await repository.updateUserInviteEmailSent({
-      userId: invitedUser.user_id,
-      inviteTokenHash,
-    });
-
-    if (stamped) emailSent = true;
-  }
-  catch (err) {
-    // The invitation is already persisted; a delivery failure must not fail the request.
-    // Logged to Sentry for investigation or re-invite
-    captureSentryException(err);
-
-    console.error(err, `Invitation email delivery failed for ${invitedUser.email}`);
-  }
+  const emailSent = await deliverInvitationEmail(repository, {
+    userId: invitedUser.user_id,
+    email: invitedUser.email,
+    actionUrl,
+    inviteTokenHash,
+  });
 
   return {
     user_id: invitedUser.user_id,
@@ -350,11 +374,11 @@ async function patchUsersDeactivate(repository: UsersRepository, params: PatchUs
 
   const {
     password: {
-      randomBytesLength,
+      tokenLength,
     },
   } = Config.authConfig();
 
-  const newPasswordHash = await bcryptHash(randomAlphaNumeric(randomBytesLength));
+  const newPasswordHash = await bcryptHash(randomAlphaNumeric(tokenLength));
 
   const {
     user: deactivatedUser,

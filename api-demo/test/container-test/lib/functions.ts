@@ -64,6 +64,44 @@ async function createRandomUser({
   };
 }
 
+// Reset tokens are only ever known to the email recipient in production, so an
+// integration test seeds the persisted hash + expiry directly to drive the
+// endpoint. A pre-existing refresh token is seeded so callers can assert the
+// reset clears it (invalidating any existing sessions).
+async function seedUserWithResetToken({
+  rawToken,
+  expiresAt,
+  status = 'ACTIVE',
+}: {
+  rawToken: string;
+  expiresAt?: Date;
+  status?: UserStatus;
+}) {
+  const {
+    userId,
+  } = await createRandomUser({ status });
+
+  const resetTokenHash = sha256Hex(rawToken);
+  const resetExpiresAt = expiresAt ?? new Date(Date.now() + 30 * 60 * 1000);
+
+  const updateUsersAuthenticationSql = `UPDATE
+    public.users_authentication
+  SET
+    password_reset_token_hash = $1
+    , password_reset_token_expiry_at = $2
+    , refresh_token_hash = $3
+  WHERE
+    user_id = $4
+  ;`;
+
+  // refresh_token_hash is unique-constrained, so derive a distinct value per seeded user
+  const refreshTokenHash = `pre-existing-refresh-${resetTokenHash}`;
+
+  await query(updateUsersAuthenticationSql, [resetTokenHash, resetExpiresAt, refreshTokenHash, userId]);
+
+  return { userId };
+}
+
 function toBase64Url(input: string | Buffer): string {
   return Buffer.isBuffer(input)
     ? input.toString('base64url')
@@ -86,6 +124,30 @@ function setCookies(headers: Supertest.Response['headers']) {
   const raw = headers['set-cookie'];
 
   return Array.isArray(raw) ? raw : (raw ? [raw] : []);
+}
+
+// Polls produce() until it returns a defined value, for asserting on work that
+// completes asynchronously (e.g. background email-sent stamping). Throws on timeout.
+async function waitForCondition<T>(
+  produce: () => Promise<T | undefined>,
+  {
+    timeoutMs = 2000,
+    intervalMs = 25,
+  }: {
+    timeoutMs?: number;
+    intervalMs?: number;
+  } = {},
+): Promise<T> {
+  const deadline = Date.now() + timeoutMs;
+
+  for (;;) {
+    const result = await produce();
+    if (result !== undefined) return result;
+
+    if (Date.now() >= deadline) throw new Error(`waitForCondition timed out after ${timeoutMs}ms`);
+
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+  }
 }
 
 function generateTestCookie(tokenType: TokenType, userId: string, userEmail: string): string {
@@ -113,6 +175,8 @@ export {
   createRandomUser,
   generateTestCookie,
   getFileNumber,
+  seedUserWithResetToken,
   setCookies,
   sha256Hex,
+  waitForCondition,
 };

@@ -15,7 +15,7 @@ const {
   password: {
     passwordLengthMin,
     passwordLengthMax,
-    randomBytesLength,
+    tokenLength,
   },
 } = Config.authConfig();
 
@@ -24,8 +24,8 @@ const body = {
   properties: {
     token: {
       type: 'string',
-      minLength: randomBytesLength,
-      maxLength: randomBytesLength,
+      minLength: tokenLength,
+      maxLength: tokenLength,
       description: 'Invitation token from the activation email link',
     },
     password: {

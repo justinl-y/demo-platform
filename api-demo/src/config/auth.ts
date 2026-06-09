@@ -17,7 +17,7 @@ function buildAuthConfig() {
       expirationDays: 7,
       passwordLengthMin: 10,
       passwordLengthMax: 40,
-      randomBytesLength: 30,
+      tokenLength: 30,
     },
     audience: secretValues.AUTH_AUDIENCE,
     secret: secretValues.AUTH_SECRET,

@@ -15,7 +15,7 @@ const {
   password: {
     passwordLengthMin,
     passwordLengthMax,
-    randomBytesLength,
+    tokenLength,
   },
 } = Config.authConfig();
 
@@ -24,8 +24,8 @@ const body = {
   properties: {
     password_reset_token: {
       type: 'string',
-      minLength: randomBytesLength,
-      maxLength: randomBytesLength,
+      minLength: tokenLength,
+      maxLength: tokenLength,
       description: 'Reset token from the password reset email link',
     },
     new_password: {
@@ -36,7 +36,10 @@ const body = {
       transform: ['trim'],
     },
   },
-  required: ['password_reset_token', 'new_password'],
+  required: [
+    'password_reset_token',
+    'new_password',
+  ],
   additionalProperties: false,
 };
 

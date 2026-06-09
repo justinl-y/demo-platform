@@ -18,7 +18,6 @@ import { Config } from '#config/index';
 import type { JWT } from '@fastify/jwt';
 import type { AuthRepository } from '#repositories/auth/auth.repository';
 import type { JwtUser } from '../../types/jwt.ts';
-import type { SentEmailType } from '../../types/general.ts';
 
 interface LoginParams {
   email: string;
@@ -200,12 +199,44 @@ interface PasswordForgotParams {
   email: string;
 }
 
-interface PasswordForgotResult {
-  user_id: string;
-  password_reset_email_sent: boolean;
+interface DeliverPasswordResetEmailParams {
+  email: string;
+  actionUrl: string;
+  userId: string;
+  passwordResetTokenHash: string;
 }
 
-async function passwordForgot(repository: AuthRepository, params: PasswordForgotParams): Promise<PasswordForgotResult | undefined> {
+// Sends the reset email and stamps the email-sent timestamp on success. Intended
+// to run off the request path (callers do not await it), so it never throws —
+// failures are captured for Sentry and logged instead.
+async function deliverPasswordResetEmail(repository: AuthRepository, params: DeliverPasswordResetEmailParams): Promise<void> {
+  const {
+    email,
+    actionUrl,
+    userId,
+    passwordResetTokenHash,
+  } = params;
+
+  try {
+    await sendEmail({
+      toEmail: email,
+      actionUrl,
+      emailType: 'PASSWORD_RESET',
+    });
+
+    await repository.setUserPasswordResetEmailSent({
+      userId,
+      passwordResetTokenHash,
+    });
+  }
+  catch (err) {
+    captureSentryException(err);
+
+    console.error(err, `Password reset email send failed for ${email}`);
+  }
+}
+
+async function passwordForgot(repository: AuthRepository, params: PasswordForgotParams): Promise<void> {
   const {
     email,
   } = params;
@@ -224,7 +255,7 @@ async function passwordForgot(repository: AuthRepository, params: PasswordForgot
   const {
     passwordResetTokenExpirationMinutes,
     password: {
-      randomBytesLength,
+      tokenLength,
     },
   } = Config.authConfig();
   const {
@@ -232,7 +263,7 @@ async function passwordForgot(repository: AuthRepository, params: PasswordForgot
   } = Config;
 
   // The raw token travels in the email link; only its hash is persisted.
-  const passwordResetToken = randomAlphaNumeric(randomBytesLength);
+  const passwordResetToken = randomAlphaNumeric(tokenLength);
   const passwordResetTokenHash = sha256Hex(passwordResetToken);
 
   // persist user reset token hash
@@ -244,47 +275,15 @@ async function passwordForgot(repository: AuthRepository, params: PasswordForgot
 
   const actionUrl = `${appBaseUrl}/password-reset?token=${passwordResetToken}`;
 
-  let emailServiceSuccess: boolean = false;
-
-  // send email via SES
-  try {
-    const sentPasswordResetEmailParams = {
-      toEmail: email,
-      actionUrl,
-      emailType: 'PASSWORD_RESET' as SentEmailType,
-    };
-
-    await sendEmail(sentPasswordResetEmailParams);
-
-    emailServiceSuccess = true;
-  }
-  catch (err) {
-    // Logged to Sentry for investigation
-    captureSentryException(err);
-
-    console.error(err, `Password reset email send failed for ${email}`);
-  }
-
-  let userStamped;
-
-  // set email sent status
-  if (emailServiceSuccess) {
-    ({
-      user: userStamped,
-    } = await repository.setUserPasswordResetEmailSent({
-      userId,
-      passwordResetTokenHash,
-    }));
-  }
-
-  let emailSent: boolean = false;
-
-  if (emailServiceSuccess && userStamped) emailSent = true;
-
-  return {
-    user_id: userId,
-    password_reset_email_sent: emailSent,
-  };
+  // Deliver off the request path so the response time does not depend on whether
+  // the account exists (prevents timing-based user enumeration). Deliberately not
+  // awaited — delivery and the email-sent stamp run in the background.
+  deliverPasswordResetEmail(repository, {
+    email,
+    actionUrl,
+    userId,
+    passwordResetTokenHash,
+  });
 }
 
 interface PasswordResetParams {
@@ -292,12 +291,34 @@ interface PasswordResetParams {
   newPassword: string;
 }
 
-interface PasswordResetResult {
-  user_id: string;
-}
+async function passwordReset(repository: AuthRepository, params: PasswordResetParams): Promise<void> {
+  const {
+    passwordResetToken,
+    newPassword,
+  } = params;
 
-async function passwordReset(repository: AuthRepository, params: PasswordResetParams): Promise<PasswordResetResult | null> {
-  return null;
+  // The raw token is compared by hash; only the hash is ever persisted.
+  const passwordResetTokenHash = sha256Hex(passwordResetToken);
+
+  // Validate the token cheaply (indexed lookup) before the expensive password
+  // hash, so an invalid token is rejected without burning a bcrypt round.
+  const existingUser = await repository.getUserByPasswordResetToken({ passwordResetTokenHash });
+  if (!existingUser) throw new BadRequestError('Invalid or expired password reset token');
+
+  const hashedNewPassword = await bcryptHash(newPassword);
+
+  // Consume the token atomically: the UPDATE re-checks the token (active user,
+  // unexpired) so it stays single-use even under concurrent requests, clears the
+  // token, and nulls the refresh token to invalidate existing sessions. A null
+  // result means the token was consumed between the lookup and here.
+  const {
+    user,
+  } = await repository.setUserResetPassword({
+    passwordResetTokenHash,
+    hashedNewPassword,
+  });
+
+  if (!user) throw new BadRequestError('Invalid or expired password reset token');
 }
 
 export {

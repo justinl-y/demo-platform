@@ -14,7 +14,9 @@ import {
   createRandomUser,
   generateTestCookie,
   getFileNumber,
+  seedUserWithResetToken,
   setCookies,
+  waitForCondition,
 } from '../lib/functions.ts';
 
 import type Supertest from 'supertest';
@@ -550,8 +552,14 @@ describe(`${fileNumber} - Auth`, () => {
         requestTime = new Date();
         rep = await getResponse(validRequestBody);
 
-        const [result] = await query<DbPasswordReset>(getPasswordResetSql, [userEmail]);
-        dbPasswordReset = result;
+        // The send + email-sent stamp run off the request path, so poll until the
+        // background stamp lands. The token hash/expiry are written synchronously,
+        // so the polled row carries them too.
+        dbPasswordReset = await waitForCondition(async () => {
+          const [result] = await query<DbPasswordReset>(getPasswordResetSql, [userEmail]);
+
+          return result.password_reset_email_sent_at ? result : undefined;
+        });
       });
 
       test('Success response returns 204', () => {
@@ -652,5 +660,218 @@ describe(`${fileNumber} - Auth`, () => {
     });
   });
 
-  describe.skip('POST /password/reset', () => {});
+  describe('POST /password/reset', () => {
+    const getResponse = (reqBody: RequestBody) => noAuthAPI.post('/password/reset', reqBody);
+
+    const validPassword = 'TestPass123!@#abc';
+    const validTokenLength = 30;
+
+    describe('Request Failure', () => {
+      test('Absent required body "password_reset_token" returns 400', async () => {
+        const res = await getResponse({ new_password: validPassword });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe(`body must have required property 'password_reset_token'`);
+      });
+
+      test('Absent required body "new_password" returns 400', async () => {
+        const res = await getResponse({ password_reset_token: faker.string.alphanumeric(validTokenLength) });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe(`body must have required property 'new_password'`);
+      });
+
+      test('Invalid type body "password_reset_token" returns 400', async () => {
+        const res = await getResponse({
+          password_reset_token: 1234,
+          new_password: validPassword,
+        } as unknown as RequestBody);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('body/password_reset_token must be string');
+      });
+
+      test('Invalid type body "new_password" returns 400', async () => {
+        const res = await getResponse({
+          password_reset_token: faker.string.alphanumeric(validTokenLength),
+          new_password: 1234,
+        } as unknown as RequestBody);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('body/new_password must be string');
+      });
+
+      test('Token shorter than the minimum returns 400', async () => {
+        const res = await getResponse({
+          password_reset_token: faker.string.alphanumeric(10),
+          new_password: validPassword,
+        });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('body/password_reset_token must NOT have fewer than 30 characters');
+      });
+
+      test('Token longer than the maximum returns 400', async () => {
+        const res = await getResponse({
+          password_reset_token: faker.string.alphanumeric(40),
+          new_password: validPassword,
+        });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('body/password_reset_token must NOT have more than 30 characters');
+      });
+
+      test('Password shorter than the minimum returns 400', async () => {
+        const res = await getResponse({
+          password_reset_token: faker.string.alphanumeric(validTokenLength),
+          new_password: 'short',
+        });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('body/new_password must NOT have fewer than 10 characters');
+      });
+
+      test('Password longer than the maximum returns 400', async () => {
+        const res = await getResponse({
+          password_reset_token: faker.string.alphanumeric(validTokenLength),
+          new_password: 'a'.repeat(41),
+        });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('body/new_password must NOT have more than 40 characters');
+      });
+
+      test('Unknown token returns 400', async () => {
+        const res = await getResponse({
+          password_reset_token: faker.string.alphanumeric(validTokenLength),
+          new_password: validPassword,
+        });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid or expired password reset token');
+      });
+
+      test('Expired token returns 400', async () => {
+        const prefix = 'expired-';
+        const rawToken = `${prefix}${faker.string.alphanumeric(validTokenLength - prefix.length)}`;
+
+        await seedUserWithResetToken({
+          rawToken,
+          expiresAt: new Date(Date.now() - 1000),
+        });
+
+        const res = await getResponse({
+          password_reset_token: rawToken,
+          new_password: validPassword,
+        });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid or expired password reset token');
+      });
+
+      test('Token for a non-active user returns 400', async () => {
+        const prefix = 'inactive-';
+        const rawToken = `${prefix}${faker.string.alphanumeric(validTokenLength - prefix.length)}`;
+
+        await seedUserWithResetToken({
+          rawToken,
+          status: 'DEACTIVATED',
+        });
+
+        const res = await getResponse({
+          password_reset_token: rawToken,
+          new_password: validPassword,
+        });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid or expired password reset token');
+      });
+
+      test('Already-used token returns 400 on the second reset', async () => {
+        const prefix = 'used-';
+        const rawToken = `${prefix}${faker.string.alphanumeric(validTokenLength - prefix.length)}`;
+
+        await seedUserWithResetToken({ rawToken });
+
+        const first = await getResponse({
+          password_reset_token: rawToken,
+          new_password: validPassword,
+        });
+        const second = await getResponse({
+          password_reset_token: rawToken,
+          new_password: validPassword,
+        });
+
+        expect(first.statusCode).toBe(204);
+        expect(second.statusCode).toBe(400);
+        expect(second.body.message).toBe('Invalid or expired password reset token');
+      });
+    });
+
+    describe('Request Success', () => {
+      interface DbReset {
+        password_hash: string | null;
+        password_reset_token_hash: string | null;
+        password_reset_token_expiry_at: Date | null;
+        refresh_token_hash: string | null;
+      }
+
+      const getResetSql = `SELECT
+        a.password_hash
+        , a.password_reset_token_hash
+        , a.password_reset_token_expiry_at
+        , a.refresh_token_hash
+      FROM
+        public.users_authentication AS a
+      WHERE
+        a.user_id = $1;`;
+
+      let resetUserId: string;
+      let rawToken: string;
+      let rep: Supertest.Response;
+      let dbReset: DbReset;
+
+      beforeAll(async () => {
+        const prefix = 'valid-';
+        rawToken = `${prefix}${faker.string.alphanumeric(validTokenLength - prefix.length)}`;
+
+        ({
+          userId: resetUserId,
+        } = await seedUserWithResetToken({ rawToken }));
+
+        rep = await getResponse({
+          password_reset_token: rawToken,
+          new_password: validPassword,
+        });
+
+        const [result] = await query<DbReset>(getResetSql, [resetUserId]);
+        dbReset = result;
+      });
+
+      test('Success response returns 204', () => {
+        expect(rep.statusCode).toBe(204);
+      });
+
+      test('Response body is empty', () => {
+        expect(rep.body).toEqual({});
+      });
+
+      test('Password is persisted as a bcrypt hash of the new password', async () => {
+        expect(dbReset.password_hash).not.toBeNull();
+        expect(await bcrypt.compare(validPassword, dbReset.password_hash as string)).toBe(true);
+      });
+
+      test('Password reset token hash is cleared in the database', () => {
+        expect(dbReset.password_reset_token_hash).toBeNull();
+      });
+
+      test('Password reset token expiry is cleared in the database', () => {
+        expect(dbReset.password_reset_token_expiry_at).toBeNull();
+      });
+
+      test('Refresh token hash is cleared to invalidate existing sessions', () => {
+        expect(dbReset.refresh_token_hash).toBeNull();
+      });
+    });
+  });
 });

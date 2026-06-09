@@ -2,20 +2,24 @@ import { cwd } from '#utils/functions';
 
 import type { DatabaseDecorator } from '../../types/database.ts';
 import type { IAuthGetUserByEmailParams, IAuthGetUserByEmailResult } from './types/get-user-by-email.typed.queries.ts';
+import type { IAuthGetUserByPasswordResetTokenParams, IAuthGetUserByPasswordResetTokenResult } from './types/get-user-by-password-reset-token.typed.queries.ts';
 import type { IAuthGetUserRefreshHashParams, IAuthGetUserRefreshHashResult } from './types/get-user-refresh-hash.typed.queries.ts';
 import type { IAuthSetUserRefreshHashOnLoginParams, IAuthSetUserRefreshHashOnLoginResult } from './types/set-user-refresh-hash-on-login.typed.queries.ts';
 import type { IAuthSetUserRefreshHashOnRefreshParams, IAuthSetUserRefreshHashOnRefreshResult } from './types/set-user-refresh-hash-on-refresh.typed.queries.ts';
 import type { IAuthSetUserPasswordResetParams, IAuthSetUserPasswordResetResult } from './types/set-user-password-reset.typed.queries.ts';
 import type { IAuthSetUserPasswordResetEmailSentParams, IAuthSetUserPasswordResetEmailSentResult } from './types/set-user-password-reset-email-sent.typed.queries.ts';
+import type { IAuthSetUserResetPasswordParams, IAuthSetUserResetPasswordResult } from './types/set-user-reset-password.typed.queries.ts';
 import type { IAuthSetUserRefreshHashNullParams, IAuthSetUserRefreshHashNullResult } from './types/set-user-refresh-hash-null.typed.queries.ts';
 
 const relPath = import.meta.dirname;
-const getUserQuery = cwd('get-user-by-email', relPath);
+const getUserByEmailQuery = cwd('get-user-by-email', relPath);
+const getUserByPasswordResetTokenQuery = cwd('get-user-by-password-reset-token', relPath);
 const getUserWithRefreshHashQuery = cwd('get-user-refresh-hash', relPath);
 const setUserRefreshHashOnLoginQuery = cwd('set-user-refresh-hash-on-login', relPath);
 const setUserRefreshHashOnRefreshQuery = cwd('set-user-refresh-hash-on-refresh', relPath);
 const setUserPasswordReset = cwd('set-user-password-reset', relPath);
 const setUserPasswordResetEmailSent = cwd('set-user-password-reset-email-sent', relPath);
+const setUserResetPassword = cwd('set-user-reset-password', relPath);
 const setUserRefreshHashNullQuery = cwd('set-user-refresh-hash-null', relPath);
 
 function createAuthRepository(db: DatabaseDecorator) {
@@ -23,7 +27,12 @@ function createAuthRepository(db: DatabaseDecorator) {
     getUserByEmail: ({
       email,
     }: IAuthGetUserByEmailParams) =>
-      db.query<IAuthGetUserByEmailResult>(getUserQuery, { email }, 'one'),
+      db.query<IAuthGetUserByEmailResult>(getUserByEmailQuery, { email }, 'one'),
+
+    getUserByPasswordResetToken: ({
+      passwordResetTokenHash,
+    }: IAuthGetUserByPasswordResetTokenParams) =>
+      db.query<IAuthGetUserByPasswordResetTokenResult>(getUserByPasswordResetTokenQuery, { passwordResetTokenHash }, 'one'),
 
     getUserWithRefreshToken: ({
       userId,
@@ -91,6 +100,25 @@ function createAuthRepository(db: DatabaseDecorator) {
           params: {
             userId,
             passwordResetTokenHash,
+          },
+        })
+        .execute();
+
+      return {
+        user: userResult[0],
+      };
+    },
+
+    setUserResetPassword: async ({
+      passwordResetTokenHash,
+      hashedNewPassword,
+    }: IAuthSetUserResetPasswordParams): Promise<{ user: IAuthSetUserResetPasswordResult | undefined }> => {
+      const [userResult] = await db.transaction()
+        .add<IAuthSetUserResetPasswordResult>({
+          files: [setUserResetPassword],
+          params: {
+            passwordResetTokenHash,
+            hashedNewPassword,
           },
         })
         .execute();
