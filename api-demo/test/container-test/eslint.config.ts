@@ -20,6 +20,7 @@ export default [
     ...stylistic,
     rules: {
       ...stylistic.rules,
+      'no-void': ['error', { allowAsStatement: true }],
       '@stylistic/no-extra-semi': 'error',
       '@stylistic/object-property-newline': ['error', { allowAllPropertiesOnSameLine: false }],
       '@stylistic/object-curly-newline': ['error', {

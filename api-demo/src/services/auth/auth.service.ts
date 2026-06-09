@@ -281,7 +281,7 @@ async function passwordForgot(repository: AuthRepository, params: PasswordForgot
   // SELECT + UPDATE that the unknown path skips); equalizing that would require a
   // single email-keyed UPDATE or a queue. The send and email-sent stamp run in the
   // background.
-  sendPasswordResetEmail(repository, {
+  void sendPasswordResetEmail(repository, {
     email,
     actionUrl,
     userId,
