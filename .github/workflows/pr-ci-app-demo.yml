@@ -1,0 +1,51 @@
+name: PR CI APP-DEMO
+
+on:
+  pull_request:
+    paths:
+      - 'app-demo/**'
+      - '.github/workflows/pr-ci-app-demo.yml'
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-ci-app-demo-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  static-checks:
+    name: Static Site Checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./app-demo
+    timeout-minutes: 10
+    steps:
+      # Checkout the code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Set up Node.js for the lint tooling
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Check JavaScript syntax
+      - name: Check JavaScript syntax
+        run: |
+          shopt -s nullglob
+          for file in *.js; do
+            echo "Checking ${file}"
+            node --check "${file}"
+          done
+
+      # Lint HTML
+      - name: Lint HTML
+        run: npx --yes htmlhint "*.html"
+
+      # Validate CSS
+      - name: Validate CSS
+        run: npx --yes csstree-validator *.css
