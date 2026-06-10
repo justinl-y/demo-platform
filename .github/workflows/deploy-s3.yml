@@ -1,0 +1,54 @@
+name: Deploy to S3 + CloudFront
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'app-demo/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: s3-deploy-master
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Configure AWS credentials
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      # Sync static assets to S3 (5 minute browser cache since files are not fingerprinted)
+      - name: Sync site to S3
+        run: |
+          aws s3 sync ./app-demo "s3://${{ vars.S3_BUCKET_NAME }}" \
+            --delete \
+            --exclude ".*" \
+            --cache-control "public, max-age=300"
+
+      # Always serve the latest HTML entry point
+      - name: Upload index.html with no-cache
+        run: |
+          aws s3 cp ./app-demo/index.html "s3://${{ vars.S3_BUCKET_NAME }}/index.html" \
+            --cache-control "no-cache"
+
+      # Invalidate the CloudFront edge cache
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id "${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}" \
+            --paths "/*"
