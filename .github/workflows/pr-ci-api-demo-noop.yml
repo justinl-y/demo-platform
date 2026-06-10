@@ -1,0 +1,31 @@
+name: PR CI API-DEMO
+
+# No-op twin of pr-ci-api-demo.yml. "Docker CI Integration Tests" is a required
+# status check, but the real workflow is path-filtered and never reports on PRs
+# that do not touch api-demo or shared — leaving the PR blocked on an
+# "Expected" check. This twin runs on exactly those PRs and reports success.
+# Workflow name and job name must stay identical to the real workflow.
+
+on:
+  pull_request:
+    paths-ignore:
+      - 'api-demo/**'
+      - 'shared/**'
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-ci-api-demo-noop-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  integration-tests:
+    name: Docker CI Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # Report success so the required check is satisfied
+      - name: Skip integration tests
+        run: echo "No api-demo or shared changes - integration tests not required."
