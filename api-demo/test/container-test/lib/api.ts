@@ -24,33 +24,6 @@ type ApiClient = Record<ApiMethod, ApiRequest>;
 
 const SUPER_USER_EMAIL = 'user.super@email.com';
 
-async function getAccessTokenCookie() {
-  const [row] = await query<{ id: string }>(
-    'SELECT id FROM internal.users WHERE email = $1',
-    [SUPER_USER_EMAIL],
-  );
-
-  if (!row) throw new Error(`getAccessTokenCookie: super user not found (${SUPER_USER_EMAIL})`);
-
-  const permissionRows = await query<{ name: string }>(
-    `SELECT
-      p.name
-     FROM
-      internal.users_roles AS ur
-      INNER JOIN internal.role_permissions AS rp ON rp.role_id = ur.role_id
-      INNER JOIN internal.permissions AS p ON p.id = rp.permission_id
-     WHERE
-      ur.user_id = $1`,
-    [row.id],
-  );
-
-  const permissions = permissionRows.map((r) => r.name);
-
-  return generateTestCookie('access', row.id, SUPER_USER_EMAIL, permissions);
-}
-
-const accessTokenCookie = await getAccessTokenCookie();
-
 const methods: ApiMethod[] = ['get', 'put', 'patch', 'del', 'post'];
 const requestByMethod: Record<ApiMethod, (resource: string) => Supertest.Test> = {
   get: (resource) => app.get(resource),
@@ -59,47 +32,72 @@ const requestByMethod: Record<ApiMethod, (resource: string) => Supertest.Test> =
   del: (resource) => app.delete(resource),
   post: (resource) => app.post(resource),
 };
-const authAPI = {} as ApiClient;
-const noAuthAPI = {} as ApiClient;
 
-// loop over all the http methods (get, post, put, delete and patch) and return functions for each.
-// also do error checking for 500s and immediately terminate test suite.
-methods.forEach((method) => {
-  // Return a pre-configured Supertest request with authorization headers
-  authAPI[method] = async (resource, data = {}, headers = {}) => {
-    const rep = await requestByMethod[method](resource)
-      .set('Cookie', accessTokenCookie)
-      .send(data)
-      .set(headers)
-      .set('Accept', 'application/json');
+// Build an ApiClient. When an access-token cookie is supplied every request
+// carries it; otherwise requests are sent unauthenticated.
+function buildClient(accessTokenCookie?: string): ApiClient {
+  const client = {} as ApiClient;
 
-    if (rep.status === 500) {
-      console.log('SERVER RESPONDED WITH a 500 Status. You should investigate this. Abandoning Tests.');
-      console.log(JSON.stringify(rep.body));
-      process.exit(1);
-    }
-    else {
+  methods.forEach((method) => {
+    client[method] = async (resource, data = {}, headers = {}) => {
+      const base = requestByMethod[method](resource);
+      const authed = accessTokenCookie ? base.set('Cookie', accessTokenCookie) : base;
+
+      const rep = await authed
+        .send(data)
+        .set(headers)
+        .set('Accept', 'application/json');
+
+      if (rep.status === 500) {
+        console.log('SERVER RESPONDED WITH a 500 Status. You should investigate this. Abandoning Tests.');
+        console.log(JSON.stringify(rep.body));
+        process.exit(1);
+      }
+
       return rep;
-    }
-  };
-  noAuthAPI[method] = async (resource, data = {}, headers = {}) => {
-    const rep = await requestByMethod[method](resource)
-      .send(data)
-      .set(headers)
-      .set('Accept', 'application/json');
+    };
+  });
 
-    if (rep.status === 500) {
-      console.log('SERVER RESPONDED WITH a 500 Status. You should investigate this. Abandoning Tests.');
-      console.log(JSON.stringify(rep.body));
-      process.exit(1);
-    }
-    else {
-      return rep;
-    }
-  };
-});
+  return client;
+}
+
+// Build an access-token cookie for a seeded user, populated with that user's
+// real permissions (so authorization behaves exactly as in production).
+async function getAccessTokenCookieForEmail(email: string): Promise<string> {
+  const getUserSql = 'SELECT u.id FROM internal.users AS u WHERE u.email = $1';
+  const [row] = await query<{ id: string }>(getUserSql, [email]);
+
+  if (!row) throw new Error(`getAccessTokenCookieForEmail: user not found (${email})`);
+
+  const getUserPermissionSql = `SELECT
+      p.name
+    FROM
+      internal.users_roles AS ur
+      INNER JOIN internal.role_permissions AS rp ON rp.role_id = ur.role_id
+      INNER JOIN internal.permissions AS p ON p.id = rp.permission_id
+    WHERE
+      ur.user_id = $1;`
+    ;
+
+  const permissionRows = await query<{ name: string }>(getUserPermissionSql, [row.id]);
+
+  const permissions = permissionRows.map((r) => r.name);
+
+  return generateTestCookie('access', row.id, email, permissions);
+}
+
+// Authenticated client for an arbitrary seeded user — drives authorization
+// paths for users other than the super user (e.g. asserting a STAFF user is
+// forbidden on a route that requires a permission they lack).
+async function authAPIAs(email: string): Promise<ApiClient> {
+  return buildClient(await getAccessTokenCookieForEmail(email));
+}
+
+const authAPI = buildClient(await getAccessTokenCookieForEmail(SUPER_USER_EMAIL));
+const noAuthAPI = buildClient();
 
 export {
   authAPI,
   noAuthAPI,
+  authAPIAs,
 };

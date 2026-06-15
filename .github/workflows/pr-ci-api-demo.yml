@@ -1,10 +1,15 @@
 name: PR CI API-DEMO
 
+# "Docker CI Integration Tests" is a required status check, so this workflow
+# triggers on every PR (no path filter at the `on:` level). A change-detection
+# step decides whether api-demo/shared were touched; the real test steps are
+# gated on that result, while the job always runs to completion and reports a
+# real success. This replaces the previous real + no-op twin pair, whose
+# `paths` / `paths-ignore` triggers were not mutually exclusive and could both
+# fire on a PR touching api-demo plus other paths.
+
 on:
   pull_request:
-    paths:
-      - 'api-demo/**'
-      - 'shared/**'
     types: [opened, synchronize, reopened, ready_for_review]
 
 permissions:
@@ -33,22 +38,41 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Detect whether api-demo or shared changed in this PR
+      - name: Detect relevant changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            relevant:
+              - 'api-demo/**'
+              - 'shared/**'
+
+      # Report success when there is nothing to test
+      - name: Skip integration tests
+        if: steps.changes.outputs.relevant == 'false'
+        run: echo "No api-demo or shared changes - integration tests not required."
+
       # Set up Docker Buildx for caching
       - name: Set up Docker Buildx
+        if: steps.changes.outputs.relevant == 'true'
         uses: docker/setup-buildx-action@v3
 
       # Show Docker versions for debugging
       - name: Show Docker versions
+        if: steps.changes.outputs.relevant == 'true'
         run: |
           docker --version
           docker compose version
 
       # Ensure clean compose state
       - name: Cleanup previous Docker Compose stack
+        if: steps.changes.outputs.relevant == 'true'
         run: docker compose down -v --remove-orphans || true
 
       # Build images (with native Buildx caching)
       - name: Build API and Test images
+        if: steps.changes.outputs.relevant == 'true'
         run: |
           docker compose build \
             --progress=plain \
@@ -58,18 +82,20 @@ jobs:
 
       # Start DB and API services
       - name: Start DB and API
+        if: steps.changes.outputs.relevant == 'true'
         run: docker compose up -d --wait db api
 
       # Run integration tests
       - name: Run integration tests
+        if: steps.changes.outputs.relevant == 'true'
         run: docker compose up --abort-on-container-exit --exit-code-from test test
 
       # Dump logs if tests fail
       - name: Dump Docker Compose logs on failure
-        if: failure()
+        if: failure() && steps.changes.outputs.relevant == 'true'
         run: docker compose logs --no-color
 
       # Teardown compose stack
       - name: Teardown Docker Compose stack
-        if: always()
+        if: always() && steps.changes.outputs.relevant == 'true'
         run: docker compose down -v --remove-orphans
