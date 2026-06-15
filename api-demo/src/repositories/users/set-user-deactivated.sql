@@ -1,6 +1,6 @@
 WITH deactivated AS (
   UPDATE
-    public.users
+    internal.users
   SET
     deactivated_at = NOW()
   WHERE
@@ -11,7 +11,7 @@ WITH deactivated AS (
     , status
 )
 UPDATE
-  public.users_authentication AS a
+  internal.users_authentication AS a
 SET
   password_hash = $newPasswordHash!
   , refresh_token_hash = NULL

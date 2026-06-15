@@ -129,8 +129,8 @@ describe(`${fileNumber} - Auth`, () => {
             a.refresh_token_hash
             , a.last_login
           FROM
-            public.users AS u
-            INNER JOIN public.users_authentication AS a ON a.user_id = u.id
+            internal.users AS u
+            INNER JOIN internal.users_authentication AS a ON a.user_id = u.id
           WHERE
             u.email = $1;`;
 
@@ -231,7 +231,7 @@ describe(`${fileNumber} - Auth`, () => {
 
         await query(
           `UPDATE
-              public.users_authentication
+              internal.users_authentication
             SET
               refresh_token_hash = NULL
             WHERE
@@ -286,7 +286,7 @@ describe(`${fileNumber} - Auth`, () => {
         const hash = await bcrypt.hash(freshRefreshToken, salt);
 
         const setUserRefreshTokenHash = `UPDATE
-          public.users_authentication
+          internal.users_authentication
         SET
           refresh_token_hash = $1
         WHERE
@@ -299,7 +299,7 @@ describe(`${fileNumber} - Auth`, () => {
         const getRefreshTokenHashSql = `SELECT
           a.refresh_token_hash
         FROM
-          public.users_authentication AS a
+          internal.users_authentication AS a
         WHERE
           a.user_id = $1;`;
         const [result] = await query<DbUserRefreshHash>(getRefreshTokenHashSql, [userId]);
@@ -428,7 +428,7 @@ describe(`${fileNumber} - Auth`, () => {
 
         await query(
           `UPDATE
-              public.users_authentication
+              internal.users_authentication
             SET
               refresh_token_hash = $1
             WHERE
@@ -442,7 +442,7 @@ describe(`${fileNumber} - Auth`, () => {
         const getRefreshTokenHashSql = `SELECT
           a.refresh_token_hash
         FROM
-          public.users_authentication AS a
+          internal.users_authentication AS a
         WHERE
           a.user_id = $1;`;
         const [result] = await query<DbUserRefreshHash>(getRefreshTokenHashSql, [logoutUserId]);
@@ -539,8 +539,8 @@ describe(`${fileNumber} - Auth`, () => {
           , a.password_reset_token_expiry_at
           , a.password_reset_email_sent_at
         FROM
-          public.users AS u
-          INNER JOIN public.users_authentication AS a ON a.user_id = u.id
+          internal.users AS u
+          INNER JOIN internal.users_authentication AS a ON a.user_id = u.id
         WHERE
           u.email = $1;`;
 
@@ -621,8 +621,8 @@ describe(`${fileNumber} - Auth`, () => {
           , a.password_reset_token_expiry_at
           , a.password_reset_email_sent_at
         FROM
-          public.users AS u
-          INNER JOIN public.users_authentication AS a ON a.user_id = u.id
+          internal.users AS u
+          INNER JOIN internal.users_authentication AS a ON a.user_id = u.id
         WHERE
           u.email = $1;`;
 
@@ -822,7 +822,7 @@ describe(`${fileNumber} - Auth`, () => {
         , a.password_reset_token_expiry_at
         , a.refresh_token_hash
       FROM
-        public.users_authentication AS a
+        internal.users_authentication AS a
       WHERE
         a.user_id = $1;`;
 

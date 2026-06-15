@@ -17,14 +17,14 @@ export interface IUsersRemoveUserQuery {
   result: IUsersRemoveUserResult;
 }
 
-const usersRemoveUserIR: any = {"usedParamSet":{"userId":true},"params":[{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":102,"b":109}]}],"statement":"                                                             \nDELETE FROM\n  public.users\nWHERE\n  id = :userId!\n  AND status = 'CREATED'\nRETURNING\n  id AS user_id"};
+const usersRemoveUserIR: any = {"usedParamSet":{"userId":true},"params":[{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":104,"b":111}]}],"statement":"                                                             \nDELETE FROM\n  internal.users\nWHERE\n  id = :userId!\n  AND status = 'CREATED'\nRETURNING\n  id AS user_id"};
 
 /**
  * Query generated from SQL:
  * ```
  *                                                              
  * DELETE FROM
- *   public.users
+ *   internal.users
  * WHERE
  *   id = :userId!
  *   AND status = 'CREATED'

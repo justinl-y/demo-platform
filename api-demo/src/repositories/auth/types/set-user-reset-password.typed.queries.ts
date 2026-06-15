@@ -18,21 +18,21 @@ export interface IAuthSetUserResetPasswordQuery {
   result: IAuthSetUserResetPasswordResult;
 }
 
-const authSetUserResetPasswordIR: any = {"usedParamSet":{"hashedNewPassword":true,"passwordResetTokenHash":true},"params":[{"name":"hashedNewPassword","required":true,"transform":{"type":"scalar"},"locs":[{"a":127,"b":145}]},{"name":"passwordResetTokenHash","required":true,"transform":{"type":"scalar"},"locs":[{"a":344,"b":367}]}],"statement":"                                                             \nUPDATE\n  public.users_authentication AS ua\nSET\n  password_hash = :hashedNewPassword!\n  , password_reset_token_hash = NULL\n  , password_reset_token_expiry_at = NULL\n  , refresh_token_hash = NULL\nFROM\n  public.users AS u\nWHERE\n  u.id = ua.user_id\n  AND ua.password_reset_token_hash = :passwordResetTokenHash!\n  AND ua.password_reset_token_expiry_at > NOW()\n  AND u.status = 'ACTIVE'\nRETURNING\n  ua.user_id"};
+const authSetUserResetPasswordIR: any = {"usedParamSet":{"hashedNewPassword":true,"passwordResetTokenHash":true},"params":[{"name":"hashedNewPassword","required":true,"transform":{"type":"scalar"},"locs":[{"a":129,"b":147}]},{"name":"passwordResetTokenHash","required":true,"transform":{"type":"scalar"},"locs":[{"a":348,"b":371}]}],"statement":"                                                             \nUPDATE\n  internal.users_authentication AS ua\nSET\n  password_hash = :hashedNewPassword!\n  , password_reset_token_hash = NULL\n  , password_reset_token_expiry_at = NULL\n  , refresh_token_hash = NULL\nFROM\n  internal.users AS u\nWHERE\n  u.id = ua.user_id\n  AND ua.password_reset_token_hash = :passwordResetTokenHash!\n  AND ua.password_reset_token_expiry_at > NOW()\n  AND u.status = 'ACTIVE'\nRETURNING\n  ua.user_id"};
 
 /**
  * Query generated from SQL:
  * ```
  *                                                              
  * UPDATE
- *   public.users_authentication AS ua
+ *   internal.users_authentication AS ua
  * SET
  *   password_hash = :hashedNewPassword!
  *   , password_reset_token_hash = NULL
  *   , password_reset_token_expiry_at = NULL
  *   , refresh_token_hash = NULL
  * FROM
- *   public.users AS u
+ *   internal.users AS u
  * WHERE
  *   u.id = ua.user_id
  *   AND ua.password_reset_token_hash = :passwordResetTokenHash!

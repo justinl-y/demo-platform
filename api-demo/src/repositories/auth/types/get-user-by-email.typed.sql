@@ -7,8 +7,8 @@ SELECT
   , u.known_as
   , a.password_hash
 FROM
-  public.users AS u
-  INNER JOIN public.users_authentication AS a ON a.user_id = u.id
+  internal.users AS u
+  INNER JOIN internal.users_authentication AS a ON a.user_id = u.id
 WHERE
   u.email = :email!
   AND u.status = 'ACTIVE'

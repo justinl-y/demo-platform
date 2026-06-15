@@ -1,10 +1,10 @@
 WITH t_activated AS (
   UPDATE
-    public.users AS u
+    internal.users AS u
   SET
     activated_at = NOW()
   FROM
-    public.users_authentication AS ua
+    internal.users_authentication AS ua
   WHERE
     u.id = ua.user_id
     AND ua.invite_token_hash = $inviteTokenHash!
@@ -15,7 +15,7 @@ WITH t_activated AS (
     , u.status
 )
 UPDATE
-  public.users_authentication AS a
+  internal.users_authentication AS a
 SET
   password_hash = $passwordHash!
   , invite_token_hash = NULL

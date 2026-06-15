@@ -4,6 +4,7 @@ import type { DatabaseDecorator } from '../../types/database.ts';
 import type { IAuthGetUserByEmailParams, IAuthGetUserByEmailResult } from './types/get-user-by-email.typed.queries.ts';
 import type { IAuthGetUserByPasswordResetTokenParams, IAuthGetUserByPasswordResetTokenResult } from './types/get-user-by-password-reset-token.typed.queries.ts';
 import type { IAuthGetUserRefreshHashParams, IAuthGetUserRefreshHashResult } from './types/get-user-refresh-hash.typed.queries.ts';
+import type { IAuthGetUserPermissionsParams, IAuthGetUserPermissionsResult } from './types/get-user-permissions.typed.queries.ts';
 import type { IAuthSetUserRefreshHashOnLoginParams, IAuthSetUserRefreshHashOnLoginResult } from './types/set-user-refresh-hash-on-login.typed.queries.ts';
 import type { IAuthSetUserRefreshHashOnRefreshParams, IAuthSetUserRefreshHashOnRefreshResult } from './types/set-user-refresh-hash-on-refresh.typed.queries.ts';
 import type { IAuthSetUserPasswordResetParams, IAuthSetUserPasswordResetResult } from './types/set-user-password-reset.typed.queries.ts';
@@ -15,6 +16,7 @@ const relPath = import.meta.dirname;
 const getUserByEmailQuery = cwd('get-user-by-email', relPath);
 const getUserByPasswordResetTokenQuery = cwd('get-user-by-password-reset-token', relPath);
 const getUserWithRefreshHashQuery = cwd('get-user-refresh-hash', relPath);
+const getUserPermissionsQuery = cwd('get-user-permissions', relPath);
 const setUserRefreshHashOnLoginQuery = cwd('set-user-refresh-hash-on-login', relPath);
 const setUserRefreshHashOnRefreshQuery = cwd('set-user-refresh-hash-on-refresh', relPath);
 const setUserPasswordReset = cwd('set-user-password-reset', relPath);
@@ -38,6 +40,11 @@ function createAuthRepository(db: DatabaseDecorator) {
       userId,
     }: IAuthGetUserRefreshHashParams) =>
       db.query<IAuthGetUserRefreshHashResult>(getUserWithRefreshHashQuery, { userId }, 'one'),
+
+    getUserPermissions: ({
+      userId,
+    }: IAuthGetUserPermissionsParams) =>
+      db.query<IAuthGetUserPermissionsResult>(getUserPermissionsQuery, { userId }, 'one'),
 
     setUserRefreshTokenOnLogin: async ({
       userId,

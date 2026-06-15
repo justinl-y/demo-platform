@@ -32,15 +32,15 @@ const {
 } = httpMethods;
 
 const routes = {
-  getUsers: routePropertiesCore(GET, '/users', getUsers as RouteHandlerMethod),
-  postUsers: routePropertiesCore(POST, '/users', postUsers as RouteHandlerMethod),
-  putUsers: routePropertiesCore(PUT, '/users/:user_id', putUsers as RouteHandlerMethod),
-  patchUsersEmail: routePropertiesCore(PATCH, '/users/:user_id/email', patchUsersEmail as RouteHandlerMethod),
-  deleteUsers: routePropertiesCore(DELETE, '/users/:user_id', deleteUsers as RouteHandlerMethod),
-  patchUsersInvite: routePropertiesCore(PATCH, '/users/:user_id/invite', patchUsersInvite as RouteHandlerMethod),
-  deleteUsersInvite: routePropertiesCore(DELETE, '/users/:user_id/invite', deleteUsersInvite as RouteHandlerMethod),
+  getUsers: routePropertiesCore(GET, '/users', getUsers as RouteHandlerMethod, 'USERS_READ'),
+  postUsers: routePropertiesCore(POST, '/users', postUsers as RouteHandlerMethod, 'USERS_WRITE'),
+  putUsers: routePropertiesCore(PUT, '/users/:user_id', putUsers as RouteHandlerMethod, 'USERS_WRITE'),
+  patchUsersEmail: routePropertiesCore(PATCH, '/users/:user_id/email', patchUsersEmail as RouteHandlerMethod, 'USERS_WRITE'),
+  deleteUsers: routePropertiesCore(DELETE, '/users/:user_id', deleteUsers as RouteHandlerMethod, 'USERS_WRITE'),
+  patchUsersInvite: routePropertiesCore(PATCH, '/users/:user_id/invite', patchUsersInvite as RouteHandlerMethod, 'USERS_AUTHORIZE'),
+  deleteUsersInvite: routePropertiesCore(DELETE, '/users/:user_id/invite', deleteUsersInvite as RouteHandlerMethod, 'USERS_AUTHORIZE'),
   postUsersActivate: routePropertiesCore(POST, '/users/activate', postUsersActivate as RouteHandlerMethod),
-  patchUsersDeactivate: routePropertiesCore(PATCH, '/users/:user_id/deactivate', patchUsersDeactivate as RouteHandlerMethod),
+  patchUsersDeactivate: routePropertiesCore(PATCH, '/users/:user_id/deactivate', patchUsersDeactivate as RouteHandlerMethod, 'USERS_AUTHORIZE'),
 };
 
 export type RouteKey = keyof typeof routes;

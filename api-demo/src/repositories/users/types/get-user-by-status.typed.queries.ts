@@ -22,7 +22,7 @@ export interface IUsersGetUserByStatusQuery {
   result: IUsersGetUserByStatusResult;
 }
 
-const usersGetUserByStatusIR: any = {"usedParamSet":{"userId":true,"status":true},"params":[{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":127,"b":134}]},{"name":"status","required":true,"transform":{"type":"scalar"},"locs":[{"a":157,"b":164}]}],"statement":"                                                             \nSELECT\n  u.id AS user_id\nFROM\n  public.users AS u\nWHERE\n  u.id = :userId!\n  AND u.status = ANY(:status!)"};
+const usersGetUserByStatusIR: any = {"usedParamSet":{"userId":true,"status":true},"params":[{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":129,"b":136}]},{"name":"status","required":true,"transform":{"type":"scalar"},"locs":[{"a":159,"b":166}]}],"statement":"                                                             \nSELECT\n  u.id AS user_id\nFROM\n  internal.users AS u\nWHERE\n  u.id = :userId!\n  AND u.status = ANY(:status!)"};
 
 /**
  * Query generated from SQL:
@@ -31,7 +31,7 @@ const usersGetUserByStatusIR: any = {"usedParamSet":{"userId":true,"status":true
  * SELECT
  *   u.id AS user_id
  * FROM
- *   public.users AS u
+ *   internal.users AS u
  * WHERE
  *   u.id = :userId!
  *   AND u.status = ANY(:status!)

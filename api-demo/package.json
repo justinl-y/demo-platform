@@ -1,7 +1,7 @@
 {
   "name": "api-demo",
   "version": "1.0.0",
-  "description": "",
+  "description": "API demo for the demo platform project",
   "private": true,
   "license": "ISC",
   "author": "Justin Levett-Yeats",

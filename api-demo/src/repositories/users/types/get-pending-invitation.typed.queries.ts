@@ -17,7 +17,7 @@ export interface IUsersGetPendingInvitationQuery {
   result: IUsersGetPendingInvitationResult;
 }
 
-const usersGetPendingInvitationIR: any = {"usedParamSet":{"inviteTokenHash":true},"params":[{"name":"inviteTokenHash","required":true,"transform":{"type":"scalar"},"locs":[{"a":206,"b":222}]}],"statement":"                                                             \nSELECT\n  ua.user_id\nFROM\n  public.users_authentication AS ua\n  INNER JOIN public.users AS u ON u.id = ua.user_id\nWHERE\n  ua.invite_token_hash = :inviteTokenHash!\n  AND ua.invite_token_expiry_at > NOW()\n  AND u.status = 'INVITED'"};
+const usersGetPendingInvitationIR: any = {"usedParamSet":{"inviteTokenHash":true},"params":[{"name":"inviteTokenHash","required":true,"transform":{"type":"scalar"},"locs":[{"a":210,"b":226}]}],"statement":"                                                             \nSELECT\n  ua.user_id\nFROM\n  internal.users_authentication AS ua\n  INNER JOIN internal.users AS u ON u.id = ua.user_id\nWHERE\n  ua.invite_token_hash = :inviteTokenHash!\n  AND ua.invite_token_expiry_at > NOW()\n  AND u.status = 'INVITED'"};
 
 /**
  * Query generated from SQL:
@@ -26,8 +26,8 @@ const usersGetPendingInvitationIR: any = {"usedParamSet":{"inviteTokenHash":true
  * SELECT
  *   ua.user_id
  * FROM
- *   public.users_authentication AS ua
- *   INNER JOIN public.users AS u ON u.id = ua.user_id
+ *   internal.users_authentication AS ua
+ *   INNER JOIN internal.users AS u ON u.id = ua.user_id
  * WHERE
  *   ua.invite_token_hash = :inviteTokenHash!
  *   AND ua.invite_token_expiry_at > NOW()

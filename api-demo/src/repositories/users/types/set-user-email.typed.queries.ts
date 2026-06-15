@@ -19,14 +19,14 @@ export interface IUsersSetUserEmailQuery {
   result: IUsersSetUserEmailResult;
 }
 
-const usersSetUserEmailIR: any = {"usedParamSet":{"newEmail":true,"userId":true},"params":[{"name":"newEmail","required":true,"transform":{"type":"scalar"},"locs":[{"a":98,"b":107}]},{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":122,"b":129}]}],"statement":"                                                             \nUPDATE\n  public.users\nSET\n  email = :newEmail!\nWHERE\n  id = :userId!\nRETURNING\n  id AS user_id\n  , email"};
+const usersSetUserEmailIR: any = {"usedParamSet":{"newEmail":true,"userId":true},"params":[{"name":"newEmail","required":true,"transform":{"type":"scalar"},"locs":[{"a":100,"b":109}]},{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":124,"b":131}]}],"statement":"                                                             \nUPDATE\n  internal.users\nSET\n  email = :newEmail!\nWHERE\n  id = :userId!\nRETURNING\n  id AS user_id\n  , email"};
 
 /**
  * Query generated from SQL:
  * ```
  *                                                              
  * UPDATE
- *   public.users
+ *   internal.users
  * SET
  *   email = :newEmail!
  * WHERE

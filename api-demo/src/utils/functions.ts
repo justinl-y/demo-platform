@@ -58,11 +58,12 @@ function getServerDetails(serverAddress: AddressInfo | string | null): string {
   return '... Server address information is unavailable';
 }
 
-function routePropertiesCore(method: string, url: string, handler: RouteHandlerMethod): RouteProperties {
+function routePropertiesCore(method: string, url: string, handler: RouteHandlerMethod, permission?: string): RouteProperties {
   return {
     method,
     url,
     handler: setWithSpan(handler.name, handler),
+    ...(permission && { config: { permission } }),
   };
 }
 

@@ -1,6 +1,6 @@
 WITH t_cancelled AS (
   UPDATE
-    public.users AS u
+    internal.users AS u
   SET
     invited_at = NULL
   WHERE
@@ -11,7 +11,7 @@ WITH t_cancelled AS (
     , u.status
 )
 UPDATE
-  public.users_authentication AS a
+  internal.users_authentication AS a
 SET
   invite_token_hash = NULL
   , invite_token_expiry_at = NULL

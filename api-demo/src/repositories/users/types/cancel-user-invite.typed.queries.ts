@@ -20,7 +20,7 @@ export interface IUsersCancelUserInviteQuery {
   result: IUsersCancelUserInviteResult;
 }
 
-const usersCancelUserInviteIR: any = {"usedParamSet":{"userId":true},"params":[{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":162,"b":169}]}],"statement":"                                                             \nWITH t_cancelled AS (\n  UPDATE\n    public.users AS u\n  SET\n    invited_at = NULL\n  WHERE\n    u.id = :userId!\n    AND u.status = 'INVITED'\n  RETURNING\n    u.id\n    , u.status\n)\nUPDATE\n  public.users_authentication AS a\nSET\n  invite_token_hash = NULL\n  , invite_token_expiry_at = NULL\n  , invite_email_sent_at = NULL\nFROM\n  t_cancelled\nWHERE\n  a.user_id = t_cancelled.id\nRETURNING\n  a.user_id\n  , t_cancelled.status AS status"};
+const usersCancelUserInviteIR: any = {"usedParamSet":{"userId":true},"params":[{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":164,"b":171}]}],"statement":"                                                             \nWITH t_cancelled AS (\n  UPDATE\n    internal.users AS u\n  SET\n    invited_at = NULL\n  WHERE\n    u.id = :userId!\n    AND u.status = 'INVITED'\n  RETURNING\n    u.id\n    , u.status\n)\nUPDATE\n  internal.users_authentication AS a\nSET\n  invite_token_hash = NULL\n  , invite_token_expiry_at = NULL\n  , invite_email_sent_at = NULL\nFROM\n  t_cancelled\nWHERE\n  a.user_id = t_cancelled.id\nRETURNING\n  a.user_id\n  , t_cancelled.status AS status"};
 
 /**
  * Query generated from SQL:
@@ -28,7 +28,7 @@ const usersCancelUserInviteIR: any = {"usedParamSet":{"userId":true},"params":[{
  *                                                              
  * WITH t_cancelled AS (
  *   UPDATE
- *     public.users AS u
+ *     internal.users AS u
  *   SET
  *     invited_at = NULL
  *   WHERE
@@ -39,7 +39,7 @@ const usersCancelUserInviteIR: any = {"usedParamSet":{"userId":true},"params":[{
  *     , u.status
  * )
  * UPDATE
- *   public.users_authentication AS a
+ *   internal.users_authentication AS a
  * SET
  *   invite_token_hash = NULL
  *   , invite_token_expiry_at = NULL

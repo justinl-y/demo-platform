@@ -1,5 +1,5 @@
 UPDATE
-  public.users_authentication
+  internal.users_authentication
 SET
   invite_email_sent_at = now()
 WHERE

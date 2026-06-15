@@ -26,13 +26,27 @@ const SUPER_USER_EMAIL = 'user.super@email.com';
 
 async function getAccessTokenCookie() {
   const [row] = await query<{ id: string }>(
-    'SELECT id FROM public.users WHERE email = $1',
+    'SELECT id FROM internal.users WHERE email = $1',
     [SUPER_USER_EMAIL],
   );
 
   if (!row) throw new Error(`getAccessTokenCookie: super user not found (${SUPER_USER_EMAIL})`);
 
-  return generateTestCookie('access', row.id, SUPER_USER_EMAIL);
+  const permissionRows = await query<{ name: string }>(
+    `SELECT
+      p.name
+     FROM
+      internal.users_roles AS ur
+      INNER JOIN internal.role_permissions AS rp ON rp.role_id = ur.role_id
+      INNER JOIN internal.permissions AS p ON p.id = rp.permission_id
+     WHERE
+      ur.user_id = $1`,
+    [row.id],
+  );
+
+  const permissions = permissionRows.map((r) => r.name);
+
+  return generateTestCookie('access', row.id, SUPER_USER_EMAIL, permissions);
 }
 
 const accessTokenCookie = await getAccessTokenCookie();

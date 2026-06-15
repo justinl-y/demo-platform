@@ -4,5 +4,6 @@ export interface JwtUser {
   id: string;
   type: TokenTypes;
   email: string;
+  permissions?: string[];
   [key: string]: unknown;
 }

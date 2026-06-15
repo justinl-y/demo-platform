@@ -18,14 +18,6 @@ declare module '@fastify/jwt' {
 }
 
 declare module 'fastify' {
-  interface FastifyRequest {
-    user: import('@fastify/jwt').FastifyJWT['user'];
-  }
-
-  interface FastifyReply {
-    error?: unknown;
-  }
-
   interface FastifyInstance {
     db: DatabaseDecorator;
     repositories: {
@@ -34,6 +26,19 @@ declare module 'fastify' {
       users: UsersRepository;
     };
     authenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
+    authorize: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
+  }
+
+  interface FastifyContextConfig {
+    permission?: string;
+  }
+
+  interface FastifyRequest {
+    user: import('@fastify/jwt').FastifyJWT['user'];
+  }
+
+  interface FastifyReply {
+    error?: unknown;
   }
 }
 

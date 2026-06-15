@@ -17,7 +17,7 @@ export interface IUsersGetUserByEmailQuery {
   result: IUsersGetUserByEmailResult;
 }
 
-const usersGetUserByEmailIR: any = {"usedParamSet":{"email":true},"params":[{"name":"email","required":true,"transform":{"type":"scalar"},"locs":[{"a":127,"b":133}]}],"statement":"                                                             \nSELECT\n\tu.id AS user_id\nFROM\n\tpublic.users AS u\nWHERE\n\tu.email = :email!"};
+const usersGetUserByEmailIR: any = {"usedParamSet":{"email":true},"params":[{"name":"email","required":true,"transform":{"type":"scalar"},"locs":[{"a":129,"b":135}]}],"statement":"                                                             \nSELECT\n\tu.id AS user_id\nFROM\n\tinternal.users AS u\nWHERE\n\tu.email = :email!"};
 
 /**
  * Query generated from SQL:
@@ -26,7 +26,7 @@ const usersGetUserByEmailIR: any = {"usedParamSet":{"email":true},"params":[{"na
  * SELECT
  * 	u.id AS user_id
  * FROM
- * 	public.users AS u
+ * 	internal.users AS u
  * WHERE
  * 	u.email = :email!
  * ```

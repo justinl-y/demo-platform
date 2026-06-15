@@ -389,7 +389,7 @@ describe(`${fileNumber} - Users`, () => {
           , u.known_as
           , u.status
         FROM
-          public.users AS u
+          internal.users AS u
         WHERE
           u.id = $1;`;
         const [result] = await query<DbUser>(getUserByIdSql, [rep.body.user_id]);
@@ -454,7 +454,7 @@ describe(`${fileNumber} - Users`, () => {
         const getUserByIdSql = `SELECT
           u.email
         FROM
-          public.users AS u
+          internal.users AS u
         WHERE
           u.id = $1;`;
         const [dbUser] = await query<{ email: string }>(getUserByIdSql, [res.body.user_id]);
@@ -603,7 +603,7 @@ describe(`${fileNumber} - Users`, () => {
           , u.full_name
           , u.known_as
         FROM
-          public.users AS u
+          internal.users AS u
         WHERE
           u.id = $1;`;
         const [result] = await query<DbUser>(getUserSql, [validUserId]);
@@ -797,7 +797,7 @@ describe(`${fileNumber} - Users`, () => {
           u.id AS user_id
           , u.email
         FROM
-          public.users AS u
+          internal.users AS u
         WHERE
           u.id = $1;`;
         const [result] = await query<DbUser>(getUserSql, [targetUserId]);
@@ -846,7 +846,7 @@ describe(`${fileNumber} - Users`, () => {
         const getUserSql = `SELECT
           u.email
         FROM
-          public.users AS u
+          internal.users AS u
         WHERE
           u.id = $1;`;
         const [dbResult] = await query<{ email: string }>(getUserSql, [targetUserId]);
@@ -945,7 +945,7 @@ describe(`${fileNumber} - Users`, () => {
         const getDeletedUserSql = `SELECT
           id
         FROM
-          public.users
+          internal.users
         WHERE
           id = $1;`;
         const [result] = await query<DbUser>(getDeletedUserSql, [createdUserId]);
@@ -1008,8 +1008,8 @@ describe(`${fileNumber} - Users`, () => {
         , a.invite_token_expiry_at
         , a.invite_email_sent_at
       FROM
-        public.users AS u
-        INNER JOIN public.users_authentication AS a ON a.user_id = u.id
+        internal.users AS u
+        INNER JOIN internal.users_authentication AS a ON a.user_id = u.id
       WHERE
         u.id = $1;`;
 
@@ -1076,7 +1076,7 @@ describe(`${fileNumber} - Users`, () => {
         const tokenSql = `SELECT
           a.invite_token_hash
         FROM
-          public.users_authentication AS a
+          internal.users_authentication AS a
         WHERE
           a.user_id = $1;`;
         const [before] = await query<{ invite_token_hash: string }>(tokenSql, [createdUserId]);
@@ -1113,7 +1113,7 @@ describe(`${fileNumber} - Users`, () => {
         , a.invite_token_expiry_at
         , a.invite_email_sent_at
       FROM
-        public.users_authentication AS a
+        internal.users_authentication AS a
       WHERE
         a.user_id = $1;`;
 
@@ -1236,8 +1236,8 @@ describe(`${fileNumber} - Users`, () => {
         , a.invite_token_expiry_at
         , a.invite_email_sent_at
       FROM
-        public.users AS u
-        INNER JOIN public.users_authentication AS a ON a.user_id = u.id
+        internal.users AS u
+        INNER JOIN internal.users_authentication AS a ON a.user_id = u.id
       WHERE
         u.id = $1;`;
 
@@ -1254,7 +1254,7 @@ describe(`${fileNumber} - Users`, () => {
         // (NULL → NULL would otherwise pass trivially). Values are arbitrary —
         // the cancel SQL doesn't validate them, only nulls them.
         const seedAuthSql = `UPDATE
-          public.users_authentication
+          internal.users_authentication
         SET
           invite_token_hash = $1
           , invite_token_expiry_at = $2
@@ -1335,7 +1335,7 @@ describe(`${fileNumber} - Users`, () => {
       const inviteExpiresAt = expiresAt ?? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
       const updateUsersAuthenticationSql = `UPDATE
-        public.users_authentication
+        internal.users_authentication
       SET
         invite_token_hash = $1
         , invite_token_expiry_at = $2
@@ -1484,8 +1484,8 @@ describe(`${fileNumber} - Users`, () => {
         , a.invite_token_hash
         , a.invite_token_expiry_at
       FROM
-        public.users AS u
-        INNER JOIN public.users_authentication AS a ON a.user_id = u.id
+        internal.users AS u
+        INNER JOIN internal.users_authentication AS a ON a.user_id = u.id
       WHERE
         u.id = $1;`;
 
@@ -1635,8 +1635,8 @@ describe(`${fileNumber} - Users`, () => {
           , a.password_hash
           , a.refresh_token_hash
         FROM
-          public.users AS u
-          INNER JOIN public.users_authentication AS a ON a.user_id = u.id
+          internal.users AS u
+          INNER JOIN internal.users_authentication AS a ON a.user_id = u.id
         WHERE
           u.id = $1;`;
         const [original] = await query<DbUser>(getUserSql, [activeUserId]);

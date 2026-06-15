@@ -1,9 +1,9 @@
 UPDATE
-  public.users_authentication AS a
+  internal.users_authentication AS a
 SET
   refresh_token_hash = $newRefreshTokenHash!
 FROM
-  public.users AS u
+  internal.users AS u
 WHERE
   a.user_id = $userId!
   AND u.id = a.user_id

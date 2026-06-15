@@ -21,7 +21,7 @@ export interface IAuthGetUserByEmailQuery {
   result: IAuthGetUserByEmailResult;
 }
 
-const authGetUserByEmailIR: any = {"usedParamSet":{"email":true},"params":[{"name":"email","required":true,"transform":{"type":"scalar"},"locs":[{"a":259,"b":265}]}],"statement":"                                                             \nSELECT\n  u.id AS user_id\n  , u.email\n  , u.full_name\n  , u.known_as\n  , a.password_hash\nFROM\n  public.users AS u\n  INNER JOIN public.users_authentication AS a ON a.user_id = u.id\nWHERE\n  u.email = :email!\n  AND u.status = 'ACTIVE'"};
+const authGetUserByEmailIR: any = {"usedParamSet":{"email":true},"params":[{"name":"email","required":true,"transform":{"type":"scalar"},"locs":[{"a":263,"b":269}]}],"statement":"                                                             \nSELECT\n  u.id AS user_id\n  , u.email\n  , u.full_name\n  , u.known_as\n  , a.password_hash\nFROM\n  internal.users AS u\n  INNER JOIN internal.users_authentication AS a ON a.user_id = u.id\nWHERE\n  u.email = :email!\n  AND u.status = 'ACTIVE'"};
 
 /**
  * Query generated from SQL:
@@ -34,8 +34,8 @@ const authGetUserByEmailIR: any = {"usedParamSet":{"email":true},"params":[{"nam
  *   , u.known_as
  *   , a.password_hash
  * FROM
- *   public.users AS u
- *   INNER JOIN public.users_authentication AS a ON a.user_id = u.id
+ *   internal.users AS u
+ *   INNER JOIN internal.users_authentication AS a ON a.user_id = u.id
  * WHERE
  *   u.email = :email!
  *   AND u.status = 'ACTIVE'
