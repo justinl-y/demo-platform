@@ -51,18 +51,15 @@ async function login(repository: AuthRepository, jwt: JWT, params: LoginParams):
   const {
     user_id: userId, full_name: fullName, known_as: knownAs, password_hash: passwordHash,
   } = user;
-
   if (!passwordHash) throw new UnauthorizedError('Authentication failed');
 
-  const refreshToken = generateJwt(jwt, userId, email, refreshTokenJwt);
-
-  const [accessToken, validPassword] = await Promise.all([
-    generateJwt(jwt, userId, email, accessTokenJwt),
-    bcryptCompare(password, passwordHash),
-  ]);
-
+  const validPassword = await bcryptCompare(password, passwordHash);
   if (!validPassword) throw new UnauthorizedError('Authentication failed');
 
+  const permissions = user.permissions ?? [];
+  const accessToken = generateJwt(jwt, userId, email, accessTokenJwt, permissions);
+
+  const refreshToken = generateJwt(jwt, userId, email, refreshTokenJwt);
   const hashedRefreshToken = await bcryptHash(refreshToken);
 
   const setUserRefreshTokenOnLoginParams = {
@@ -124,9 +121,11 @@ async function refresh(repository: AuthRepository, jwt: JWT, params: RefreshPara
   const validRefreshToken = await bcryptCompare(tokenRefresh, user.refresh_token_hash);
   if (!validRefreshToken) throw new UnauthorizedError('Authentication failed');
 
-  const newAccessToken = generateJwt(jwt, userId, userEmail, accessTokenJwt);
   const newRefreshToken = generateJwt(jwt, userId, userEmail, refreshTokenJwt);
 
+  const userPermissions = await repository.getUserPermissions({ userId });
+  const permissions = userPermissions?.permissions ?? [];
+  const newAccessToken = generateJwt(jwt, userId, userEmail, accessTokenJwt, permissions);
   const newRefreshTokenHash = await bcryptHash(newRefreshToken);
 
   const setUserTokenOnRefreshParams = {

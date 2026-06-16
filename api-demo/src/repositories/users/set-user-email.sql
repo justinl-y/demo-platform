@@ -1,5 +1,5 @@
 UPDATE
-  public.users
+  internal.users
 SET
   email = $newEmail!
 WHERE

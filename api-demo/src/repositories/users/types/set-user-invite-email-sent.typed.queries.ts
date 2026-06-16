@@ -18,14 +18,14 @@ export interface IUsersSetUserInviteEmailSentQuery {
   result: IUsersSetUserInviteEmailSentResult;
 }
 
-const usersSetUserInviteEmailSentIR: any = {"usedParamSet":{"userId":true,"inviteTokenHash":true},"params":[{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":152,"b":159}]},{"name":"inviteTokenHash","required":true,"transform":{"type":"scalar"},"locs":[{"a":187,"b":203}]}],"statement":"                                                             \nUPDATE\n  public.users_authentication\nSET\n  invite_email_sent_at = now()\nWHERE\n  user_id = :userId!\n  AND invite_token_hash = :inviteTokenHash!\nRETURNING\n  user_id"};
+const usersSetUserInviteEmailSentIR: any = {"usedParamSet":{"userId":true,"inviteTokenHash":true},"params":[{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":154,"b":161}]},{"name":"inviteTokenHash","required":true,"transform":{"type":"scalar"},"locs":[{"a":189,"b":205}]}],"statement":"                                                             \nUPDATE\n  internal.users_authentication\nSET\n  invite_email_sent_at = now()\nWHERE\n  user_id = :userId!\n  AND invite_token_hash = :inviteTokenHash!\nRETURNING\n  user_id"};
 
 /**
  * Query generated from SQL:
  * ```
  *                                                              
  * UPDATE
- *   public.users_authentication
+ *   internal.users_authentication
  * SET
  *   invite_email_sent_at = now()
  * WHERE

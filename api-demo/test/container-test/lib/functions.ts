@@ -85,7 +85,7 @@ async function seedUserWithResetToken({
   const resetExpiresAt = expiresAt ?? new Date(Date.now() + 30 * 60 * 1000);
 
   const updateUsersAuthenticationSql = `UPDATE
-    public.users_authentication
+    internal.users_authentication
   SET
     password_reset_token_hash = $1
     , password_reset_token_expiry_at = $2
@@ -150,7 +150,7 @@ async function waitForCondition<T>(
   }
 }
 
-function generateTestCookie(tokenType: TokenType, userId: string, userEmail: string): string {
+function generateTestCookie(tokenType: TokenType, userId: string, userEmail: string, permissions?: string[]): string {
   const header = toBase64Url(JSON.stringify({
     alg: 'HS256',
     typ: 'JWT',
@@ -160,6 +160,7 @@ function generateTestCookie(tokenType: TokenType, userId: string, userEmail: str
     id: userId,
     email: userEmail,
     type: tokenType,
+    ...(tokenType === 'access' && permissions ? { permissions } : {}),
     iat: now,
     exp: now + TOKEN_EXPIRY_SECONDS[tokenType],
   }));

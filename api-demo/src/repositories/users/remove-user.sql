@@ -1,5 +1,5 @@
 DELETE FROM
-  public.users
+  internal.users
 WHERE
   id = $userId!
   AND status = 'CREATED'

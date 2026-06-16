@@ -35,7 +35,7 @@ jobs:
       # Sync static assets to S3 (5 minute browser cache since files are not fingerprinted)
       - name: Sync site to S3
         run: |
-          aws s3 sync ./app-demo "s3://${{ vars.S3_BUCKET_NAME }}" \
+          aws s3 sync ./app-demo "s3://${{ vars.APP_DEMO_S3_BUCKET_NAME }}" \
             --delete \
             --exclude ".*" \
             --cache-control "public, max-age=300"
@@ -43,12 +43,12 @@ jobs:
       # Always serve the latest HTML entry point
       - name: Upload index.html with no-cache
         run: |
-          aws s3 cp ./app-demo/index.html "s3://${{ vars.S3_BUCKET_NAME }}/index.html" \
+          aws s3 cp ./app-demo/index.html "s3://${{ vars.APP_DEMO_S3_BUCKET_NAME }}/index.html" \
             --cache-control "no-cache"
 
       # Invalidate the CloudFront edge cache
       - name: Invalidate CloudFront cache
         run: |
           aws cloudfront create-invalidation \
-            --distribution-id "${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}" \
+            --distribution-id "${{ vars.APP_DEMO_CLOUDFRONT_DISTRIBUTION_ID }}" \
             --paths "/*"

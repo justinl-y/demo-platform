@@ -30,7 +30,7 @@ DECLARE
   v_activated_at timestamptz := v_created_at + INTERVAL '10 minutes';
   v_deactivated_at timestamptz := v_created_at + INTERVAL '15 minutes';
 BEGIN
-  INSERT INTO public.users
+  INSERT INTO internal.users
     (
       email
       , full_name
@@ -58,7 +58,7 @@ BEGIN
 
   -- the users_authentication row is created by trg_create_users_authentication_row
   UPDATE
-    public.users_authentication
+    internal.users_authentication
   SET
     password_hash = v_encrypted_password
   WHERE

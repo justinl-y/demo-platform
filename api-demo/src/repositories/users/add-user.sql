@@ -1,4 +1,4 @@
-INSERT INTO public.users
+INSERT INTO internal.users
 	(
 		email
 		, full_name

@@ -21,7 +21,7 @@ export interface IUsersSetUserDeactivatedQuery {
   result: IUsersSetUserDeactivatedResult;
 }
 
-const usersSetUserDeactivatedIR: any = {"usedParamSet":{"userId":true,"newPasswordHash":true},"params":[{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":160,"b":167}]},{"name":"newPasswordHash","required":true,"transform":{"type":"scalar"},"locs":[{"a":293,"b":309}]}],"statement":"                                                             \nWITH deactivated AS (\n  UPDATE\n    public.users\n  SET\n    deactivated_at = NOW()\n  WHERE\n    id = :userId!\n    AND status = 'ACTIVE'\n  RETURNING\n    id\n    , status\n)\nUPDATE\n  public.users_authentication AS a\nSET\n  password_hash = :newPasswordHash!\n  , refresh_token_hash = NULL\nFROM\n  deactivated AS d\nWHERE\n  a.user_id = d.id\nRETURNING\n  a.user_id\n  , d.status"};
+const usersSetUserDeactivatedIR: any = {"usedParamSet":{"userId":true,"newPasswordHash":true},"params":[{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":162,"b":169}]},{"name":"newPasswordHash","required":true,"transform":{"type":"scalar"},"locs":[{"a":297,"b":313}]}],"statement":"                                                             \nWITH deactivated AS (\n  UPDATE\n    internal.users\n  SET\n    deactivated_at = NOW()\n  WHERE\n    id = :userId!\n    AND status = 'ACTIVE'\n  RETURNING\n    id\n    , status\n)\nUPDATE\n  internal.users_authentication AS a\nSET\n  password_hash = :newPasswordHash!\n  , refresh_token_hash = NULL\nFROM\n  deactivated AS d\nWHERE\n  a.user_id = d.id\nRETURNING\n  a.user_id\n  , d.status"};
 
 /**
  * Query generated from SQL:
@@ -29,7 +29,7 @@ const usersSetUserDeactivatedIR: any = {"usedParamSet":{"userId":true,"newPasswo
  *                                                              
  * WITH deactivated AS (
  *   UPDATE
- *     public.users
+ *     internal.users
  *   SET
  *     deactivated_at = NOW()
  *   WHERE
@@ -40,7 +40,7 @@ const usersSetUserDeactivatedIR: any = {"usedParamSet":{"userId":true,"newPasswo
  *     , status
  * )
  * UPDATE
- *   public.users_authentication AS a
+ *   internal.users_authentication AS a
  * SET
  *   password_hash = :newPasswordHash!
  *   , refresh_token_hash = NULL

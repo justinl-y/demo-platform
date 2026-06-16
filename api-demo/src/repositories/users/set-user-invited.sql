@@ -1,6 +1,6 @@
 WITH t_invited AS (
   UPDATE
-    public.users
+    internal.users
   SET
     invited_at = NOW()
     , deactivated_at = NULL
@@ -14,7 +14,7 @@ WITH t_invited AS (
     , status
 )
 UPDATE
-  public.users_authentication AS a
+  internal.users_authentication AS a
 SET
   invite_token_hash = $inviteTokenHash!
   , invite_token_expiry_at = NOW() + make_interval(days => $inviteTokenExpiryDays!)

@@ -7,7 +7,7 @@ WITH t_users AS (
 		, u.status
 		, COUNT(*) OVER () AS total
 	FROM
-	  public.users AS u
+	  internal.users AS u
 	WHERE
 		COALESCE(u.status = ANY($status), TRUE)
 	  AND COALESCE((u.id = $userId), TRUE)

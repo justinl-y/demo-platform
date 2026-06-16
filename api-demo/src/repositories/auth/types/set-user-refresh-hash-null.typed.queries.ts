@@ -17,14 +17,14 @@ export interface IAuthSetUserRefreshHashNullQuery {
   result: IAuthSetUserRefreshHashNullResult;
 }
 
-const authSetUserRefreshHashNullIR: any = {"usedParamSet":{"userId":true},"params":[{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":149,"b":156}]}],"statement":"                                                             \nUPDATE\n  public.users_authentication\nSET\n  refresh_token_hash = NULL\nWHERE\n  user_id = :userId!\n  AND refresh_token_hash IS NOT NULL\nRETURNING\n  user_id AS id"};
+const authSetUserRefreshHashNullIR: any = {"usedParamSet":{"userId":true},"params":[{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":151,"b":158}]}],"statement":"                                                             \nUPDATE\n  internal.users_authentication\nSET\n  refresh_token_hash = NULL\nWHERE\n  user_id = :userId!\n  AND refresh_token_hash IS NOT NULL\nRETURNING\n  user_id AS id"};
 
 /**
  * Query generated from SQL:
  * ```
  *                                                              
  * UPDATE
- *   public.users_authentication
+ *   internal.users_authentication
  * SET
  *   refresh_token_hash = NULL
  * WHERE

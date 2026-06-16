@@ -36,16 +36,19 @@ class AuthUtils {
       encryptSaltWorkFactor,
     } = Config.authConfig();
     const salt = await bcrypt.genSalt(encryptSaltWorkFactor);
+
     return bcrypt.hash(secret, salt);
   }
 
   @SetWithSpan()
-  static generateJwt(jwt: JWT, userId: string, userEmail: string, jwtType: TokenTypes): string {
+  static generateJwt(jwt: JWT, userId: string, userEmail: string, jwtType: TokenTypes, permissions?: string[]): string {
     const payload = {
       id: userId,
       email: userEmail,
       type: jwtType,
     } as JwtUser;
+
+    if (jwtType === 'access' && permissions) payload.permissions = permissions;
 
     const options = {
       expiresIn: '0m',

@@ -18,18 +18,18 @@ export interface IAuthSetUserRefreshHashOnRefreshQuery {
   result: IAuthSetUserRefreshHashOnRefreshResult;
 }
 
-const authSetUserRefreshHashOnRefreshIR: any = {"usedParamSet":{"newRefreshTokenHash":true,"userId":true},"params":[{"name":"newRefreshTokenHash","required":true,"transform":{"type":"scalar"},"locs":[{"a":131,"b":151}]},{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":198,"b":205}]}],"statement":"                                                             \nUPDATE\n  public.users_authentication AS a\nSET\n  refresh_token_hash = :newRefreshTokenHash!\nFROM\n  public.users AS u\nWHERE\n  a.user_id = :userId!\n  AND u.id = a.user_id\n  AND u.status = 'ACTIVE'\nRETURNING\n  a.user_id AS id"};
+const authSetUserRefreshHashOnRefreshIR: any = {"usedParamSet":{"newRefreshTokenHash":true,"userId":true},"params":[{"name":"newRefreshTokenHash","required":true,"transform":{"type":"scalar"},"locs":[{"a":133,"b":153}]},{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":202,"b":209}]}],"statement":"                                                             \nUPDATE\n  internal.users_authentication AS a\nSET\n  refresh_token_hash = :newRefreshTokenHash!\nFROM\n  internal.users AS u\nWHERE\n  a.user_id = :userId!\n  AND u.id = a.user_id\n  AND u.status = 'ACTIVE'\nRETURNING\n  a.user_id AS id"};
 
 /**
  * Query generated from SQL:
  * ```
  *                                                              
  * UPDATE
- *   public.users_authentication AS a
+ *   internal.users_authentication AS a
  * SET
  *   refresh_token_hash = :newRefreshTokenHash!
  * FROM
- *   public.users AS u
+ *   internal.users AS u
  * WHERE
  *   a.user_id = :userId!
  *   AND u.id = a.user_id

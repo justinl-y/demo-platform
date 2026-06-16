@@ -1,5 +1,5 @@
 UPDATE
-  public.users_authentication
+  internal.users_authentication
 SET
   refresh_token_hash = NULL
 WHERE

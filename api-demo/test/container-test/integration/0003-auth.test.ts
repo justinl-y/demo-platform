@@ -129,8 +129,8 @@ describe(`${fileNumber} - Auth`, () => {
             a.refresh_token_hash
             , a.last_login
           FROM
-            public.users AS u
-            INNER JOIN public.users_authentication AS a ON a.user_id = u.id
+            internal.users AS u
+            INNER JOIN internal.users_authentication AS a ON a.user_id = u.id
           WHERE
             u.email = $1;`;
 
@@ -215,6 +215,45 @@ describe(`${fileNumber} - Auth`, () => {
         expect(res.statusCode).toBe(200);
       });
     });
+
+    describe('Access token permissions claim', () => {
+      // user.super@email.com is seeded with a role granting internal-user permissions.
+      const SUPER_USER_EMAIL = 'user.super@email.com';
+
+      test('"access_token" payload embeds the user\'s granted permissions', async () => {
+        const res = await getResponse({
+          email: SUPER_USER_EMAIL,
+          password: SUPER_USER_EMAIL,
+        });
+
+        expect(res.statusCode).toBe(200);
+
+        const cookie = setCookies(res.headers).find((c) => c.startsWith('access_token='))!;
+        const token = cookie.split(';')[0].replace('access_token=', '');
+        const payload = JSON.parse(
+          Buffer.from(token.split('.')[1], 'base64url').toString(),
+        ) as { permissions?: string[] };
+
+        // Derive the expected set from the DB so the test tracks whatever roles/
+        // permissions are seeded for the user, rather than a hardcoded list.
+        const grantedPermissionsSql = `SELECT DISTINCT
+            p.name
+          FROM
+            internal.users AS u
+            INNER JOIN internal.users_roles AS ur ON ur.user_id = u.id
+            INNER JOIN internal.role_permissions AS rp ON rp.role_id = ur.role_id
+            INNER JOIN internal.permissions AS p ON p.id = rp.permission_id
+          WHERE
+            u.email = $1;`;
+
+        const grantedPermissions = await query<{ name: string }>(grantedPermissionsSql, [SUPER_USER_EMAIL]);
+        const expectedPermissions = grantedPermissions.map((r) => r.name).sort();
+
+        // guard against a vacuous pass if the user has no permissions seeded
+        expect(expectedPermissions.length).toBeGreaterThan(0);
+        expect([...(payload.permissions ?? [])].sort()).toEqual(expectedPermissions);
+      });
+    });
   });
 
   describe('POST /refresh', () => {
@@ -231,7 +270,7 @@ describe(`${fileNumber} - Auth`, () => {
 
         await query(
           `UPDATE
-              public.users_authentication
+              internal.users_authentication
             SET
               refresh_token_hash = NULL
             WHERE
@@ -286,7 +325,7 @@ describe(`${fileNumber} - Auth`, () => {
         const hash = await bcrypt.hash(freshRefreshToken, salt);
 
         const setUserRefreshTokenHash = `UPDATE
-          public.users_authentication
+          internal.users_authentication
         SET
           refresh_token_hash = $1
         WHERE
@@ -299,7 +338,7 @@ describe(`${fileNumber} - Auth`, () => {
         const getRefreshTokenHashSql = `SELECT
           a.refresh_token_hash
         FROM
-          public.users_authentication AS a
+          internal.users_authentication AS a
         WHERE
           a.user_id = $1;`;
         const [result] = await query<DbUserRefreshHash>(getRefreshTokenHashSql, [userId]);
@@ -428,7 +467,7 @@ describe(`${fileNumber} - Auth`, () => {
 
         await query(
           `UPDATE
-              public.users_authentication
+              internal.users_authentication
             SET
               refresh_token_hash = $1
             WHERE
@@ -442,7 +481,7 @@ describe(`${fileNumber} - Auth`, () => {
         const getRefreshTokenHashSql = `SELECT
           a.refresh_token_hash
         FROM
-          public.users_authentication AS a
+          internal.users_authentication AS a
         WHERE
           a.user_id = $1;`;
         const [result] = await query<DbUserRefreshHash>(getRefreshTokenHashSql, [logoutUserId]);
@@ -539,8 +578,8 @@ describe(`${fileNumber} - Auth`, () => {
           , a.password_reset_token_expiry_at
           , a.password_reset_email_sent_at
         FROM
-          public.users AS u
-          INNER JOIN public.users_authentication AS a ON a.user_id = u.id
+          internal.users AS u
+          INNER JOIN internal.users_authentication AS a ON a.user_id = u.id
         WHERE
           u.email = $1;`;
 
@@ -621,8 +660,8 @@ describe(`${fileNumber} - Auth`, () => {
           , a.password_reset_token_expiry_at
           , a.password_reset_email_sent_at
         FROM
-          public.users AS u
-          INNER JOIN public.users_authentication AS a ON a.user_id = u.id
+          internal.users AS u
+          INNER JOIN internal.users_authentication AS a ON a.user_id = u.id
         WHERE
           u.email = $1;`;
 
@@ -822,7 +861,7 @@ describe(`${fileNumber} - Auth`, () => {
         , a.password_reset_token_expiry_at
         , a.refresh_token_hash
       FROM
-        public.users_authentication AS a
+        internal.users_authentication AS a
       WHERE
         a.user_id = $1;`;
 

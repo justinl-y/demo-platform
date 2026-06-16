@@ -1,5 +1,5 @@
 UPDATE
-  public.users
+  internal.users
 SET
   full_name = $fullName!
   , known_as = $knownAs

@@ -18,14 +18,14 @@ export interface IAuthSetUserPasswordResetEmailSentQuery {
   result: IAuthSetUserPasswordResetEmailSentResult;
 }
 
-const authSetUserPasswordResetEmailSentIR: any = {"usedParamSet":{"userId":true,"passwordResetTokenHash":true},"params":[{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":160,"b":167}]},{"name":"passwordResetTokenHash","required":true,"transform":{"type":"scalar"},"locs":[{"a":203,"b":226}]}],"statement":"                                                             \nUPDATE\n  public.users_authentication\nSET\n  password_reset_email_sent_at = now()\nWHERE\n  user_id = :userId!\n  AND password_reset_token_hash = :passwordResetTokenHash!\nRETURNING\n  user_id"};
+const authSetUserPasswordResetEmailSentIR: any = {"usedParamSet":{"userId":true,"passwordResetTokenHash":true},"params":[{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":162,"b":169}]},{"name":"passwordResetTokenHash","required":true,"transform":{"type":"scalar"},"locs":[{"a":205,"b":228}]}],"statement":"                                                             \nUPDATE\n  internal.users_authentication\nSET\n  password_reset_email_sent_at = now()\nWHERE\n  user_id = :userId!\n  AND password_reset_token_hash = :passwordResetTokenHash!\nRETURNING\n  user_id"};
 
 /**
  * Query generated from SQL:
  * ```
  *                                                              
  * UPDATE
- *   public.users_authentication
+ *   internal.users_authentication
  * SET
  *   password_reset_email_sent_at = now()
  * WHERE

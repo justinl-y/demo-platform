@@ -17,7 +17,7 @@ export interface IAuthGetUserByPasswordResetTokenQuery {
   result: IAuthGetUserByPasswordResetTokenResult;
 }
 
-const authGetUserByPasswordResetTokenIR: any = {"usedParamSet":{"passwordResetTokenHash":true},"params":[{"name":"passwordResetTokenHash","required":true,"transform":{"type":"scalar"},"locs":[{"a":214,"b":237}]}],"statement":"                                                             \nSELECT\n  ua.user_id\nFROM\n  public.users_authentication AS ua\n  INNER JOIN public.users AS u ON u.id = ua.user_id\nWHERE\n  ua.password_reset_token_hash = :passwordResetTokenHash!\n  AND ua.password_reset_token_expiry_at > NOW()\n  AND u.status = 'ACTIVE'"};
+const authGetUserByPasswordResetTokenIR: any = {"usedParamSet":{"passwordResetTokenHash":true},"params":[{"name":"passwordResetTokenHash","required":true,"transform":{"type":"scalar"},"locs":[{"a":218,"b":241}]}],"statement":"                                                             \nSELECT\n  ua.user_id\nFROM\n  internal.users_authentication AS ua\n  INNER JOIN internal.users AS u ON u.id = ua.user_id\nWHERE\n  ua.password_reset_token_hash = :passwordResetTokenHash!\n  AND ua.password_reset_token_expiry_at > NOW()\n  AND u.status = 'ACTIVE'"};
 
 /**
  * Query generated from SQL:
@@ -26,8 +26,8 @@ const authGetUserByPasswordResetTokenIR: any = {"usedParamSet":{"passwordResetTo
  * SELECT
  *   ua.user_id
  * FROM
- *   public.users_authentication AS ua
- *   INNER JOIN public.users AS u ON u.id = ua.user_id
+ *   internal.users_authentication AS ua
+ *   INNER JOIN internal.users AS u ON u.id = ua.user_id
  * WHERE
  *   ua.password_reset_token_hash = :passwordResetTokenHash!
  *   AND ua.password_reset_token_expiry_at > NOW()

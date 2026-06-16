@@ -2,6 +2,7 @@ import { initSentry } from '#lib/sentry-instrument';
 
 import {
   authenticateOnRequest,
+  authorizePreHandler,
   consoleErrorHandler,
   consoleInteractionHandler,
   globalErrorHandler,
@@ -61,6 +62,7 @@ async function buildInstance() {
 
   // decorate instance with hooks
   instance.decorate('authenticate', authenticateOnRequest);
+  instance.decorate('authorize', authorizePreHandler);
   instance.decorateReply('error', null);
   instance.addHook('onError', consoleErrorHandler);
   instance.addHook('onResponse', consoleInteractionHandler);

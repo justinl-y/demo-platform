@@ -3,19 +3,17 @@ import { routePropertiesPrehandler } from '#utils/functions';
 import type { FastifyInstance } from 'fastify';
 import type { RouteKey } from './index.ts';
 
-// authorization goes in preHandler
-
 function preHandler(this: FastifyInstance, key: RouteKey) {
   const routePreHandler = {
-    getUsers: routePropertiesPrehandler([]),
-    postUsers: routePropertiesPrehandler([]),
-    putUsers: routePropertiesPrehandler([]),
-    patchUsersEmail: routePropertiesPrehandler([]),
-    deleteUsers: routePropertiesPrehandler([]),
+    getUsers: routePropertiesPrehandler([this.authorize]),
+    postUsers: routePropertiesPrehandler([this.authorize]),
+    putUsers: routePropertiesPrehandler([this.authorize]),
+    patchUsersEmail: routePropertiesPrehandler([this.authorize]),
+    deleteUsers: routePropertiesPrehandler([this.authorize]),
     postUsersActivate: routePropertiesPrehandler([]),
-    patchUsersInvite: routePropertiesPrehandler([]),
-    deleteUsersInvite: routePropertiesPrehandler([]),
-    patchUsersDeactivate: routePropertiesPrehandler([]),
+    patchUsersInvite: routePropertiesPrehandler([this.authorize]),
+    deleteUsersInvite: routePropertiesPrehandler([this.authorize]),
+    patchUsersDeactivate: routePropertiesPrehandler([this.authorize]),
   };
 
   return routePreHandler[key] ?? {};

@@ -23,7 +23,7 @@ export interface IUsersSetUserInvitedQuery {
   result: IUsersSetUserInvitedResult;
 }
 
-const usersSetUserInvitedIR: any = {"usedParamSet":{"userId":true,"inviteTokenHash":true,"inviteTokenExpiryDays":true},"params":[{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":208,"b":215}]},{"name":"inviteTokenHash","required":true,"transform":{"type":"scalar"},"locs":[{"a":387,"b":403}]},{"name":"inviteTokenExpiryDays","required":true,"transform":{"type":"scalar"},"locs":[{"a":464,"b":486}]}],"statement":"                                                             \nWITH t_invited AS (\n  UPDATE\n    public.users\n  SET\n    invited_at = NOW()\n    , deactivated_at = NULL\n    , activated_at = NULL\n  WHERE\n    id = :userId!\n    AND status = ANY('{CREATED, INVITED, DEACTIVATED}')\n  RETURNING\n    id\n    , email\n    , status\n)\nUPDATE\n  public.users_authentication AS a\nSET\n  invite_token_hash = :inviteTokenHash!\n  , invite_token_expiry_at = NOW() + make_interval(days => :inviteTokenExpiryDays!)\n  , invite_email_sent_at = NULL\nFROM\n  t_invited AS i\nWHERE\n  a.user_id = i.id\nRETURNING\n  i.id AS user_id\n  , i.email\n  , i.status"};
+const usersSetUserInvitedIR: any = {"usedParamSet":{"userId":true,"inviteTokenHash":true,"inviteTokenExpiryDays":true},"params":[{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":210,"b":217}]},{"name":"inviteTokenHash","required":true,"transform":{"type":"scalar"},"locs":[{"a":391,"b":407}]},{"name":"inviteTokenExpiryDays","required":true,"transform":{"type":"scalar"},"locs":[{"a":468,"b":490}]}],"statement":"                                                             \nWITH t_invited AS (\n  UPDATE\n    internal.users\n  SET\n    invited_at = NOW()\n    , deactivated_at = NULL\n    , activated_at = NULL\n  WHERE\n    id = :userId!\n    AND status = ANY('{CREATED, INVITED, DEACTIVATED}')\n  RETURNING\n    id\n    , email\n    , status\n)\nUPDATE\n  internal.users_authentication AS a\nSET\n  invite_token_hash = :inviteTokenHash!\n  , invite_token_expiry_at = NOW() + make_interval(days => :inviteTokenExpiryDays!)\n  , invite_email_sent_at = NULL\nFROM\n  t_invited AS i\nWHERE\n  a.user_id = i.id\nRETURNING\n  i.id AS user_id\n  , i.email\n  , i.status"};
 
 /**
  * Query generated from SQL:
@@ -31,7 +31,7 @@ const usersSetUserInvitedIR: any = {"usedParamSet":{"userId":true,"inviteTokenHa
  *                                                              
  * WITH t_invited AS (
  *   UPDATE
- *     public.users
+ *     internal.users
  *   SET
  *     invited_at = NOW()
  *     , deactivated_at = NULL
@@ -45,7 +45,7 @@ const usersSetUserInvitedIR: any = {"usedParamSet":{"userId":true,"inviteTokenHa
  *     , status
  * )
  * UPDATE
- *   public.users_authentication AS a
+ *   internal.users_authentication AS a
  * SET
  *   invite_token_hash = :inviteTokenHash!
  *   , invite_token_expiry_at = NOW() + make_interval(days => :inviteTokenExpiryDays!)

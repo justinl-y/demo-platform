@@ -116,7 +116,7 @@ describe('0012 - database', () => {
         file: 'src/repositories/auth/set-user-token',
         params: { userId: 'u1' },
         query: `UPDATE
-          public.users_authentication
+          internal.users_authentication
         SET
           refresh_token_hash = $hashedRefreshToken
         WHERE

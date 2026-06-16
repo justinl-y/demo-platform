@@ -6,86 +6,104 @@ import { generateTestCookie } from './functions.ts';
 
 import type Supertest from 'supertest';
 
-const app = request(BASE_REQUEST);
+// Build an access-token cookie for a seeded user, populated with that user's
+// real permissions (so authorization behaves exactly as in production).
+async function getAccessTokenCookieForEmail(email: string): Promise<string> {
+  const getUserSql = `SELECT
+    u.id
+  FROM
+    internal.users AS u
+  WHERE
+    u.email = $1;`
+  ;
+  const [row] = await query<{ id: string }>(getUserSql, [email]);
+
+  if (!row) throw new Error(`getAccessTokenCookieForEmail: user not found (${email})`);
+
+  const getUserPermissionSql = `SELECT
+    p.name
+  FROM
+    internal.users_roles AS ur
+    INNER JOIN internal.role_permissions AS rp ON rp.role_id = ur.role_id
+    INNER JOIN internal.permissions AS p ON p.id = rp.permission_id
+  WHERE
+    ur.user_id = $1;`
+  ;
+  const permissionRows = await query<{ name: string }>(getUserPermissionSql, [row.id]);
+
+  const permissions = permissionRows.map((r) => r.name);
+
+  return generateTestCookie('access', row.id, email, permissions);
+}
 
 type ApiMethod = 'get' | 'put' | 'patch' | 'del' | 'post';
 
 type RequestBody = Record<string, unknown>;
-
 type RequestHeaders = Record<string, string>;
-
 type ApiRequest = (
-  resource: string,
-  data?: RequestBody,
+  path: string,
+  body?: RequestBody,
   headers?: RequestHeaders,
 ) => Promise<Supertest.Response>;
 
 type ApiClient = Record<ApiMethod, ApiRequest>;
 
-const SUPER_USER_EMAIL = 'user.super@email.com';
+const app = request(BASE_REQUEST);
 
-async function getAccessTokenCookie() {
-  const [row] = await query<{ id: string }>(
-    'SELECT id FROM public.users WHERE email = $1',
-    [SUPER_USER_EMAIL],
-  );
-
-  if (!row) throw new Error(`getAccessTokenCookie: super user not found (${SUPER_USER_EMAIL})`);
-
-  return generateTestCookie('access', row.id, SUPER_USER_EMAIL);
-}
-
-const accessTokenCookie = await getAccessTokenCookie();
+const requestByMethod: Record<ApiMethod, (path: string) => Supertest.Test> = {
+  get: (path) => app.get(path),
+  put: (path) => app.put(path),
+  patch: (path) => app.patch(path),
+  del: (path) => app.delete(path),
+  post: (path) => app.post(path),
+};
 
 const methods: ApiMethod[] = ['get', 'put', 'patch', 'del', 'post'];
-const requestByMethod: Record<ApiMethod, (resource: string) => Supertest.Test> = {
-  get: (resource) => app.get(resource),
-  put: (resource) => app.put(resource),
-  patch: (resource) => app.patch(resource),
-  del: (resource) => app.delete(resource),
-  post: (resource) => app.post(resource),
-};
-const authAPI = {} as ApiClient;
-const noAuthAPI = {} as ApiClient;
 
-// loop over all the http methods (get, post, put, delete and patch) and return functions for each.
-// also do error checking for 500s and immediately terminate test suite.
-methods.forEach((method) => {
-  // Return a pre-configured Supertest request with authorization headers
-  authAPI[method] = async (resource, data = {}, headers = {}) => {
-    const rep = await requestByMethod[method](resource)
-      .set('Cookie', accessTokenCookie)
-      .send(data)
-      .set(headers)
-      .set('Accept', 'application/json');
+// Build an ApiClient. When an access-token cookie is supplied every request carries it;
+// otherwise requests are sent unauthenticated.
+function buildClient(accessTokenCookie?: string): ApiClient {
+  const client = {} as ApiClient;
 
-    if (rep.status === 500) {
-      console.log('SERVER RESPONDED WITH a 500 Status. You should investigate this. Abandoning Tests.');
-      console.log(JSON.stringify(rep.body));
-      process.exit(1);
-    }
-    else {
-      return rep;
-    }
-  };
-  noAuthAPI[method] = async (resource, data = {}, headers = {}) => {
-    const rep = await requestByMethod[method](resource)
-      .send(data)
-      .set(headers)
-      .set('Accept', 'application/json');
+  methods.forEach((method) => {
+    client[method] = async (path, body = {}, headers = {}) => {
+      const baseRequest = requestByMethod[method](path);
+      const authedRequest = accessTokenCookie ? baseRequest.set('Cookie', accessTokenCookie) : baseRequest;
 
-    if (rep.status === 500) {
-      console.log('SERVER RESPONDED WITH a 500 Status. You should investigate this. Abandoning Tests.');
-      console.log(JSON.stringify(rep.body));
-      process.exit(1);
-    }
-    else {
-      return rep;
-    }
-  };
-});
+      const reply = await authedRequest
+        .send(body)
+        .set(headers)
+        .set('Accept', 'application/json')
+      ;
+
+      if (reply.status === 500) {
+        console.log('SERVER RESPONDED WITH a 500 Status. You should investigate this. Abandoning Tests.');
+        console.log(JSON.stringify(reply.body));
+
+        process.exit(1);
+      }
+
+      return reply;
+    };
+  });
+
+  return client;
+}
+
+// api request with no authorization
+const noAuthAPI = buildClient();
+
+// api request with authorization of super user permissions
+const SUPER_USER_EMAIL = 'user.super@email.com';
+const authAPISuper = buildClient(await getAccessTokenCookieForEmail(SUPER_USER_EMAIL));
+
+// api request with authorization of specific user permissions
+async function authAPIUser(email: string): Promise<ApiClient> {
+  return buildClient(await getAccessTokenCookieForEmail(email));
+}
 
 export {
-  authAPI,
   noAuthAPI,
+  authAPISuper,
+  authAPIUser,
 };

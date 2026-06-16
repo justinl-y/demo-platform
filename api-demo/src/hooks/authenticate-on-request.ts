@@ -21,7 +21,7 @@ async function authenticateOnRequest(request: FastifyRequest, _reply: FastifyRep
   let decodedToken: JwtUser;
 
   try {
-    decodedToken = await request.jwtVerify();
+    decodedToken = await request.jwtVerify(); // request.user is set by request.jwtVerify() success (including permissions)
   }
   catch (err) {
     throw new UnauthorizedError('Authentication failed');

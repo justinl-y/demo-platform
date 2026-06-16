@@ -19,20 +19,20 @@ export interface IAuthSetUserPasswordResetQuery {
   result: IAuthSetUserPasswordResetResult;
 }
 
-const authSetUserPasswordResetIR: any = {"usedParamSet":{"passwordResetTokenHash":true,"passwordResetTokenExpiryMinutes":true,"userId":true},"params":[{"name":"passwordResetTokenHash","required":true,"transform":{"type":"scalar"},"locs":[{"a":139,"b":162}]},{"name":"passwordResetTokenExpiryMinutes","required":true,"transform":{"type":"scalar"},"locs":[{"a":231,"b":263}]},{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":376,"b":383}]}],"statement":"                                                             \nUPDATE\n  public.users_authentication As ua\nSET\n  password_reset_token_hash = :passwordResetTokenHash!\n  , password_reset_token_expiry_at = NOW() + make_interval(mins => :passwordResetTokenExpiryMinutes!)\n  , password_reset_email_sent_at = NULL\nFROM\n  public.users AS u\nWHERE\n  u.id = ua.user_id\n  AND ua.user_id = :userId!\n  AND u.status = 'ACTIVE'\nRETURNING\n  ua.user_id"};
+const authSetUserPasswordResetIR: any = {"usedParamSet":{"passwordResetTokenHash":true,"passwordResetTokenExpiryMinutes":true,"userId":true},"params":[{"name":"passwordResetTokenHash","required":true,"transform":{"type":"scalar"},"locs":[{"a":141,"b":164}]},{"name":"passwordResetTokenExpiryMinutes","required":true,"transform":{"type":"scalar"},"locs":[{"a":233,"b":265}]},{"name":"userId","required":true,"transform":{"type":"scalar"},"locs":[{"a":380,"b":387}]}],"statement":"                                                             \nUPDATE\n  internal.users_authentication As ua\nSET\n  password_reset_token_hash = :passwordResetTokenHash!\n  , password_reset_token_expiry_at = NOW() + make_interval(mins => :passwordResetTokenExpiryMinutes!)\n  , password_reset_email_sent_at = NULL\nFROM\n  internal.users AS u\nWHERE\n  u.id = ua.user_id\n  AND ua.user_id = :userId!\n  AND u.status = 'ACTIVE'\nRETURNING\n  ua.user_id"};
 
 /**
  * Query generated from SQL:
  * ```
  *                                                              
  * UPDATE
- *   public.users_authentication As ua
+ *   internal.users_authentication As ua
  * SET
  *   password_reset_token_hash = :passwordResetTokenHash!
  *   , password_reset_token_expiry_at = NOW() + make_interval(mins => :passwordResetTokenExpiryMinutes!)
  *   , password_reset_email_sent_at = NULL
  * FROM
- *   public.users AS u
+ *   internal.users AS u
  * WHERE
  *   u.id = ua.user_id
  *   AND ua.user_id = :userId!

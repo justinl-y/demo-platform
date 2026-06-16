@@ -60,8 +60,8 @@ jobs:
         with:
           aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          application_name: ${{ vars.EB_APPLICATION_NAME }}
-          environment_name: ${{ vars.EB_ENVIRONMENT_NAME }}
+          application_name: ${{ vars.API_DEMO_EB_APPLICATION_NAME }}
+          environment_name: ${{ vars.API_DEMO_EB_ENVIRONMENT_NAME }}
           region: ${{ vars.AWS_REGION }}
           version_label: ${{ steps.version.outputs.label }}
           version_description: "Git commit ${{ github.sha }}"
