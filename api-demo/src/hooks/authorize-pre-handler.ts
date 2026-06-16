@@ -14,7 +14,7 @@ async function authorizePreHandler(request: FastifyRequest, _reply: FastifyReply
   if (!permission) return;
 
   // authorized routes
-  if (!request.user?.permissions?.includes(permission)) throw new ForbiddenError(`Missing required permission: ${permission}`);
+  if (!request.user?.permissions?.includes(permission)) throw new ForbiddenError('Not Authorized');
 }
 
 export default authorizePreHandler;
