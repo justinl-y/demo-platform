@@ -32,15 +32,15 @@ const {
 } = httpMethods;
 
 const routes = {
-  getUsers: routePropertiesCore(GET, '/users', getUsers as RouteHandlerMethod, 'USERS_READ'),
-  postUsers: routePropertiesCore(POST, '/users', postUsers as RouteHandlerMethod, 'USERS_WRITE'),
-  putUsers: routePropertiesCore(PUT, '/users/:user_id', putUsers as RouteHandlerMethod, 'USERS_WRITE'),
-  patchUsersEmail: routePropertiesCore(PATCH, '/users/:user_id/email', patchUsersEmail as RouteHandlerMethod, 'USERS_WRITE'),
-  deleteUsers: routePropertiesCore(DELETE, '/users/:user_id', deleteUsers as RouteHandlerMethod, 'USERS_WRITE'),
-  patchUsersInvite: routePropertiesCore(PATCH, '/users/:user_id/invite', patchUsersInvite as RouteHandlerMethod, 'USERS_AUTHORIZE'),
-  deleteUsersInvite: routePropertiesCore(DELETE, '/users/:user_id/invite', deleteUsersInvite as RouteHandlerMethod, 'USERS_AUTHORIZE'),
+  getUsers: routePropertiesCore(GET, '/users', getUsers as RouteHandlerMethod, 'INTERNAL_USERS_READ'),
+  postUsers: routePropertiesCore(POST, '/users', postUsers as RouteHandlerMethod, 'INTERNAL_USERS_WRITE'),
+  putUsers: routePropertiesCore(PUT, '/users/:user_id', putUsers as RouteHandlerMethod, 'INTERNAL_USERS_WRITE'),
+  patchUsersEmail: routePropertiesCore(PATCH, '/users/:user_id/email', patchUsersEmail as RouteHandlerMethod, 'INTERNAL_USERS_WRITE'),
+  deleteUsers: routePropertiesCore(DELETE, '/users/:user_id', deleteUsers as RouteHandlerMethod, 'INTERNAL_USERS_WRITE'),
+  patchUsersInvite: routePropertiesCore(PATCH, '/users/:user_id/invite', patchUsersInvite as RouteHandlerMethod, 'INTERNAL_USERS_AUTHORIZE_WRITE'),
+  deleteUsersInvite: routePropertiesCore(DELETE, '/users/:user_id/invite', deleteUsersInvite as RouteHandlerMethod, 'INTERNAL_USERS_AUTHORIZE_WRITE'),
   postUsersActivate: routePropertiesCore(POST, '/users/activate', postUsersActivate as RouteHandlerMethod),
-  patchUsersDeactivate: routePropertiesCore(PATCH, '/users/:user_id/deactivate', patchUsersDeactivate as RouteHandlerMethod, 'USERS_AUTHORIZE'),
+  patchUsersDeactivate: routePropertiesCore(PATCH, '/users/:user_id/deactivate', patchUsersDeactivate as RouteHandlerMethod, 'INTERNAL_USERS_AUTHORIZE_WRITE'),
 };
 
 export type RouteKey = keyof typeof routes;

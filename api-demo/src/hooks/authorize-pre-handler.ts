@@ -3,14 +3,18 @@ import type { FastifyRequest, FastifyReply } from 'fastify';
 
 async function authorizePreHandler(request: FastifyRequest, _reply: FastifyReply): Promise<void> {
   const {
-    permission,
-  } = request.routeOptions.config;
+    routeOptions: {
+      config: {
+        permission,
+      },
+    },
+  } = request;
 
+  // unauthorized routes
   if (!permission) return;
 
-  if (!request.user?.permissions?.includes(permission)) {
-    throw new ForbiddenError(`Missing required permission: ${permission}`);
-  }
+  // authorized routes
+  if (!request.user?.permissions?.includes(permission)) throw new ForbiddenError(`Missing required permission: ${permission}`);
 }
 
 export default authorizePreHandler;

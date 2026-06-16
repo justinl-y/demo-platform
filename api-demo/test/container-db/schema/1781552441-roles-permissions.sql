@@ -29,9 +29,9 @@ CREATE TABLE internal.role_permissions (
   id uuid PRIMARY KEY DEFAULT uuidv7()
   , role_id uuid NOT NULL
   , permission_id uuid NOT NULL
-  ,FOREIGN KEY (role_id) REFERENCES internal.roles(id) ON DELETE CASCADE
-  ,FOREIGN KEY (permission_id) REFERENCES internal.permissions(id) ON DELETE CASCADE
-  ,UNIQUE (role_id, permission_id)
+  , FOREIGN KEY (role_id) REFERENCES internal.roles(id) ON DELETE CASCADE
+  , FOREIGN KEY (permission_id) REFERENCES internal.permissions(id) ON DELETE CASCADE
+  , UNIQUE (role_id, permission_id)
 );
 
 CREATE INDEX idx_internal_role_permissions_permission_id ON internal.role_permissions (permission_id);

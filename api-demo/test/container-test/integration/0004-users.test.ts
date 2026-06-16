@@ -9,7 +9,7 @@ import { faker } from '@faker-js/faker/locale/en';
 import bcrypt from 'bcryptjs';
 
 import { query } from '../lib/db.ts';
-import { authAPI, noAuthAPI } from '../lib/api.ts';
+import { authAPISuper, noAuthAPI } from '../lib/api.ts';
 import {
   createRandomUser,
   getFileNumber,
@@ -36,46 +36,46 @@ describe(`${fileNumber} - Users`, () => {
       } = await createRandomUser({ status: 'DEACTIVATED' }));
     });
 
-    const getResponse = () => authAPI.get('/users');
+    const getResponse = () => authAPISuper.get('/users');
 
     describe('Request Failure', () => {
       test('"status" with invalid value returns 400', async () => {
-        const res = await authAPI.get('/users?status=invalid');
+        const res = await authAPISuper.get('/users?status=invalid');
 
         expect(res.statusCode).toBe(400);
         expect(res.body.message).toContain('querystring/status');
       });
 
       test('"page" of "0" returns 400', async () => {
-        const res = await authAPI.get('/users?page=0');
+        const res = await authAPISuper.get('/users?page=0');
 
         expect(res.statusCode).toBe(400);
         expect(res.body.message).toBe('querystring/page must match pattern "^[1-9][0-9]*$"');
       });
 
       test('"page" of non-numeric string returns 400', async () => {
-        const res = await authAPI.get('/users?page=abc');
+        const res = await authAPISuper.get('/users?page=abc');
 
         expect(res.statusCode).toBe(400);
         expect(res.body.message).toBe('querystring/page must match pattern "^[1-9][0-9]*$"');
       });
 
       test('"per_page" of "0" returns 400', async () => {
-        const res = await authAPI.get('/users?per_page=0');
+        const res = await authAPISuper.get('/users?per_page=0');
 
         expect(res.statusCode).toBe(400);
         expect(res.body.message).toBe('querystring/per_page must match pattern "^([1-9][0-9]?|100)$"');
       });
 
       test('"per_page" of "101" returns 400', async () => {
-        const res = await authAPI.get('/users?per_page=101');
+        const res = await authAPISuper.get('/users?per_page=101');
 
         expect(res.statusCode).toBe(400);
         expect(res.body.message).toBe('querystring/per_page must match pattern "^([1-9][0-9]?|100)$"');
       });
 
       test('"per_page" of non-numeric string returns 400', async () => {
-        const res = await authAPI.get('/users?per_page=abc');
+        const res = await authAPISuper.get('/users?per_page=abc');
 
         expect(res.statusCode).toBe(400);
         expect(res.body.message).toBe('querystring/per_page must match pattern "^([1-9][0-9]?|100)$"');
@@ -116,28 +116,28 @@ describe(`${fileNumber} - Users`, () => {
       });
 
       test('"status=ACTIVE&status=DEACTIVATED" returns both active and deactivated users', async () => {
-        const res = await authAPI.get('/users?status=ACTIVE&status=DEACTIVATED');
+        const res = await authAPISuper.get('/users?status=ACTIVE&status=DEACTIVATED');
 
         expect(res.body.output[activeUserId]).toBeDefined();
         expect(res.body.output[deactivatedUserId]).toBeDefined();
       });
 
       test('"status=ACTIVE" returns only active users', async () => {
-        const res = await authAPI.get('/users?status=ACTIVE');
+        const res = await authAPISuper.get('/users?status=ACTIVE');
 
         expect(res.body.output[activeUserId]).toBeDefined();
         expect(res.body.output[deactivatedUserId]).toBeUndefined();
       });
 
       test('"status=DEACTIVATED" returns only deactivated users', async () => {
-        const res = await authAPI.get('/users?status=DEACTIVATED');
+        const res = await authAPISuper.get('/users?status=DEACTIVATED');
 
         expect(res.body.output[activeUserId]).toBeUndefined();
         expect(res.body.output[deactivatedUserId]).toBeDefined();
       });
 
       test('"per_page=1" returns exactly one user', async () => {
-        const res = await authAPI.get('/users?per_page=1');
+        const res = await authAPISuper.get('/users?per_page=1');
 
         expect(res.statusCode).toBe(200);
         expect(Object.keys(res.body.output)).toHaveLength(1);
@@ -147,8 +147,8 @@ describe(`${fileNumber} - Users`, () => {
 
       test('page=1 and page=2 with per_page=1 return different users', async () => {
         const [res1, res2] = await Promise.all([
-          authAPI.get('/users?per_page=1&page=1'),
-          authAPI.get('/users?per_page=1&page=2'),
+          authAPISuper.get('/users?per_page=1&page=1'),
+          authAPISuper.get('/users?per_page=1&page=2'),
         ]);
 
         expect(Object.keys(res1.body.output)).toHaveLength(1);
@@ -157,7 +157,7 @@ describe(`${fileNumber} - Users`, () => {
       });
 
       test('"page=9999" returns empty output with count 0', async () => {
-        const res = await authAPI.get('/users?page=9999&per_page=100');
+        const res = await authAPISuper.get('/users?page=9999&per_page=100');
 
         expect(res.statusCode).toBe(200);
         expect(res.body.output).toEqual({});
@@ -176,18 +176,18 @@ describe(`${fileNumber} - Users`, () => {
       } = await createRandomUser());
     });
 
-    const getResponse = (userId: string) => authAPI.get(`/users?user_id=${userId}`);
+    const getResponse = (userId: string) => authAPISuper.get(`/users?user_id=${userId}`);
 
     describe('Request Failure', () => {
       test('Non-UUID string "user_id" returns 400', async () => {
-        const res = await authAPI.get('/users?user_id=not-a-uuid');
+        const res = await authAPISuper.get('/users?user_id=not-a-uuid');
 
         expect(res.statusCode).toBe(400);
         expect(res.body.message).toBe('querystring/user_id must match format "uuid"');
       });
 
       test('Integer "user_id" returns 400', async () => {
-        const res = await authAPI.get('/users?user_id=12345');
+        const res = await authAPISuper.get('/users?user_id=12345');
 
         expect(res.statusCode).toBe(400);
         expect(res.body.message).toBe('querystring/user_id must match format "uuid"');
@@ -247,7 +247,7 @@ describe(`${fileNumber} - Users`, () => {
   });
 
   describe('POST /users', () => {
-    const getResponse = (reqBody: RequestBody) => authAPI.post('/users', reqBody);
+    const getResponse = (reqBody: RequestBody) => authAPISuper.post('/users', reqBody);
 
     let validRequestBody = {} as RequestBody;
 
@@ -501,7 +501,7 @@ describe(`${fileNumber} - Users`, () => {
   });
 
   describe('PUT /users/:user_id', () => {
-    const getResponse = (userId: string, reqBody: RequestBody) => authAPI.put(`/users/${userId}`, reqBody);
+    const getResponse = (userId: string, reqBody: RequestBody) => authAPISuper.put(`/users/${userId}`, reqBody);
 
     let validUserId: string;
     let validRequestBody: RequestBody;
@@ -685,7 +685,7 @@ describe(`${fileNumber} - Users`, () => {
   });
 
   describe('PATCH /users/:user_id/email', () => {
-    const getResponse = (userId: string, reqBody: RequestBody) => authAPI.patch(`/users/${userId}/email`, reqBody);
+    const getResponse = (userId: string, reqBody: RequestBody) => authAPISuper.patch(`/users/${userId}/email`, reqBody);
 
     let validUserId: string;
     let validRequestBody = {} as RequestBody;
@@ -857,7 +857,7 @@ describe(`${fileNumber} - Users`, () => {
   });
 
   describe('DELETE /users/:user_id', () => {
-    const getResponse = (userId: string) => authAPI.del(`/users/${userId}`);
+    const getResponse = (userId: string) => authAPISuper.del(`/users/${userId}`);
 
     describe('Request Failure', () => {
       test('Non-UUID "user_id" returns 400', async () => {
@@ -956,7 +956,7 @@ describe(`${fileNumber} - Users`, () => {
   });
 
   describe('PATCH /users/:user_id/invite', () => {
-    const getResponse = (userId: string) => authAPI.patch(`/users/${userId}/invite`);
+    const getResponse = (userId: string) => authAPISuper.patch(`/users/${userId}/invite`);
 
     describe('Request Failure', () => {
       test('Non-UUID "user_id" returns 400', async () => {
@@ -1162,7 +1162,7 @@ describe(`${fileNumber} - Users`, () => {
   });
 
   describe('DELETE /users/:user_id/invite', () => {
-    const cancelInvite = (userId: string) => authAPI.del(`/users/${userId}/invite`);
+    const cancelInvite = (userId: string) => authAPISuper.del(`/users/${userId}/invite`);
 
     describe('Request Failure', () => {
       test('Non-UUID "user_id" returns 400', async () => {
@@ -1539,7 +1539,7 @@ describe(`${fileNumber} - Users`, () => {
   });
 
   describe('PATCH /users/:user_id/deactivate', () => {
-    const getResponse = (userId: string) => authAPI.patch(`/users/${userId}/deactivate`);
+    const getResponse = (userId: string) => authAPISuper.patch(`/users/${userId}/deactivate`);
 
     describe('Request Failure', () => {
       test('Non-UUID "user_id" returns 400', async () => {

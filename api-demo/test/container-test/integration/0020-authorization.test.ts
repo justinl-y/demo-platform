@@ -4,7 +4,7 @@ import {
   test,
 } from 'vitest';
 
-import { authAPI, authAPIAs, noAuthAPI } from '../lib/api.ts';
+import { authAPISuper, authAPIUser, noAuthAPI } from '../lib/api.ts';
 import { query } from '../lib/db.ts';
 import { getFileNumber } from '../lib/functions.ts';
 
@@ -32,15 +32,15 @@ describe(`${fileNumber} - Authorization via JWT Permissions`, () => {
 
   describe('User with the required permission', () => {
     test('GET /users is allowed for the super user', async () => {
-      const res = await authAPI.get('/users');
+      const res = await authAPISuper.get('/users');
 
       expect(res.statusCode).toBe(200);
     });
 
-    test('PATCH /users/:id/invite is not forbidden with USERS_AUTHORIZE', async () => {
-      // carol is MODERATOR — has USERS_AUTHORIZE, so authorization must not block her.
+    test('PATCH /users/:id/invite is not forbidden with INTERNAL_USERS_AUTHORIZE_WRITE', async () => {
+      // carol is INTERNAL_USER_ADMIN — has INTERNAL_USERS_AUTHORIZE_WRITE, so authorization must not block her.
       const targetId = await getUserIdByEmail('bob.johnson@example.com');
-      const moderatorAPI = await authAPIAs('carol.williams@example.com');
+      const moderatorAPI = await authAPIUser('carol.williams@example.com');
 
       const reqBody = {
         email: 'invite.test@example.com',
@@ -54,10 +54,10 @@ describe(`${fileNumber} - Authorization via JWT Permissions`, () => {
   });
 
   describe('User without the required permission', () => {
-    test('PATCH /users/:id/invite is forbidden without USERS_AUTHORIZE', async () => {
-      // bob is STAFF — USERS_READ only, lacks USERS_AUTHORIZE.
+    test('PATCH /users/:id/invite is forbidden without INTERNAL_USERS_AUTHORIZE_WRITE', async () => {
+      // bob is INTERNAL_USER_READ — INTERNAL_USERS_READ only, lacks INTERNAL_USERS_AUTHORIZE_WRITE.
       const targetId = await getUserIdByEmail('bob.johnson@example.com');
-      const staffAPI = await authAPIAs('bob.johnson@example.com');
+      const staffAPI = await authAPIUser('bob.johnson@example.com');
 
       const reqBody = {
         email: 'invite.test@example.com',
@@ -68,10 +68,10 @@ describe(`${fileNumber} - Authorization via JWT Permissions`, () => {
       expect(res.statusCode).toBe(403);
     });
 
-    test('DELETE /users/:id is forbidden without USERS_WRITE', async () => {
-      // bob is STAFF — USERS_READ only, lacks USERS_WRITE.
+    test('DELETE /users/:id is forbidden without INTERNAL_USERS_WRITE', async () => {
+      // bob is INTERNAL_USER_READ — INTERNAL_USERS_READ only, lacks INTERNAL_USERS_WRITE.
       const targetId = await getUserIdByEmail('eve.jones@example.com');
-      const staffAPI = await authAPIAs('bob.johnson@example.com');
+      const staffAPI = await authAPIUser('bob.johnson@example.com');
 
       const res = await staffAPI.del(`/users/${targetId}`);
 

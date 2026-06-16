@@ -36,6 +36,7 @@ class AuthUtils {
       encryptSaltWorkFactor,
     } = Config.authConfig();
     const salt = await bcrypt.genSalt(encryptSaltWorkFactor);
+
     return bcrypt.hash(secret, salt);
   }
 
@@ -47,9 +48,7 @@ class AuthUtils {
       type: jwtType,
     } as JwtUser;
 
-    if (jwtType === 'access' && permissions) {
-      payload.permissions = permissions;
-    }
+    if (jwtType === 'access' && permissions) payload.permissions = permissions;
 
     const options = {
       expiresIn: '0m',
