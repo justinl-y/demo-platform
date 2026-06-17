@@ -9,6 +9,7 @@ import type {
 import type { AuthRepository } from '#repositories/auth/auth.repository';
 import type { HealthRepository } from '#repositories/health/health.repository';
 import type { UsersRepository } from '#repositories/users/users.repository';
+import type { PermissionsRepository } from '#repositories/permissions/permissions.repository';
 
 declare module '@fastify/jwt' {
   interface FastifyJWT {
@@ -24,6 +25,7 @@ declare module 'fastify' {
       auth: AuthRepository;
       health: HealthRepository;
       users: UsersRepository;
+      permissions: PermissionsRepository;
     };
     authenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
     authorize: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;

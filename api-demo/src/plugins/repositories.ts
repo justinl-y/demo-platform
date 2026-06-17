@@ -3,6 +3,7 @@ import fp from 'fastify-plugin';
 import { createAuthRepository } from '#repositories/auth/auth.repository';
 import { createHealthRepository } from '#repositories/health/health.repository';
 import { createUsersRepository } from '#repositories/users/users.repository';
+import { createPermissionsRepository } from '#repositories/permissions/permissions.repository';
 
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
 
@@ -17,6 +18,7 @@ function repositoriesPlugin(fastify: FastifyInstance, _options: FastifyPluginOpt
     auth: createAuthRepository(fastify.db),
     health: createHealthRepository(fastify.db),
     users: createUsersRepository(fastify.db),
+    permissions: createPermissionsRepository(fastify.db),
   });
 }
 

@@ -24,7 +24,7 @@ import type { RequestBody } from '../types/request-types.ts';
 
 const fileNumber = getFileNumber(import.meta.url);
 
-describe(`${fileNumber} - Auth`, () => {
+describe(`${fileNumber} - Authentication`, () => {
   let userId: string;
   let userEmail: string;
 

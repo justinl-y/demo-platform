@@ -4,7 +4,9 @@ INSERT INTO internal.permissions
 VALUES
   ('INTERNAL_USERS_READ', 'Read users'),
   ('INTERNAL_USERS_WRITE', 'Create/update/delete users'),
-  ('INTERNAL_USERS_AUTHORIZE_WRITE', 'Invite/activate/deactivate users')
+  ('INTERNAL_USERS_AUTHORIZE_WRITE', 'Invite/activate/deactivate users'),
+  ('INTERNAL_PERMISSIONS_READ', 'Read permissions'),
+  ('INTERNAL_PERMISSIONS_WRITE', 'Create/update/delete permissions')
 ON CONFLICT (name) DO NOTHING;
 
 -- Insert roles
@@ -59,65 +61,4 @@ WHERE
   r.name = 'INTERNAL_USER_ADMIN'
   AND p.name = ANY('{INTERNAL_USERS_READ, INTERNAL_USERS_WRITE, INTERNAL_USERS_AUTHORIZE_WRITE}')
 ON CONFLICT (role_id, permission_id) DO NOTHING
-;
-
--- Assign roles to users
--- super user: ADMIN
-INSERT INTO internal.users_roles
-  (user_id, role_id)
-SELECT
-  u.id
-  , r.id
-FROM
-  internal.users AS u
-  CROSS JOIN internal.roles AS r
-WHERE
-  u.email = 'user.super@email.com'
-  AND r.name = 'ADMIN'
-ON CONFLICT (user_id, role_id) DO NOTHING
-;
-
--- alice: ADMIN
-INSERT INTO internal.users_roles
-  (user_id, role_id)
-SELECT
-  u.id
-  , r.id
-FROM
-  internal.users AS u
-  CROSS JOIN internal.roles AS r
-WHERE
-  u.email = 'alice.smith@example.com' 
-  AND r.name = 'ADMIN'
-ON CONFLICT (user_id, role_id) DO NOTHING
-;
-
--- bob: INTERNAL_USER_READ
-INSERT INTO internal.users_roles
-  (user_id, role_id)
-SELECT
-  u.id
-  , r.id
-FROM
-  internal.users AS u
-  CROSS JOIN internal.roles AS r
-WHERE
-  u.email = 'bob.johnson@example.com'
-  AND r.name = 'INTERNAL_USER_READ'
-ON CONFLICT (user_id, role_id) DO NOTHING
-;
-
--- carol: INTERNAL_USER_ADMIN
-INSERT INTO internal.users_roles
-  (user_id, role_id)
-SELECT
-  u.id
-  , r.id
-FROM
-  internal.users AS u
-  CROSS JOIN internal.roles AS r
-WHERE
-  u.email = 'carol.williams@example.com'
-  AND r.name = 'INTERNAL_USER_ADMIN'
-ON CONFLICT (user_id, role_id) DO NOTHING
 ;
