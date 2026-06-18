@@ -241,7 +241,7 @@ describe(`${fileNumber} - Authentication`, () => {
           FROM
             internal.users AS u
             INNER JOIN internal.users_roles AS ur ON ur.user_id = u.id
-            INNER JOIN internal.role_permissions AS rp ON rp.role_id = ur.role_id
+            INNER JOIN internal.roles_permissions AS rp ON rp.role_id = ur.role_id
             INNER JOIN internal.permissions AS p ON p.id = rp.permission_id
           WHERE
             u.email = $1;`;

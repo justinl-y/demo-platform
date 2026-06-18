@@ -1,6 +1,6 @@
 import { cookieOptions } from '#lib/authentication';
 import { Config } from '#config/index';
-import { login } from '#services/auth/auth.service';
+import { login } from '#services/authentication/authentication.service';
 
 import type {
   FastifyRequest,
@@ -32,7 +32,7 @@ async function postLogin(this: FastifyInstance, request: FastifyRequest<Request>
     password,
   };
 
-  const result = await login(this.repositories.auth, this.jwt, loginParams);
+  const result = await login(this.repositories.authentication, this.jwt, loginParams);
 
   // access cookie
   reply.setCookie(accessTokenCookie, result.accessToken, {

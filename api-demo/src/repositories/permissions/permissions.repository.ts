@@ -3,6 +3,7 @@ import { cwd } from '#utils/functions';
 import type { DatabaseDecorator } from '../../types/database.ts';
 import type { IPermissionsGetPermissionsParams, IPermissionsGetPermissionsResult } from './types/get-permissions.typed.queries.ts';
 import type { IPermissionsGetPermissionByNameParams, IPermissionsGetPermissionByNameResult } from './types/get-permission-by-name.typed.queries.ts';
+import type { IPermissionsGetPermissionIdsParams, IPermissionsGetPermissionIdsResult } from './types/get-permission-ids.typed.queries.ts';
 import type { IPermissionsAddPermissionParams, IPermissionsAddPermissionResult } from './types/add-permission.typed.queries.ts';
 import type { IPermissionsSetPermissionParams, IPermissionsSetPermissionResult } from './types/set-permission.typed.queries.ts';
 import type { IPermissionsRemovePermissionParams, IPermissionsRemovePermissionResult } from './types/remove-permission.typed.queries.ts';
@@ -10,6 +11,7 @@ import type { IPermissionsRemovePermissionParams, IPermissionsRemovePermissionRe
 const relPath = import.meta.dirname;
 const getPermissionsQuery = cwd('get-permissions', relPath);
 const getPermissionByNameQuery = cwd('get-permission-by-name', relPath);
+const getPermissionIdsQuery = cwd('get-permission-ids', relPath);
 const addPermissionQuery = cwd('add-permission', relPath);
 const updatePermissionQuery = cwd('set-permission', relPath);
 const removePermissionQuery = cwd('remove-permission', relPath);
@@ -34,6 +36,12 @@ function createPermissionsRepository(db: DatabaseDecorator) {
       name,
     }: IPermissionsGetPermissionByNameParams) => {
       return db.query<IPermissionsGetPermissionByNameResult>(getPermissionByNameQuery, { name }, 'one');
+    },
+
+    getPermissionIds: ({
+      permissionIds,
+    }: IPermissionsGetPermissionIdsParams) => {
+      return db.query<IPermissionsGetPermissionIdsResult>(getPermissionIdsQuery, { permissionIds }, 'collection');
     },
 
     addPermission: async ({

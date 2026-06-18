@@ -1,13 +1,13 @@
 import { BadRequestError } from 'http-errors-enhanced';
 
-import { paginationOffset, paginationCount, paginationPages, randomAlphaNumeric, sha256Hex } from '#utils/functions';
+import { paginationOffset, buildPaginatedResult, randomAlphaNumeric, sha256Hex } from '#utils/functions';
 import { bcryptHash } from '#lib/authentication';
 import { sendEmail } from '#lib/mailer';
 import { captureSentryException } from '#lib/sentry-instrument';
 import { Config } from '#config/index';
 
 import type { UsersRepository } from '#repositories/users/users.repository';
-import type { GetResult, UserStatus } from '../../types/general.ts';
+import type { PaginatedResult, UserStatus } from '../../types/general.ts';
 
 interface FetchUsersParams {
   page: number;
@@ -23,13 +23,7 @@ interface UserItem {
   status: UserStatus;
 }
 
-interface FetchUsersResult extends GetResult {
-  output: {
-    [user_id: string]: UserItem;
-  };
-}
-
-async function fetchUsers(repository: UsersRepository, params: FetchUsersParams): Promise<FetchUsersResult> {
+async function fetchUsers(repository: UsersRepository, params: FetchUsersParams): Promise<PaginatedResult<UserItem>> {
   const {
     page,
     perPage,
@@ -48,18 +42,11 @@ async function fetchUsers(repository: UsersRepository, params: FetchUsersParams)
 
   const result = await repository.getUsers(getUsersParams);
 
-  const output = (result?.users ?? {}) as unknown as { [id: string]: UserItem };
-  const count = paginationCount(output);
-  const pages = paginationPages(result?.total, perPage);
-
-  return {
-    output,
-    count,
-    pagination: {
-      page,
-      pages,
-    },
-  };
+  return buildPaginatedResult<UserItem>(result, {
+    page,
+    perPage,
+    key: 'users',
+  });
 }
 
 interface CreateUserParams {

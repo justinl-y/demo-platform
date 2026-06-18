@@ -9,6 +9,14 @@ function onRequest(this: FastifyInstance, key: RouteKey) {
     postPermissions: routePropertiesOnRequest([this.authenticate]),
     putPermissions: routePropertiesOnRequest([this.authenticate]),
     deletePermissions: routePropertiesOnRequest([this.authenticate]),
+    getRoles: routePropertiesOnRequest([this.authenticate]),
+    postRoles: routePropertiesOnRequest([this.authenticate]),
+    putRoles: routePropertiesOnRequest([this.authenticate]),
+    deleteRoles: routePropertiesOnRequest([this.authenticate]),
+    getRolePermissions: routePropertiesOnRequest([this.authenticate]),
+    postRolePermissions: routePropertiesOnRequest([this.authenticate]),
+    putRolePermissions: routePropertiesOnRequest([this.authenticate]),
+    deleteRolePermissions: routePropertiesOnRequest([this.authenticate]),
   };
 
   return routeOnRequest[key] ?? {};

@@ -24,7 +24,7 @@ async function getAccessTokenCookieForEmail(email: string): Promise<string> {
     p.name
   FROM
     internal.users_roles AS ur
-    INNER JOIN internal.role_permissions AS rp ON rp.role_id = ur.role_id
+    INNER JOIN internal.roles_permissions AS rp ON rp.role_id = ur.role_id
     INNER JOIN internal.permissions AS p ON p.id = rp.permission_id
   WHERE
     ur.user_id = $1;`

@@ -1,4 +1,4 @@
-import { passwordForgot as passwordForgotService } from '#services/auth/auth.service';
+import { passwordForgot as passwordForgotService } from '#services/authentication/authentication.service';
 
 import type {
   FastifyRequest,
@@ -23,7 +23,7 @@ async function passwordForgot(this: FastifyInstance, request: FastifyRequest<Req
     email,
   };
 
-  await passwordForgotService(this.repositories.auth, passwordForgotParams);
+  await passwordForgotService(this.repositories.authentication, passwordForgotParams);
 
   return reply
     .code(204)

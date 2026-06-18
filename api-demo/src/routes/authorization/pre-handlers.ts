@@ -11,6 +11,14 @@ function preHandler(this: FastifyInstance, key: RouteKey) {
     postPermissions: routePropertiesPrehandler([this.authorize]),
     putPermissions: routePropertiesPrehandler([this.authorize]),
     deletePermissions: routePropertiesPrehandler([this.authorize]),
+    getRoles: routePropertiesPrehandler([this.authorize]),
+    postRoles: routePropertiesPrehandler([this.authorize]),
+    putRoles: routePropertiesPrehandler([this.authorize]),
+    deleteRoles: routePropertiesPrehandler([this.authorize]),
+    getRolePermissions: routePropertiesPrehandler([this.authorize]),
+    postRolePermissions: routePropertiesPrehandler([this.authorize]),
+    putRolePermissions: routePropertiesPrehandler([this.authorize]),
+    deleteRolePermissions: routePropertiesPrehandler([this.authorize]),
   };
 
   return routePreHandler[key] ?? {};

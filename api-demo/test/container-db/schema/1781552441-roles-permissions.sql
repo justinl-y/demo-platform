@@ -25,7 +25,7 @@ CREATE TABLE internal.roles (
   , description varchar(255) NOT NULL
 );
 
-CREATE TABLE internal.role_permissions (
+CREATE TABLE internal.roles_permissions (
   id uuid PRIMARY KEY DEFAULT uuidv7()
   , role_id uuid NOT NULL
   , permission_id uuid NOT NULL
@@ -34,7 +34,7 @@ CREATE TABLE internal.role_permissions (
   , UNIQUE (role_id, permission_id)
 );
 
-CREATE INDEX idx_internal_role_permissions_permission_id ON internal.role_permissions (permission_id);
+CREATE INDEX idx_internal_roles_permissions_permission_id ON internal.roles_permissions (permission_id);
 
 CREATE TABLE internal.users_roles (
   id uuid PRIMARY KEY DEFAULT uuidv7()

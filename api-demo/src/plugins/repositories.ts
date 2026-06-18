@@ -1,9 +1,11 @@
 import fp from 'fastify-plugin';
 
-import { createAuthRepository } from '#repositories/auth/auth.repository';
+import { createAuthenticationRepository } from '#repositories/authentication/authentication.repository';
 import { createHealthRepository } from '#repositories/health/health.repository';
 import { createUsersRepository } from '#repositories/users/users.repository';
 import { createPermissionsRepository } from '#repositories/permissions/permissions.repository';
+import { createRolesRepository } from '#repositories/roles/roles.repository';
+import { createRolePermissionsRepository } from '#repositories/roles-permissions/roles-permissions.repository';
 
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
 
@@ -15,10 +17,12 @@ function repositoriesPlugin(fastify: FastifyInstance, _options: FastifyPluginOpt
   }
 
   fastify.decorate('repositories', {
-    auth: createAuthRepository(fastify.db),
+    authentication: createAuthenticationRepository(fastify.db),
     health: createHealthRepository(fastify.db),
     users: createUsersRepository(fastify.db),
     permissions: createPermissionsRepository(fastify.db),
+    roles: createRolesRepository(fastify.db),
+    rolePermissions: createRolePermissionsRepository(fastify.db),
   });
 }
 

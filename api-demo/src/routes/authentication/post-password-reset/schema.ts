@@ -6,7 +6,7 @@ import {
 } from '#config/index';
 
 const route = {
-  tags: ['auth'],
+  tags: ['authentication'],
   summary: 'User password reset',
   description: 'Resets a user\'s password using the token from the reset email',
 };

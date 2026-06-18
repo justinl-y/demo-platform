@@ -1,9 +1,9 @@
 import { BadRequestError } from 'http-errors-enhanced';
 
-import { paginationOffset, paginationCount, paginationPages } from '#utils/functions';
+import { paginationOffset, buildPaginatedResult } from '#utils/functions';
 
 import type { PermissionsRepository } from '#repositories/permissions/permissions.repository';
-import type { GetResult } from '../../types/general.ts';
+import type { PaginatedResult } from '../../types/general.ts';
 
 interface FetchPermissionsParams {
   page: number;
@@ -16,13 +16,7 @@ interface PermissionItem {
   description: string;
 }
 
-interface FetchPermissionsResult extends GetResult {
-  output: {
-    [permission_id: string]: PermissionItem;
-  };
-}
-
-async function fetchPermissions(repository: PermissionsRepository, params: FetchPermissionsParams): Promise<FetchPermissionsResult> {
+async function fetchPermissions(repository: PermissionsRepository, params: FetchPermissionsParams): Promise<PaginatedResult<PermissionItem>> {
   const {
     page,
     perPage,
@@ -39,18 +33,11 @@ async function fetchPermissions(repository: PermissionsRepository, params: Fetch
 
   const result = await repository.getPermissions(getPermissionsParams);
 
-  const output = (result?.permissions ?? {}) as unknown as { [id: string]: PermissionItem };
-  const count = paginationCount(output);
-  const pages = paginationPages(result?.total, perPage);
-
-  return {
-    output,
-    count,
-    pagination: {
-      page,
-      pages,
-    },
-  };
+  return buildPaginatedResult<PermissionItem>(result, {
+    page,
+    perPage,
+    key: 'permissions',
+  });
 }
 
 interface CreatePermissionParams {

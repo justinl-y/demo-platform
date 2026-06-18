@@ -6,7 +6,9 @@ VALUES
   ('INTERNAL_USERS_WRITE', 'Create/update/delete users'),
   ('INTERNAL_USERS_AUTHORIZE_WRITE', 'Invite/activate/deactivate users'),
   ('INTERNAL_PERMISSIONS_READ', 'Read permissions'),
-  ('INTERNAL_PERMISSIONS_WRITE', 'Create/update/delete permissions')
+  ('INTERNAL_PERMISSIONS_WRITE', 'Create/update/delete permissions'),
+  ('INTERNAL_ROLES_READ', 'Read roles'),
+  ('INTERNAL_ROLES_WRITE', 'Create/update/delete roles')
 ON CONFLICT (name) DO NOTHING;
 
 -- Insert roles
@@ -20,7 +22,7 @@ ON CONFLICT (name) DO NOTHING;
 
 -- Assign permissions to roles
 -- ADMIN: all permissions
-INSERT INTO internal.role_permissions
+INSERT INTO internal.roles_permissions
   (role_id, permission_id)
 SELECT
   r.id
@@ -34,7 +36,7 @@ ON CONFLICT (role_id, permission_id) DO NOTHING
 ;
 
 -- INTERNAL_USER_READ: read access to base resources
-INSERT INTO internal.role_permissions
+INSERT INTO internal.roles_permissions
   (role_id, permission_id)
 SELECT
   r.id
@@ -50,7 +52,7 @@ ON CONFLICT (role_id, permission_id) DO NOTHING
 
 -- INTERNAL_USER_ADMIN: create/edit users & manage authorization (invite/activate/deactivate)
 INSERT INTO
-  internal.role_permissions (role_id, permission_id)
+  internal.roles_permissions (role_id, permission_id)
 SELECT
   r.id
   , p.id

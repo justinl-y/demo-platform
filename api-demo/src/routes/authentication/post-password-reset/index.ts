@@ -1,4 +1,4 @@
-import { passwordReset as passwordResetService } from '#services/auth/auth.service';
+import { passwordReset as passwordResetService } from '#services/authentication/authentication.service';
 
 import type {
   FastifyRequest,
@@ -26,7 +26,7 @@ async function passwordReset(this: FastifyInstance, request: FastifyRequest<Requ
     newPassword,
   };
 
-  await passwordResetService(this.repositories.auth, passwordResetParams);
+  await passwordResetService(this.repositories.authentication, passwordResetParams);
 
   return reply
     .code(204)

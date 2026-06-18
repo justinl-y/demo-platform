@@ -11,6 +11,7 @@ import type {
   preHandlerHookHandler,
   RouteHandlerMethod,
 } from 'fastify';
+import type { PaginatedResult } from '../types/general.ts';
 
 interface RouteProperties<H extends RouteHandlerMethod = RouteHandlerMethod> {
   method: string;
@@ -109,6 +110,36 @@ function paginationPages(total: number | null | undefined, perPage: number) {
   return Math.ceil((total ?? 0) / perPage);
 }
 
+interface PaginationOptions {
+  page: number;
+  perPage: number;
+  key: string;
+}
+
+// Maps a list query result onto the paginated response envelope. The list queries build
+// their rows as a single id-keyed JSON object under `key` and expose the pre-pagination
+// row count as `total`; this turns that into { output, count, pagination }.
+function buildPaginatedResult<T>(
+  result: { total: number | null } | null | undefined,
+  {
+    page, perPage, key,
+  }: PaginationOptions,
+): PaginatedResult<T> {
+  const rows = result as unknown as Record<string, unknown> | null | undefined;
+  const output = (rows?.[key] ?? {}) as { [id: string]: T };
+  const count = paginationCount(output);
+  const pages = paginationPages(result?.total, perPage);
+
+  return {
+    output,
+    count,
+    pagination: {
+      page,
+      pages,
+    },
+  };
+}
+
 function randomAlphaNumeric(length: number = 30): string {
   let result = '';
 
@@ -135,6 +166,7 @@ export {
   paginationOffset,
   paginationCount,
   paginationPages,
+  buildPaginatedResult,
   randomAlphaNumeric,
   sha256Hex,
 };

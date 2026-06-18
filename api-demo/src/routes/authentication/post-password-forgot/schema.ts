@@ -3,7 +3,7 @@ import {
 } from '#utils/functions';
 
 const route = {
-  tags: ['auth'],
+  tags: ['authentication'],
   summary: 'User password forgot',
   description: 'Triggers a password reset flow',
 };

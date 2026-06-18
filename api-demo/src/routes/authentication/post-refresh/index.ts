@@ -1,7 +1,7 @@
 import { UnauthorizedError } from 'http-errors-enhanced';
 import { cookieOptions } from '#lib/authentication';
 import { Config } from '#config/index';
-import { refresh } from '#services/auth/auth.service';
+import { refresh } from '#services/authentication/authentication.service';
 
 import type { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 
@@ -22,7 +22,7 @@ async function postRefresh(this: FastifyInstance, request: FastifyRequest, reply
     tokenRefresh,
   };
 
-  const result = await refresh(this.repositories.auth, this.jwt, refreshParams);
+  const result = await refresh(this.repositories.authentication, this.jwt, refreshParams);
 
   // access cookie
   reply.setCookie(accessTokenCookie, result.accessToken, {

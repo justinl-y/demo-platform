@@ -64,6 +64,16 @@ async function createRandomUser({
   };
 }
 
+async function getUserIdByEmail(email: string): Promise<string> {
+  const getUserSql = 'SELECT u.id FROM internal.users AS u WHERE u.email = $1';
+
+  const [user] = await query<{ id: string }>(getUserSql, [email]);
+
+  if (!user) throw new Error(`getUserIdByEmail: user not found (${email})`);
+
+  return user.id;
+}
+
 // Reset tokens are only ever known to the email recipient in production, so an
 // integration test seeds the persisted hash + expiry directly to drive the
 // endpoint. A pre-existing refresh token is seeded so callers can assert the
@@ -176,6 +186,7 @@ export {
   createRandomUser,
   generateTestCookie,
   getFileNumber,
+  getUserIdByEmail,
   seedUserWithResetToken,
   setCookies,
   sha256Hex,
