@@ -8,7 +8,7 @@ INSERT INTO internal.permissions
 VALUES
 	(
 		:name!
-		, :description
+		, :description!
 	)
 RETURNING
 	id AS permission_id

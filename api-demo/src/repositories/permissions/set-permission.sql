@@ -2,7 +2,7 @@ UPDATE
   internal.permissions
 SET
   name = $name!
-  , description = $description
+  , description = $description!
 WHERE
   id = $permissionId!
 RETURNING

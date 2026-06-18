@@ -3,7 +3,7 @@ import { PreparedQuery } from '@pgtyped/runtime';
 
 /** 'RolesSetRole' parameters type */
 export interface IRolesSetRoleParams {
-  description?: string | null | void;
+  description: string;
   name: string;
   roleId: string;
 }
@@ -21,7 +21,7 @@ export interface IRolesSetRoleQuery {
   result: IRolesSetRoleResult;
 }
 
-const rolesSetRoleIR: any = {"usedParamSet":{"name":true,"description":true,"roleId":true},"params":[{"name":"name","required":true,"transform":{"type":"scalar"},"locs":[{"a":99,"b":104}]},{"name":"description","required":false,"transform":{"type":"scalar"},"locs":[{"a":124,"b":135}]},{"name":"roleId","required":true,"transform":{"type":"scalar"},"locs":[{"a":150,"b":157}]}],"statement":"                                                             \nUPDATE\n  internal.roles\nSET\n  name = :name!\n  , description = :description\nWHERE\n  id = :roleId!\nRETURNING\n  id AS role_id\n  , name\n  , description"};
+const rolesSetRoleIR: any = {"usedParamSet":{"name":true,"description":true,"roleId":true},"params":[{"name":"name","required":true,"transform":{"type":"scalar"},"locs":[{"a":99,"b":104}]},{"name":"description","required":true,"transform":{"type":"scalar"},"locs":[{"a":124,"b":136}]},{"name":"roleId","required":true,"transform":{"type":"scalar"},"locs":[{"a":151,"b":158}]}],"statement":"                                                             \nUPDATE\n  internal.roles\nSET\n  name = :name!\n  , description = :description!\nWHERE\n  id = :roleId!\nRETURNING\n  id AS role_id\n  , name\n  , description"};
 
 /**
  * Query generated from SQL:
@@ -31,7 +31,7 @@ const rolesSetRoleIR: any = {"usedParamSet":{"name":true,"description":true,"rol
  *   internal.roles
  * SET
  *   name = :name!
- *   , description = :description
+ *   , description = :description!
  * WHERE
  *   id = :roleId!
  * RETURNING

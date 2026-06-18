@@ -2,7 +2,7 @@ UPDATE
   internal.roles
 SET
   name = $name!
-  , description = $description
+  , description = $description!
 WHERE
   id = $roleId!
 RETURNING

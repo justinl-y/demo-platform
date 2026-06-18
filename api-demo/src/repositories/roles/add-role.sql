@@ -6,7 +6,7 @@ INSERT INTO internal.roles
 VALUES
 	(
 		$name!
-		, $description
+		, $description!
 	)
 RETURNING
 	id AS role_id

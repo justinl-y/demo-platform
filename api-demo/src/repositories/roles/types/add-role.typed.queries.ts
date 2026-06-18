@@ -3,7 +3,7 @@ import { PreparedQuery } from '@pgtyped/runtime';
 
 /** 'RolesAddRole' parameters type */
 export interface IRolesAddRoleParams {
-  description?: string | null | void;
+  description: string;
   name: string;
 }
 
@@ -20,7 +20,7 @@ export interface IRolesAddRoleQuery {
   result: IRolesAddRoleResult;
 }
 
-const rolesAddRoleIR: any = {"usedParamSet":{"name":true,"description":true},"params":[{"name":"name","required":true,"transform":{"type":"scalar"},"locs":[{"a":130,"b":135}]},{"name":"description","required":false,"transform":{"type":"scalar"},"locs":[{"a":141,"b":152}]}],"statement":"                                                             \nINSERT INTO internal.roles\n\t(\n\t\tname\n\t\t, description\n\t)\nVALUES\n\t(\n\t\t:name!\n\t\t, :description\n\t)\nRETURNING\n\tid AS role_id\n\t, name\n\t, description"};
+const rolesAddRoleIR: any = {"usedParamSet":{"name":true,"description":true},"params":[{"name":"name","required":true,"transform":{"type":"scalar"},"locs":[{"a":130,"b":135}]},{"name":"description","required":true,"transform":{"type":"scalar"},"locs":[{"a":141,"b":153}]}],"statement":"                                                             \nINSERT INTO internal.roles\n\t(\n\t\tname\n\t\t, description\n\t)\nVALUES\n\t(\n\t\t:name!\n\t\t, :description!\n\t)\nRETURNING\n\tid AS role_id\n\t, name\n\t, description"};
 
 /**
  * Query generated from SQL:
@@ -34,7 +34,7 @@ const rolesAddRoleIR: any = {"usedParamSet":{"name":true,"description":true},"pa
  * VALUES
  * 	(
  * 		:name!
- * 		, :description
+ * 		, :description!
  * 	)
  * RETURNING
  * 	id AS role_id

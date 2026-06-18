@@ -3,7 +3,7 @@ import { PreparedQuery } from '@pgtyped/runtime';
 
 /** 'PermissionsSetPermission' parameters type */
 export interface IPermissionsSetPermissionParams {
-  description?: string | null | void;
+  description: string;
   name: string;
   permissionId: string;
 }
@@ -21,7 +21,7 @@ export interface IPermissionsSetPermissionQuery {
   result: IPermissionsSetPermissionResult;
 }
 
-const permissionsSetPermissionIR: any = {"usedParamSet":{"name":true,"description":true,"permissionId":true},"params":[{"name":"name","required":true,"transform":{"type":"scalar"},"locs":[{"a":105,"b":110}]},{"name":"description","required":false,"transform":{"type":"scalar"},"locs":[{"a":130,"b":141}]},{"name":"permissionId","required":true,"transform":{"type":"scalar"},"locs":[{"a":156,"b":169}]}],"statement":"                                                             \nUPDATE\n  internal.permissions\nSET\n  name = :name!\n  , description = :description\nWHERE\n  id = :permissionId!\nRETURNING\n  id AS permission_id\n  , name\n  , description"};
+const permissionsSetPermissionIR: any = {"usedParamSet":{"name":true,"description":true,"permissionId":true},"params":[{"name":"name","required":true,"transform":{"type":"scalar"},"locs":[{"a":105,"b":110}]},{"name":"description","required":true,"transform":{"type":"scalar"},"locs":[{"a":130,"b":142}]},{"name":"permissionId","required":true,"transform":{"type":"scalar"},"locs":[{"a":157,"b":170}]}],"statement":"                                                             \nUPDATE\n  internal.permissions\nSET\n  name = :name!\n  , description = :description!\nWHERE\n  id = :permissionId!\nRETURNING\n  id AS permission_id\n  , name\n  , description"};
 
 /**
  * Query generated from SQL:
@@ -31,7 +31,7 @@ const permissionsSetPermissionIR: any = {"usedParamSet":{"name":true,"descriptio
  *   internal.permissions
  * SET
  *   name = :name!
- *   , description = :description
+ *   , description = :description!
  * WHERE
  *   id = :permissionId!
  * RETURNING
