@@ -24,7 +24,7 @@ FROM
   internal.users AS u
   CROSS JOIN internal.roles AS r
 WHERE
-  u.email = 'alice.smith@example.com' 
+  u.email = 'alice.smith@example.com'
   AND r.name = 'ADMIN'
 ON CONFLICT (user_id, role_id) DO NOTHING
 ;
