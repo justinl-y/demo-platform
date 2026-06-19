@@ -1275,26 +1275,17 @@ describe(`${fileNumber} - Authorization`, () => {
         expect(rows.map((row) => row.permission_id).sort()).toEqual([...permissionIds].sort());
       });
 
-      test('Re-assigning an already-assigned permission returns 400', async () => {
-        const res = await getResponse(roleId, {
-          permissions: permissionIds,
-        });
-
-        expect(res.statusCode).toBe(400);
-        expect(res.body.message).toBe('One or more permissions are already assigned to the role');
-      });
-
-      test('A mix of new and already-assigned permissions returns 400 and assigns nothing', async () => {
+      test('Posting to a role that already has permissions returns 400 and assigns nothing new', async () => {
         const newPermission = await createRandomPermission();
 
         const res = await getResponse(roleId, {
-          permissions: [permissionIds[0], newPermission.permission_id],
+          permissions: [newPermission.permission_id],
         });
 
         expect(res.statusCode).toBe(400);
-        expect(res.body.message).toBe('One or more permissions are already assigned to the role');
+        expect(res.body.message).toBe('Role permissions already exist');
 
-        // the request must fail wholesale, not partially assign the new permission
+        // the new permission must not have been assigned
         const sql = 'SELECT permission_id FROM internal.roles_permissions WHERE role_id = $1 AND permission_id = $2;';
         const rows = await query<{ permission_id: string }>(sql, [roleId, newPermission.permission_id]);
 

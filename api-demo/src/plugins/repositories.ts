@@ -6,6 +6,7 @@ import { createUsersRepository } from '#repositories/users/users.repository';
 import { createPermissionsRepository } from '#repositories/permissions/permissions.repository';
 import { createRolesRepository } from '#repositories/roles/roles.repository';
 import { createRolePermissionsRepository } from '#repositories/roles-permissions/roles-permissions.repository';
+import { createUsersRolesRepository } from '#repositories/users-roles/users-roles.repository';
 
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
 
@@ -23,6 +24,7 @@ function repositoriesPlugin(fastify: FastifyInstance, _options: FastifyPluginOpt
     permissions: createPermissionsRepository(fastify.db),
     roles: createRolesRepository(fastify.db),
     rolePermissions: createRolePermissionsRepository(fastify.db),
+    usersRoles: createUsersRolesRepository(fastify.db),
   });
 }
 

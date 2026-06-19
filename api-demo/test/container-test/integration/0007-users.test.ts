@@ -21,6 +21,42 @@ import type { RequestBody } from '../types/request-types.ts';
 
 const fileNumber = getFileNumber(import.meta.url);
 
+interface SeededRole {
+  role_id: string;
+  role_name: string;
+}
+
+// GET /users/roles has no write route yet, so the role-assignment tests seed
+// internal.roles and the internal.users_roles join table directly.
+async function createRandomRole(): Promise<SeededRole> {
+  const insertSql = `INSERT INTO internal.roles
+      (name, description)
+    VALUES
+      ($1, $2)
+    RETURNING
+      id AS role_id
+      , name AS role_name;`;
+
+  const [role] = await query<SeededRole>(insertSql, [
+    `TEST_ROLE_${faker.string.alphanumeric(16).toUpperCase()}`,
+    faker.lorem.sentence(),
+  ]);
+
+  expect(role, 'failed to seed test role').toBeDefined();
+
+  return role;
+}
+
+async function assignRoleToUser(userId: string, roleId: string): Promise<void> {
+  const insertSql = `INSERT INTO internal.users_roles
+      (user_id, role_id)
+    VALUES
+      ($1, $2)
+    ON CONFLICT (user_id, role_id) DO NOTHING;`;
+
+  await query(insertSql, [userId, roleId]);
+}
+
 describe(`${fileNumber} - Users`, () => {
   describe('GET /users - all', () => {
     let activeUserId: string;
@@ -951,6 +987,623 @@ describe(`${fileNumber} - Users`, () => {
         const [result] = await query<DbUser>(getDeletedUserSql, [createdUserId]);
 
         expect(result).toBeUndefined();
+      });
+    });
+  });
+
+  describe('GET /users/roles - all', () => {
+    beforeAll(async () => {
+      const {
+        userId,
+      } = await createRandomUser();
+      const role = await createRandomRole();
+      await assignRoleToUser(userId, role.role_id);
+    });
+
+    const getResponse = () => authAPISuper.get('/users/roles');
+
+    describe('Request Failure', () => {
+      test('"page" of "0" returns 400', async () => {
+        const res = await authAPISuper.get('/users/roles?page=0');
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('querystring/page must match pattern "^[1-9][0-9]*$"');
+      });
+
+      test('"page" of non-numeric string returns 400', async () => {
+        const res = await authAPISuper.get('/users/roles?page=abc');
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('querystring/page must match pattern "^[1-9][0-9]*$"');
+      });
+
+      test('"per_page" of "0" returns 400', async () => {
+        const res = await authAPISuper.get('/users/roles?per_page=0');
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('querystring/per_page must match pattern "^([1-9][0-9]?|100)$"');
+      });
+
+      test('"per_page" of "101" returns 400', async () => {
+        const res = await authAPISuper.get('/users/roles?per_page=101');
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('querystring/per_page must match pattern "^([1-9][0-9]?|100)$"');
+      });
+
+      test('"user_id" of non-UUID returns 400', async () => {
+        const res = await authAPISuper.get('/users/roles?user_id=not-a-uuid');
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('querystring/user_id must match format "uuid"');
+      });
+    });
+
+    describe('Request Success', () => {
+      let rep: Supertest.Response;
+
+      beforeAll(async () => {
+        rep = await getResponse();
+      });
+
+      test('Success response returns 200', () => {
+        expect(rep.statusCode).toBe(200);
+      });
+
+      test('Response body has correct shape', () => {
+        expect(rep.body).toHaveProperty('output');
+        expect(rep.body).toHaveProperty('count');
+        expect(rep.body).toHaveProperty('pagination');
+        expect(rep.body.output).toBeTypeOf('object');
+        expect(Array.isArray(rep.body.output)).toBe(false);
+        expect(rep.body.count).toBeTypeOf('number');
+        expect(rep.body.pagination).toHaveProperty('page');
+        expect(rep.body.pagination).toHaveProperty('pages');
+      });
+
+      test('Response entries have correct shape', () => {
+        const [entry] = Object.values(rep.body.output) as Array<Record<string, unknown>>;
+
+        expect(entry).toBeDefined();
+        expect(entry).toHaveProperty('user_id');
+        expect(entry).toHaveProperty('user_email');
+        expect(entry).toHaveProperty('roles');
+        expect(entry.roles).toBeTypeOf('object');
+        expect(Array.isArray(entry.roles)).toBe(false);
+      });
+
+      test('"per_page=1" returns exactly one user', async () => {
+        const res = await authAPISuper.get('/users/roles?per_page=1');
+
+        expect(res.statusCode).toBe(200);
+        expect(Object.keys(res.body.output)).toHaveLength(1);
+        expect(res.body.count).toBe(1);
+        expect(res.body.pagination.pages).toBeGreaterThanOrEqual(1);
+      });
+
+      test('"page=9999" returns empty output with count 0', async () => {
+        const res = await authAPISuper.get('/users/roles?page=9999&per_page=100');
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.output).toEqual({});
+        expect(res.body.count).toBe(0);
+      });
+    });
+  });
+
+  describe('GET /users/roles - single', () => {
+    let userWithRolesId: string;
+    let userWithRolesEmail: string;
+    let userWithoutRolesId: string;
+    let roleOne: SeededRole;
+    let roleTwo: SeededRole;
+
+    beforeAll(async () => {
+      ({
+        userId: userWithRolesId, email: userWithRolesEmail,
+      } = await createRandomUser());
+
+      ({
+        userId: userWithoutRolesId,
+      } = await createRandomUser());
+
+      roleOne = await createRandomRole();
+      roleTwo = await createRandomRole();
+      await assignRoleToUser(userWithRolesId, roleOne.role_id);
+      await assignRoleToUser(userWithRolesId, roleTwo.role_id);
+    });
+
+    const getResponse = (userId: string) => authAPISuper.get(`/users/roles?user_id=${userId}`);
+
+    describe('Request Failure', () => {
+      test('Non-UUID "user_id" returns 400', async () => {
+        const res = await getResponse('not-a-uuid');
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('querystring/user_id must match format "uuid"');
+      });
+
+      test('Integer "user_id" returns 400', async () => {
+        const res = await getResponse('12345');
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('querystring/user_id must match format "uuid"');
+      });
+
+      test('Unknown UUID returns 200 with empty output and count 0', async () => {
+        const res = await getResponse('00000000-0000-0000-0000-000000000000');
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.output).toEqual({});
+        expect(res.body.count).toBe(0);
+      });
+    });
+
+    describe('Request Success', () => {
+      let rep: Supertest.Response;
+
+      beforeAll(async () => {
+        rep = await getResponse(userWithRolesId);
+      });
+
+      test('Success response returns 200', () => {
+        expect(rep.statusCode).toBe(200);
+      });
+
+      test('Response contains only the requested user', () => {
+        expect(Object.keys(rep.body.output)).toEqual([userWithRolesId]);
+        expect(rep.body.count).toBe(1);
+      });
+
+      test('Response entry has correct shape', () => {
+        const user = rep.body.output[userWithRolesId];
+
+        expect(user).toBeDefined();
+        expect(user.user_id).toBe(userWithRolesId);
+        expect(user.user_email).toBe(userWithRolesEmail);
+        expect(user.roles).toBeTypeOf('object');
+        expect(Array.isArray(user.roles)).toBe(false);
+      });
+
+      test('Assigned roles are keyed by role id with id and name', () => {
+        const {
+          roles,
+        } = rep.body.output[userWithRolesId];
+
+        expect(Object.keys(roles)).toHaveLength(2);
+        expect(roles[roleOne.role_id]).toEqual({
+          role_id: roleOne.role_id,
+          role_name: roleOne.role_name,
+        });
+        expect(roles[roleTwo.role_id]).toEqual({
+          role_id: roleTwo.role_id,
+          role_name: roleTwo.role_name,
+        });
+      });
+
+      test('A user with no assigned roles has an empty roles object', async () => {
+        const res = await getResponse(userWithoutRolesId);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.output[userWithoutRolesId]).toBeDefined();
+        expect(res.body.output[userWithoutRolesId].roles).toEqual({});
+      });
+    });
+  });
+
+  describe('POST /users/:user_id/roles', () => {
+    const getResponse = (userId: string, reqBody: Record<string, unknown>) => authAPISuper.post(`/users/${userId}/roles`, reqBody);
+
+    let validUserId: string;
+    let seededRole: SeededRole;
+    let validRequestBody: Record<string, unknown>;
+
+    beforeAll(async () => {
+      ({
+        userId: validUserId,
+      } = await createRandomUser());
+
+      seededRole = await createRandomRole();
+
+      validRequestBody = {
+        roles: [seededRole.role_id],
+      };
+    });
+
+    describe('Request Failure', () => {
+      test('Non-UUID "user_id" returns 400', async () => {
+        const res = await getResponse('not-a-uuid', validRequestBody);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('params/user_id must match format "uuid"');
+      });
+
+      test('Integer "user_id" returns 400', async () => {
+        const res = await getResponse('12345', validRequestBody);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('params/user_id must match format "uuid"');
+      });
+
+      test('Absent required body "roles" returns 400', async () => {
+        const res = await getResponse(validUserId, {});
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe(`body must have required property 'roles'`);
+      });
+
+      test('Empty "roles" array returns 400', async () => {
+        const res = await getResponse(validUserId, { roles: [] });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('body/roles must NOT have fewer than 1 items');
+      });
+
+      test('Non-UUID "roles" item returns 400', async () => {
+        const res = await getResponse(validUserId, { roles: ['not-a-uuid'] });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('body/roles/0 must match format "uuid"');
+      });
+
+      test('Duplicate "roles" items return 400', async () => {
+        const res = await getResponse(validUserId, { roles: [seededRole.role_id, seededRole.role_id] });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('body/roles must NOT have duplicate items (items ## 1 and 0 are identical)');
+      });
+
+      test('Unknown user UUID returns 400', async () => {
+        const unknownUuid = '00000000-0000-0000-0000-000000000000';
+        const res = await getResponse(unknownUuid, validRequestBody);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid user id or user status');
+      });
+
+      test('Deactivated user returns 400', async () => {
+        const {
+          userId,
+        } = await createRandomUser({ status: 'DEACTIVATED' });
+
+        const res = await getResponse(userId, validRequestBody);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid user id or user status');
+      });
+
+      test('Unknown role id returns 400', async () => {
+        const unknownUuid = '00000000-0000-0000-0000-000000000000';
+        const res = await getResponse(validUserId, { roles: [unknownUuid] });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('One or more supplied role ids are invalid');
+      });
+
+      test('User with existing roles returns 400 and assigns nothing new', async () => {
+        const {
+          userId,
+        } = await createRandomUser();
+        const existingRole = await createRandomRole();
+        const newRole = await createRandomRole();
+        await assignRoleToUser(userId, existingRole.role_id);
+
+        const res = await getResponse(userId, { roles: [newRole.role_id] });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('User roles already exist');
+
+        // The user's role set must be untouched — no new role assigned.
+        const getUserRolesSql = `SELECT
+          ur.role_id
+        FROM
+          internal.users_roles AS ur
+        WHERE
+          ur.user_id = $1;`;
+        const rows = await query<{ role_id: string }>(getUserRolesSql, [userId]);
+        const assignedRoleIds = rows.map((row) => row.role_id);
+
+        expect(assignedRoleIds).toEqual([existingRole.role_id]);
+        expect(assignedRoleIds).not.toContain(newRole.role_id);
+      });
+    });
+
+    describe('Request Success', () => {
+      interface DbUserRole {
+        role_id: string;
+      }
+
+      const getUserRolesSql = `SELECT
+        ur.role_id
+      FROM
+        internal.users_roles AS ur
+      WHERE
+        ur.user_id = $1
+      ORDER BY
+        ur.role_id;`;
+
+      let targetUserId: string;
+      let roleOne: SeededRole;
+      let roleTwo: SeededRole;
+      let rep: Supertest.Response;
+      let dbRoleIds: string[];
+
+      beforeAll(async () => {
+        ({
+          userId: targetUserId,
+        } = await createRandomUser());
+
+        roleOne = await createRandomRole();
+        roleTwo = await createRandomRole();
+
+        rep = await getResponse(targetUserId, { roles: [roleOne.role_id, roleTwo.role_id] });
+
+        const result = await query<DbUserRole>(getUserRolesSql, [targetUserId]);
+        dbRoleIds = result.map((row) => row.role_id);
+      });
+
+      test('Success response returns 201', () => {
+        expect(rep.statusCode).toBe(201);
+      });
+
+      test('Response body has correct shape', () => {
+        expect(rep.body).toHaveProperty('user_id');
+        expect(rep.body).toHaveProperty('roles');
+        expect(Array.isArray(rep.body.roles)).toBe(true);
+      });
+
+      test('Response "user_id" matches the user', () => {
+        expect(rep.body.user_id).toBe(targetUserId);
+      });
+
+      test('Response "roles" contains the assigned role ids', () => {
+        expect(rep.body.roles).toHaveLength(2);
+        expect(rep.body.roles).toContain(roleOne.role_id);
+        expect(rep.body.roles).toContain(roleTwo.role_id);
+      });
+
+      test('Assignments are persisted in the database', () => {
+        expect(dbRoleIds).toContain(roleOne.role_id);
+        expect(dbRoleIds).toContain(roleTwo.role_id);
+      });
+
+      test('Assigning a single role to a user returns 201', async () => {
+        const {
+          userId,
+        } = await createRandomUser();
+        const role = await createRandomRole();
+
+        const res = await getResponse(userId, { roles: [role.role_id] });
+
+        expect(res.statusCode).toBe(201);
+        expect(res.body.roles).toEqual([role.role_id]);
+      });
+    });
+  });
+
+  describe('PUT /users/:user_id/roles', () => {
+    const getResponse = (userId: string, reqBody: Record<string, unknown>) => authAPISuper.put(`/users/${userId}/roles`, reqBody);
+
+    const getUserRolesSql = `SELECT
+      ur.role_id
+    FROM
+      internal.users_roles AS ur
+    WHERE
+      ur.user_id = $1;`;
+
+    let validUserId: string;
+    let seededRole: SeededRole;
+
+    beforeAll(async () => {
+      ({
+        userId: validUserId,
+      } = await createRandomUser());
+
+      seededRole = await createRandomRole();
+    });
+
+    describe('Request Failure', () => {
+      test('Non-UUID "user_id" returns 400', async () => {
+        const res = await getResponse('not-a-uuid', { roles: [seededRole.role_id] });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('params/user_id must match format "uuid"');
+      });
+
+      test('Integer "user_id" returns 400', async () => {
+        const res = await getResponse('12345', { roles: [seededRole.role_id] });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('params/user_id must match format "uuid"');
+      });
+
+      test('Absent required body "roles" returns 400', async () => {
+        const res = await getResponse(validUserId, {});
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe(`body must have required property 'roles'`);
+      });
+
+      test('Non-UUID "roles" item returns 400', async () => {
+        const res = await getResponse(validUserId, { roles: ['not-a-uuid'] });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('body/roles/0 must match format "uuid"');
+      });
+
+      test('Duplicate "roles" items return 400', async () => {
+        const res = await getResponse(validUserId, { roles: [seededRole.role_id, seededRole.role_id] });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('body/roles must NOT have duplicate items (items ## 1 and 0 are identical)');
+      });
+
+      test('Unknown user UUID returns 400', async () => {
+        const unknownUuid = '00000000-0000-0000-0000-000000000000';
+        const res = await getResponse(unknownUuid, { roles: [seededRole.role_id] });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid user id or user status');
+      });
+
+      test('Deactivated user returns 400', async () => {
+        const {
+          userId,
+        } = await createRandomUser({ status: 'DEACTIVATED' });
+
+        const res = await getResponse(userId, { roles: [seededRole.role_id] });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid user id or user status');
+      });
+
+      test('Unknown role id returns 400', async () => {
+        const unknownUuid = '00000000-0000-0000-0000-000000000000';
+        const res = await getResponse(validUserId, { roles: [unknownUuid] });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('One or more supplied role ids are invalid');
+      });
+    });
+
+    describe('Request Success', () => {
+      test('Replaces the existing role set (old removed, new present)', async () => {
+        const {
+          userId,
+        } = await createRandomUser();
+        const oldRole = await createRandomRole();
+        const newRoleOne = await createRandomRole();
+        const newRoleTwo = await createRandomRole();
+        await assignRoleToUser(userId, oldRole.role_id);
+
+        const res = await getResponse(userId, { roles: [newRoleOne.role_id, newRoleTwo.role_id] });
+
+        expect(res.statusCode).toBe(200);
+        expect([...res.body.roles].sort()).toEqual([newRoleOne.role_id, newRoleTwo.role_id].sort());
+
+        const rows = await query<{ role_id: string }>(getUserRolesSql, [userId]);
+        const assignedRoleIds = rows.map((row) => row.role_id);
+
+        expect(assignedRoleIds).toContain(newRoleOne.role_id);
+        expect(assignedRoleIds).toContain(newRoleTwo.role_id);
+        expect(assignedRoleIds).not.toContain(oldRole.role_id);
+      });
+
+      test('An empty "roles" array removes all of the user\'s roles', async () => {
+        const {
+          userId,
+        } = await createRandomUser();
+        const roleOne = await createRandomRole();
+        const roleTwo = await createRandomRole();
+        await assignRoleToUser(userId, roleOne.role_id);
+        await assignRoleToUser(userId, roleTwo.role_id);
+
+        const res = await getResponse(userId, { roles: [] });
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.roles).toEqual([]);
+
+        const rows = await query<{ role_id: string }>(getUserRolesSql, [userId]);
+
+        expect(rows).toHaveLength(0);
+      });
+
+      test('Setting roles on a user that has none returns 200', async () => {
+        const {
+          userId,
+        } = await createRandomUser();
+        const role = await createRandomRole();
+
+        const res = await getResponse(userId, { roles: [role.role_id] });
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.roles).toEqual([role.role_id]);
+      });
+    });
+  });
+
+  describe('DELETE /users/:user_id/roles', () => {
+    const getResponse = (userId: string) => authAPISuper.del(`/users/${userId}/roles`);
+
+    const getUserRolesSql = `SELECT
+      ur.role_id
+    FROM
+      internal.users_roles AS ur
+    WHERE
+      ur.user_id = $1;`;
+
+    describe('Request Failure', () => {
+      test('Non-UUID "user_id" returns 400', async () => {
+        const res = await getResponse('not-a-uuid');
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('params/user_id must match format "uuid"');
+      });
+
+      test('Integer "user_id" returns 400', async () => {
+        const res = await getResponse('12345');
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('params/user_id must match format "uuid"');
+      });
+
+      test('Unknown user UUID returns 400', async () => {
+        const res = await getResponse('00000000-0000-0000-0000-000000000000');
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid user id or user status');
+      });
+
+      test('Deactivated user returns 400', async () => {
+        const {
+          userId,
+        } = await createRandomUser({ status: 'DEACTIVATED' });
+
+        const res = await getResponse(userId);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid user id or user status');
+      });
+    });
+
+    describe('Request Success', () => {
+      let userId: string;
+      let rep: Supertest.Response;
+
+      beforeAll(async () => {
+        ({
+          userId,
+        } = await createRandomUser());
+        const roleOne = await createRandomRole();
+        const roleTwo = await createRandomRole();
+        await assignRoleToUser(userId, roleOne.role_id);
+        await assignRoleToUser(userId, roleTwo.role_id);
+
+        rep = await getResponse(userId);
+      });
+
+      test('Success response returns 204', () => {
+        expect(rep.statusCode).toBe(204);
+      });
+
+      test('Response body is empty', () => {
+        expect(rep.body).toEqual({});
+      });
+
+      test('All of the user\'s roles are removed from the database', async () => {
+        const rows = await query<{ role_id: string }>(getUserRolesSql, [userId]);
+
+        expect(rows).toHaveLength(0);
+      });
+
+      test('Deleting roles from a user that has none returns 204', async () => {
+        const {
+          userId: noRolesUserId,
+        } = await createRandomUser();
+
+        const res = await getResponse(noRolesUserId);
+
+        expect(res.statusCode).toBe(204);
       });
     });
   });

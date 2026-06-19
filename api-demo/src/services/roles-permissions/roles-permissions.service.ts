@@ -63,9 +63,9 @@ interface AssignRolePermissionsResult {
   permissions: string[];
 }
 
-// Creates role-permission assignments. The role and every supplied permission id are
-// validated, and because POST only creates, any permission already assigned to the role
-// is rejected — the whole request fails rather than partially assigning.
+// Sets a role's initial permissions. The role is validated, then rejected outright if it
+// already has any permissions assigned — this endpoint only assigns permissions to a role
+// that has none. The supplied permission ids are validated before the assignments are created.
 async function assignRolePermissions(
   rolePermissionsRepository: RolePermissionsRepository,
   rolesRepository: RolesRepository,
@@ -80,14 +80,11 @@ async function assignRolePermissions(
   const role = await rolesRepository.getRoleById({ roleId });
   if (!role) throw new BadRequestError('Invalid role id');
 
+  const existingRolePermissions = await rolePermissionsRepository.getRolePermissionIds({ roleId }) ?? [];
+  if (existingRolePermissions.length > 0) throw new BadRequestError('Role permissions already exist');
+
   const existingPermissions = await permissionsRepository.getPermissionIds({ permissionIds }) ?? [];
   if (existingPermissions.length !== permissionIds.length) throw new BadRequestError('One or more supplied permission ids are invalid');
-
-  const alreadyAssigned = await rolePermissionsRepository.getRolePermissionIds({
-    roleId,
-    permissionIds,
-  }) ?? [];
-  if (alreadyAssigned.length > 0) throw new BadRequestError('One or more permissions are already assigned to the role');
 
   const {
     permissions: createdPermissions,

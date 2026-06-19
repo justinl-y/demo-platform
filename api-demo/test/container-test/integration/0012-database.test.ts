@@ -113,7 +113,7 @@ describe('0012 - database', () => {
   test('dry-run transaction rolls back and throws dry-run error', async () => {
     flattenInstructionMock.mockResolvedValue([
       {
-        file: 'src/repositories/authentication/set-user-token',
+        file: 'src/repositories/authentication/set-user-refresh-hash-on-login',
         params: { userId: 'u1' },
         query: `UPDATE
           internal.users_authentication
@@ -136,7 +136,7 @@ describe('0012 - database', () => {
 
     const resultPromise = transaction.call({} as never)
       .add({
-        files: 'src/repositories/authentication/set-user-token',
+        files: 'src/repositories/authentication/set-user-refresh-hash-on-login',
         params: {
           userId: 'u1',
           hashedRefreshToken: 'hash',

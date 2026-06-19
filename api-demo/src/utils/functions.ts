@@ -119,16 +119,16 @@ interface PaginationOptions {
 // Maps a list query result onto the paginated response envelope. The list queries build
 // their rows as a single id-keyed JSON object under `key` and expose the pre-pagination
 // row count as `total`; this turns that into { output, count, pagination }.
+// NOTE: Result can be any query shape; we extract the `key` property and `total` field.
 function buildPaginatedResult<T>(
-  result: { total: number | null } | null | undefined,
+  result: unknown,
   {
     page, perPage, key,
   }: PaginationOptions,
 ): PaginatedResult<T> {
-  const rows = result as unknown as Record<string, unknown> | null | undefined;
-  const output = (rows?.[key] ?? {}) as { [id: string]: T };
+  const output = (((result as Record<PropertyKey, unknown>)?.[key]) ?? {}) as { [id: string]: T };
   const count = paginationCount(output);
-  const pages = paginationPages(result?.total, perPage);
+  const pages = paginationPages(((result as { total?: number | null })?.total), perPage);
 
   return {
     output,

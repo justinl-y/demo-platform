@@ -6,6 +6,10 @@ import type { RouteKey } from './index.ts';
 function preHandler(this: FastifyInstance, key: RouteKey) {
   const routePreHandler = {
     getUsers: routePropertiesPrehandler([this.authorize]),
+    getUsersRoles: routePropertiesPrehandler([this.authorize]),
+    postUsersRoles: routePropertiesPrehandler([this.authorize]),
+    putUsersRoles: routePropertiesPrehandler([this.authorize]),
+    deleteUsersRoles: routePropertiesPrehandler([this.authorize]),
     postUsers: routePropertiesPrehandler([this.authorize]),
     putUsers: routePropertiesPrehandler([this.authorize]),
     patchUsersEmail: routePropertiesPrehandler([this.authorize]),

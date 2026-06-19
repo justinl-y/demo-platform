@@ -9,6 +9,10 @@ import onRequest from './on-request.ts';
 import preHandlers from './pre-handlers.ts';
 
 import getUsers from './get-users/index.ts';
+import getUsersRoles from './get-users-roles/index.ts';
+import postUsersRoles from './post-users-roles/index.ts';
+import putUsersRoles from './put-users-roles/index.ts';
+import deleteUsersRoles from './delete-users-roles/index.ts';
 import postUsers from './post-users/index.ts';
 import putUsers from './put-users/index.ts';
 import patchUsersEmail from './patch-users-email/index.ts';
@@ -33,6 +37,10 @@ const {
 
 const routes = {
   getUsers: routePropertiesCore(GET, '/users', getUsers as RouteHandlerMethod, 'INTERNAL_USERS_READ'),
+  getUsersRoles: routePropertiesCore(GET, '/users/roles', getUsersRoles as RouteHandlerMethod, 'INTERNAL_USERS_READ'),
+  postUsersRoles: routePropertiesCore(POST, '/users/:user_id/roles', postUsersRoles as RouteHandlerMethod, 'INTERNAL_USERS_AUTHORIZE_WRITE'),
+  putUsersRoles: routePropertiesCore(PUT, '/users/:user_id/roles', putUsersRoles as RouteHandlerMethod, 'INTERNAL_USERS_AUTHORIZE_WRITE'),
+  deleteUsersRoles: routePropertiesCore(DELETE, '/users/:user_id/roles', deleteUsersRoles as RouteHandlerMethod, 'INTERNAL_USERS_AUTHORIZE_WRITE'),
   postUsers: routePropertiesCore(POST, '/users', postUsers as RouteHandlerMethod, 'INTERNAL_USERS_WRITE'),
   putUsers: routePropertiesCore(PUT, '/users/:user_id', putUsers as RouteHandlerMethod, 'INTERNAL_USERS_WRITE'),
   patchUsersEmail: routePropertiesCore(PATCH, '/users/:user_id/email', patchUsersEmail as RouteHandlerMethod, 'INTERNAL_USERS_WRITE'),

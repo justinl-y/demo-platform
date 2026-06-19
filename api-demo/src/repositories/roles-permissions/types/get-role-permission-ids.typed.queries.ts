@@ -1,11 +1,8 @@
 /** Types generated for queries found in "src/repositories/roles-permissions/types/get-role-permission-ids.typed.sql" */
 import { PreparedQuery } from '@pgtyped/runtime';
 
-export type stringArray = (string)[];
-
 /** 'RolesPermissionsGetRolePermissionIds' parameters type */
 export interface IRolesPermissionsGetRolePermissionIdsParams {
-  permissionIds: stringArray;
   roleId: string;
 }
 
@@ -20,7 +17,7 @@ export interface IRolesPermissionsGetRolePermissionIdsQuery {
   result: IRolesPermissionsGetRolePermissionIdsResult;
 }
 
-const rolesPermissionsGetRolePermissionIdsIR: any = {"usedParamSet":{"roleId":true,"permissionIds":true},"params":[{"name":"roleId","required":true,"transform":{"type":"scalar"},"locs":[{"a":146,"b":153}]},{"name":"permissionIds","required":true,"transform":{"type":"scalar"},"locs":[{"a":183,"b":197}]}],"statement":"                                                             \nSELECT\n\trp.permission_id\nFROM\n\tinternal.roles_permissions AS rp\nWHERE\n\trp.role_id = :roleId!\n\tAND rp.permission_id = ANY(:permissionIds!)"};
+const rolesPermissionsGetRolePermissionIdsIR: any = {"usedParamSet":{"roleId":true},"params":[{"name":"roleId","required":true,"transform":{"type":"scalar"},"locs":[{"a":146,"b":153}]}],"statement":"                                                             \nSELECT\n\trp.permission_id\nFROM\n\tinternal.roles_permissions AS rp\nWHERE\n\trp.role_id = :roleId!"};
 
 /**
  * Query generated from SQL:
@@ -32,7 +29,6 @@ const rolesPermissionsGetRolePermissionIdsIR: any = {"usedParamSet":{"roleId":tr
  * 	internal.roles_permissions AS rp
  * WHERE
  * 	rp.role_id = :roleId!
- * 	AND rp.permission_id = ANY(:permissionIds!)
  * ```
  */
 export const rolesPermissionsGetRolePermissionIds = new PreparedQuery<IRolesPermissionsGetRolePermissionIdsParams,IRolesPermissionsGetRolePermissionIdsResult>(rolesPermissionsGetRolePermissionIdsIR);

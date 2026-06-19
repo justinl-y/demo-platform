@@ -30,14 +30,8 @@ function createRolePermissionsRepository(db: DatabaseDecorator) {
 
     getRolePermissionIds: ({
       roleId,
-      permissionIds,
     }: IRolesPermissionsGetRolePermissionIdsParams) => {
-      const queryParams = {
-        roleId,
-        permissionIds,
-      };
-
-      return db.query<IRolesPermissionsGetRolePermissionIdsResult>(getRolePermissionIdsQuery, queryParams, 'collection');
+      return db.query<IRolesPermissionsGetRolePermissionIdsResult>(getRolePermissionIdsQuery, { roleId }, 'collection');
     },
 
     addRolePermissions: async ({
