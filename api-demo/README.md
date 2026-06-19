@@ -60,6 +60,25 @@ All endpoints are served from the API base URL. Auth endpoints use JWT cookies; 
 | `PUT` | `/users/:user_id` | cookie | Update a user's full name and known as. |
 | `PATCH` | `/users/:user_id/deactivate` | cookie | Deactivate a user. |
 | `PATCH` | `/users/:user_id/email` | cookie | Update a user's email address. |
+| `PATCH` | `/users/:user_id/invite` | cookie | Invite a user. |
+| `DELETE` | `/users/:user_id/invite` | cookie | Cancel a user invitation. |
+| `POST` | `/users/activate` | — | Activate an invited user via the activation token and set the account password. |
+| `GET` | `/users/roles` | cookie | Get users with their assigned roles. Optional filter: `user_id`. |
+| `POST` | `/users/:user_id/roles` | cookie | Assign a user's initial roles (user must have none). |
+| `PUT` | `/users/:user_id/roles` | cookie | Replace a user's roles. |
+| `DELETE` | `/users/:user_id/roles` | cookie | Remove all of a user's roles. |
+| `GET` | `/permissions` | cookie | Get one or more permissions. |
+| `POST` | `/permissions` | cookie | Create a permission. |
+| `PUT` | `/permissions/:permission_id` | cookie | Update a permission. |
+| `DELETE` | `/permissions/:permission_id` | cookie | Delete a permission. |
+| `GET` | `/roles` | cookie | Get one or more roles. |
+| `POST` | `/roles` | cookie | Create a role. |
+| `PUT` | `/roles/:role_id` | cookie | Update a role. |
+| `DELETE` | `/roles/:role_id` | cookie | Delete a role. |
+| `GET` | `/roles/permissions` | cookie | Get roles with their assigned permissions. |
+| `POST` | `/roles/:role_id/permissions` | cookie | Assign a role's initial permissions (role must have none). |
+| `PUT` | `/roles/:role_id/permissions` | cookie | Replace a role's permissions. |
+| `DELETE` | `/roles/:role_id/permissions` | cookie | Remove all of a role's permissions. |
 | `GET` | `/health_db` | — | Database health check. |
 | `GET` | `/health_eb` | — | Elastic Beanstalk health check. |
 

@@ -37,10 +37,6 @@ const {
 
 const routes = {
   getUsers: routePropertiesCore(GET, '/users', getUsers as RouteHandlerMethod, 'INTERNAL_USERS_READ'),
-  getUsersRoles: routePropertiesCore(GET, '/users/roles', getUsersRoles as RouteHandlerMethod, 'INTERNAL_USERS_READ'),
-  postUsersRoles: routePropertiesCore(POST, '/users/:user_id/roles', postUsersRoles as RouteHandlerMethod, 'INTERNAL_USERS_AUTHORIZE_WRITE'),
-  putUsersRoles: routePropertiesCore(PUT, '/users/:user_id/roles', putUsersRoles as RouteHandlerMethod, 'INTERNAL_USERS_AUTHORIZE_WRITE'),
-  deleteUsersRoles: routePropertiesCore(DELETE, '/users/:user_id/roles', deleteUsersRoles as RouteHandlerMethod, 'INTERNAL_USERS_AUTHORIZE_WRITE'),
   postUsers: routePropertiesCore(POST, '/users', postUsers as RouteHandlerMethod, 'INTERNAL_USERS_WRITE'),
   putUsers: routePropertiesCore(PUT, '/users/:user_id', putUsers as RouteHandlerMethod, 'INTERNAL_USERS_WRITE'),
   patchUsersEmail: routePropertiesCore(PATCH, '/users/:user_id/email', patchUsersEmail as RouteHandlerMethod, 'INTERNAL_USERS_WRITE'),
@@ -49,6 +45,10 @@ const routes = {
   deleteUsersInvite: routePropertiesCore(DELETE, '/users/:user_id/invite', deleteUsersInvite as RouteHandlerMethod, 'INTERNAL_USERS_AUTHORIZE_WRITE'),
   postUsersActivate: routePropertiesCore(POST, '/users/activate', postUsersActivate as RouteHandlerMethod),
   patchUsersDeactivate: routePropertiesCore(PATCH, '/users/:user_id/deactivate', patchUsersDeactivate as RouteHandlerMethod, 'INTERNAL_USERS_AUTHORIZE_WRITE'),
+  getUsersRoles: routePropertiesCore(GET, '/users/roles', getUsersRoles as RouteHandlerMethod, 'INTERNAL_USERS_AUTHORIZE_READ'),
+  postUsersRoles: routePropertiesCore(POST, '/users/:user_id/roles', postUsersRoles as RouteHandlerMethod, 'INTERNAL_USERS_AUTHORIZE_WRITE'),
+  putUsersRoles: routePropertiesCore(PUT, '/users/:user_id/roles', putUsersRoles as RouteHandlerMethod, 'INTERNAL_USERS_AUTHORIZE_WRITE'),
+  deleteUsersRoles: routePropertiesCore(DELETE, '/users/:user_id/roles', deleteUsersRoles as RouteHandlerMethod, 'INTERNAL_USERS_AUTHORIZE_WRITE'),
 };
 
 export type RouteKey = keyof typeof routes;

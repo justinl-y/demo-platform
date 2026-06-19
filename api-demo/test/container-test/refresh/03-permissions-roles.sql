@@ -4,6 +4,7 @@ INSERT INTO internal.permissions
 VALUES
   ('INTERNAL_USERS_READ', 'Read users'),
   ('INTERNAL_USERS_WRITE', 'Create/update/delete users'),
+  ('INTERNAL_USERS_AUTHORIZE_READ', 'Read user role assignments'),
   ('INTERNAL_USERS_AUTHORIZE_WRITE', 'Invite/activate/deactivate users'),
   ('INTERNAL_PERMISSIONS_READ', 'Read permissions'),
   ('INTERNAL_PERMISSIONS_WRITE', 'Create/update/delete permissions'),
@@ -50,7 +51,7 @@ WHERE
 ON CONFLICT (role_id, permission_id) DO NOTHING
 ;
 
--- INTERNAL_USER_ADMIN: create/edit users & manage authorization (invite/activate/deactivate)
+-- INTERNAL_USER_ADMIN: create/edit users & manage authorization (read role assignments, invite/activate/deactivate)
 INSERT INTO
   internal.roles_permissions (role_id, permission_id)
 SELECT
@@ -61,6 +62,6 @@ FROM
   CROSS JOIN internal.permissions AS p
 WHERE
   r.name = 'INTERNAL_USER_ADMIN'
-  AND p.name = ANY('{INTERNAL_USERS_READ, INTERNAL_USERS_WRITE, INTERNAL_USERS_AUTHORIZE_WRITE}')
+  AND p.name = ANY('{INTERNAL_USERS_READ, INTERNAL_USERS_WRITE, INTERNAL_USERS_AUTHORIZE_READ, INTERNAL_USERS_AUTHORIZE_WRITE}')
 ON CONFLICT (role_id, permission_id) DO NOTHING
 ;

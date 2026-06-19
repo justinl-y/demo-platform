@@ -4,8 +4,10 @@ import {
 
 const route = {
   tags: ['users'],
-  summary: 'Assign roles to a user',
-  description: 'Assigns one or more roles to a user, returning the created user-role resource',
+  summary: 'Assign a user\'s initial roles',
+  description: 'Assigns one or more roles to a user that currently has none, returning the created '
+    + 'user-role resource. Fails if the user already has any roles — use PUT to replace an existing '
+    + 'role set, or DELETE followed by POST to reset it.',
   security: [{ cookieAuth: [] }],
 };
 

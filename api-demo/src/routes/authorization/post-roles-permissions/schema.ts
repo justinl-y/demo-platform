@@ -4,8 +4,10 @@ import {
 
 const route = {
   tags: ['authorization'],
-  summary: 'Assign permissions to a role',
-  description: 'Assigns one or more permissions to a role, returning the created role-permission resource',
+  summary: 'Assign a role\'s initial permissions',
+  description: 'Assigns one or more permissions to a role that currently has none, returning the created '
+    + 'role-permission resource. Fails if the role already has any permissions — use PUT to replace an '
+    + 'existing permission set, or DELETE followed by POST to reset it.',
   security: [{ cookieAuth: [] }],
 };
 
