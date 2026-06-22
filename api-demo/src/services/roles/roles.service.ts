@@ -5,12 +5,14 @@ import { UniqueViolationError } from '#lib/database';
 
 import type { RolesRepository } from '#repositories/roles/roles.repository';
 import type { UsersRolesRepository } from '#repositories/users-roles/users-roles.repository';
-import type { PaginatedResult } from '../../types/general.ts';
+import type { PaginatedResult, SortOrder } from '../../types/general.ts';
 
 interface FetchRolesParams {
   page: number;
   perPage: number;
-  roleId: string | null;
+  search: string | null;
+  sort: string;
+  order: SortOrder;
 }
 
 interface RoleItem {
@@ -22,13 +24,17 @@ async function fetchRoles(repository: RolesRepository, params: FetchRolesParams)
   const {
     page,
     perPage,
-    roleId,
+    search,
+    sort,
+    order,
   } = params;
 
   const offset = paginationOffset(page, perPage);
 
   const getRolesParams = {
-    roleId,
+    search,
+    sort,
+    order,
     limit: perPage,
     offset,
   };

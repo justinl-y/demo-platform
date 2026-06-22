@@ -2,13 +2,14 @@ WITH t_users AS (
 	SELECT
 	  u.id AS user_id
 	  , u.email AS user_email
+	  , u.full_name AS user_full_name
 		, COUNT(*) OVER () AS total
 	FROM
 	  internal.users AS u
 	WHERE
 	  COALESCE((u.id = $userId), TRUE)
 	ORDER BY
-		u.email ASC
+		split_part(u.full_name, ' ', -1) ASC
 		, u.id ASC
 	LIMIT
 		$limit!
@@ -21,6 +22,7 @@ SELECT
 		, json_build_object(
 			'user_id', tu.user_id
 			, 'user_email', tu.user_email
+			, 'user_full_name', tu.user_full_name
 			, 'roles', COALESCE(ur.roles, '{}'::json)
 		)
 	) AS users
@@ -35,6 +37,8 @@ FROM
 					'role_id', r.id
 					, 'role_name', r.name
 				)
+				ORDER BY
+					r.name ASC
 			) AS roles
 		FROM
 			internal.users_roles AS ur

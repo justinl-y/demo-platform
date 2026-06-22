@@ -7,9 +7,22 @@ WITH t_permissions AS (
 	FROM
 	  internal.permissions AS p
 	WHERE
-	  COALESCE((p.id = $permissionId), TRUE)
+		COALESCE(
+			p.name ILIKE $search
+			OR p.id::text ILIKE $search
+		, TRUE)
 	ORDER BY
-		p.name ASC
+		-- Direction can't be parameterized, so each direction is a separate gated term.
+		CASE WHEN $order! = 'DESC' THEN
+			CASE $sort!
+				WHEN 'name' THEN p.name
+			END
+		END DESC
+		, CASE WHEN $order = 'ASC' THEN
+			CASE $sort
+				WHEN 'name' THEN p.name
+			END
+		END ASC
 		, p.id ASC
 	LIMIT
 		$limit!

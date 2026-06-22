@@ -12,6 +12,15 @@ const route = {
 const querystring = {
   type: 'object',
   properties: {
+    order: {
+      type: 'string',
+      enum: [
+        'ASC',
+        'DESC',
+      ],
+      default: 'ASC',
+      description: 'Sort order',
+    },
     page: {
       type: 'string',
       format: 'integer',
@@ -43,20 +52,33 @@ const querystring = {
       ],
       description: 'Filter by status',
     },
-    user_id: {
+    search: {
       type: 'string',
-      format: 'uuid',
-      description: 'Optional user id to fetch a single user',
+      description: 'Search term to filter users by name (any part of full name), email or user_id',
+    },
+    sort: {
+      type: 'string',
+      enum: [
+        'name',
+        'email',
+        'created_at',
+      ],
+      default: 'created_at',
+      description: 'Field to sort by',
     },
   },
-  required: ['page', 'per_page'],
+  required: [
+    'order',
+    'page',
+    'per_page',
+  ],
 };
 
 const response = {
   200: {
     type: 'object',
     properties: {
-      output: {
+      data: {
         type: 'object',
         propertyNames: {
           type: 'string',
@@ -101,10 +123,10 @@ const response = {
         additionalProperties: false,
       },
     },
-    required: ['output', 'count', 'pagination'],
+    required: ['data', 'count', 'pagination'],
     additionalProperties: false,
     example: {
-      output: {
+      data: {
         'a3bb189e-8bf9-3888-9912-ace4e6543002': {
           email: 'user1@example.com',
           full_name: 'string',

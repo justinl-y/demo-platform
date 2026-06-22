@@ -39,7 +39,7 @@ const response = {
   200: {
     type: 'object',
     properties: {
-      output: {
+      data: {
         type: 'object',
         propertyNames: {
           type: 'string',
@@ -55,6 +55,9 @@ const response = {
             user_email: {
               type: 'string',
               format: 'email',
+            },
+            user_full_name: {
+              type: 'string',
             },
             roles: {
               type: 'object',
@@ -78,7 +81,7 @@ const response = {
               },
             },
           },
-          required: ['user_id', 'user_email', 'roles'],
+          required: ['user_id', 'user_email', 'user_full_name', 'roles'],
           additionalProperties: false,
         },
       },
@@ -99,13 +102,14 @@ const response = {
         additionalProperties: false,
       },
     },
-    required: ['output', 'count', 'pagination'],
+    required: ['data', 'count', 'pagination'],
     additionalProperties: false,
     example: {
-      output: {
+      data: {
         'a3bb189e-8bf9-3888-9912-ace4e6543002': {
           user_id: 'a3bb189e-8bf9-3888-9912-ace4e6543002',
           user_email: 'alice.smith@example.com',
+          user_full_name: 'Alice Smith',
           roles: {
             'f47ac10b-58cc-4372-a567-0e02b2c3d479': {
               role_id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',

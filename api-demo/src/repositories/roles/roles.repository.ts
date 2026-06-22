@@ -1,4 +1,4 @@
-import { cwd } from '#utils/functions';
+import { cwd, likeContains } from '#utils/functions';
 
 import type { DatabaseDecorator } from '../../types/database.ts';
 import type { IRolesGetRolesParams, IRolesGetRolesResult } from './types/get-roles.typed.queries.ts';
@@ -21,12 +21,16 @@ const removeRoleQuery = cwd('remove-role', relPath);
 function createRolesRepository(db: DatabaseDecorator) {
   return {
     getRoles: ({
-      roleId,
+      search,
+      sort,
+      order,
       limit,
       offset,
     }: IRolesGetRolesParams) => {
       const queryParams = {
-        roleId,
+        search: likeContains(search ?? null),
+        sort,
+        order,
         limit,
         offset,
       };

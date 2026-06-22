@@ -12,6 +12,15 @@ const route = {
 const querystring = {
   type: 'object',
   properties: {
+    order: {
+      type: 'string',
+      enum: [
+        'ASC',
+        'DESC',
+      ],
+      default: 'ASC',
+      description: 'Sort order',
+    },
     page: {
       type: 'string',
       format: 'integer',
@@ -26,20 +35,31 @@ const querystring = {
       default: '50',
       description: 'Number of items per page (max 100, default 50)',
     },
-    permission_id: {
+    search: {
       type: 'string',
-      format: 'uuid',
-      description: 'Optional permission id to fetch a single permission',
+      description: 'Search term to filter permissions by name or permission_id',
+    },
+    sort: {
+      type: 'string',
+      enum: [
+        'name',
+      ],
+      default: 'name',
+      description: 'Field to sort by',
     },
   },
-  required: ['page', 'per_page'],
+  required: [
+    'order',
+    'page',
+    'per_page',
+  ],
 };
 
 const response = {
   200: {
     type: 'object',
     properties: {
-      output: {
+      data: {
         type: 'object',
         propertyNames: {
           type: 'string',
@@ -72,14 +92,17 @@ const response = {
             type: 'integer',
           },
         },
-        required: ['page', 'pages'],
+        required: [
+          'page',
+          'pages',
+        ],
         additionalProperties: false,
       },
     },
-    required: ['output', 'count', 'pagination'],
+    required: ['data', 'count', 'pagination'],
     additionalProperties: false,
     example: {
-      output: {
+      data: {
         'a3bb189e-8bf9-3888-9912-ace4e6543002': {
           name: 'INTERNAL_USERS_READ',
           description: 'Read users',

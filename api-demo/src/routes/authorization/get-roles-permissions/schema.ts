@@ -39,7 +39,7 @@ const response = {
   200: {
     type: 'object',
     properties: {
-      output: {
+      data: {
         type: 'object',
         propertyNames: {
           type: 'string',
@@ -98,10 +98,10 @@ const response = {
         additionalProperties: false,
       },
     },
-    required: ['output', 'count', 'pagination'],
+    required: ['data', 'count', 'pagination'],
     additionalProperties: false,
     example: {
-      output: {
+      data: {
         'a3bb189e-8bf9-3888-9912-ace4e6543002': {
           role_id: 'a3bb189e-8bf9-3888-9912-ace4e6543002',
           role_name: 'ADMIN',
