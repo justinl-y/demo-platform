@@ -48,11 +48,6 @@ const querystring = {
       description: 'Field to sort by',
     },
   },
-  required: [
-    'order',
-    'page',
-    'per_page',
-  ],
 };
 
 const response = {
