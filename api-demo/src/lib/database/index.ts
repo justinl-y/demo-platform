@@ -9,6 +9,7 @@ import {
 import {
   errorsToHandle,
   getErrorDetails,
+  UniqueViolationError,
 } from './errors.ts';
 import { pgConnect } from './pg-client.ts';
 import {
@@ -268,4 +269,5 @@ function transaction(this: Pool): TransactionBuilder {
 export {
   query,
   transaction,
+  UniqueViolationError,
 };

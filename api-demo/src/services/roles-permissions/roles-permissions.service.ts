@@ -1,6 +1,7 @@
 import { BadRequestError } from 'http-errors-enhanced';
 
 import { paginationOffset, buildPaginatedResult } from '#utils/functions';
+import { UniqueViolationError } from '#lib/database';
 
 import type { RolePermissionsRepository } from '#repositories/roles-permissions/roles-permissions.repository';
 import type { RolesRepository } from '#repositories/roles/roles.repository';
@@ -86,17 +87,25 @@ async function assignRolePermissions(
   const existingPermissions = await permissionsRepository.getPermissionIds({ permissionIds }) ?? [];
   if (existingPermissions.length !== permissionIds.length) throw new BadRequestError('One or more supplied permission ids are invalid');
 
-  const {
-    permissions: createdPermissions,
-  } = await rolePermissionsRepository.addRolePermissions({
-    roleId,
-    permissionIds,
-  });
+  try {
+    const {
+      permissions: createdPermissions,
+    } = await rolePermissionsRepository.addRolePermissions({
+      roleId,
+      permissionIds,
+    });
 
-  return {
-    role_id: roleId,
-    permissions: createdPermissions.map((row) => row.permission_id),
-  };
+    return {
+      role_id: roleId,
+      permissions: createdPermissions.map((row) => row.permission_id),
+    };
+  }
+  catch (err) {
+    // Safety net for the check-then-insert race: a concurrent assign can slip past the
+    // existing-permissions check and hit the UNIQUE(role_id, permission_id) constraint.
+    if (err instanceof UniqueViolationError) throw new BadRequestError('Role permissions already exist');
+    throw err;
+  }
 }
 
 interface EditRolePermissionsParams {

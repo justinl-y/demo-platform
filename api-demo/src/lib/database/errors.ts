@@ -8,6 +8,20 @@ interface KnownError {
   name?: string;
   path?: string;
   sqlFileName?: string;
+  constraint?: string;
+}
+
+// Thrown for PG unique-violation (23505) failures. Extends InternalServerError so an
+// uncaught instance still surfaces as a 500 — services that expect a uniqueness race
+// (check-name-then-insert) catch this and remap it to a 400.
+class UniqueViolationError extends InternalServerError {
+  constraint?: string;
+
+  constructor(message: string, constraint?: string) {
+    super(message);
+    this.name = 'UniqueViolationError';
+    this.constraint = constraint;
+  }
 }
 
 function sqlSyntaxError(file: string | undefined, context: string, message: string): string {
@@ -85,20 +99,13 @@ function errorsToHandle(err: unknown, code: string | undefined, file: string | u
     case '23505':
       {
         const matchedKey = message.match(/^Key (\(.*\))=(\(.*?\)) already exists.*$/);
+        const context = matchedKey
+          ? `Insert operation unique key violation ${matchedKey[1]} ${matchedKey[2]}`
+          : 'Unique constraint violation';
 
-        if (matchedKey) {
-          const [, key, value] = matchedKey;
-
-          error = new InternalServerError(pgError(file, `Insert operation unique key violation ${key} ${value}`, message));
-          break;
-        }
+        error = new UniqueViolationError(pgError(file, context, message), (err as KnownError).constraint);
       }
-
-      if (/violates unique constraint/.test(message)) {
-        error = new InternalServerError(pgError(file, 'Unique constraint violation', message));
-        break;
-      }
-      // falls through
+      break;
     case '23503':
       {
         const missingKey = message.match(/^Key (\(.*\))=(\(.*?\)) is not present .*$/);
@@ -132,4 +139,5 @@ function errorsToHandle(err: unknown, code: string | undefined, file: string | u
 export {
   getErrorDetails,
   errorsToHandle,
+  UniqueViolationError,
 };

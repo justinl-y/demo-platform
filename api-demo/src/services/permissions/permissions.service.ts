@@ -1,6 +1,7 @@
 import { BadRequestError } from 'http-errors-enhanced';
 
 import { paginationOffset, buildPaginatedResult } from '#utils/functions';
+import { UniqueViolationError } from '#lib/database';
 
 import type { PermissionsRepository } from '#repositories/permissions/permissions.repository';
 import type { RolePermissionsRepository } from '#repositories/roles-permissions/roles-permissions.repository';
@@ -61,14 +62,22 @@ async function createPermission(repository: PermissionsRepository, params: Creat
   const existing = await repository.getPermissionByName({ name });
   if (existing) throw new BadRequestError('Supplied permission name is not unique');
 
-  const {
-    permission: newPermission,
-  } = await repository.addPermission({
-    name,
-    description,
-  });
+  try {
+    const {
+      permission: newPermission,
+    } = await repository.addPermission({
+      name,
+      description,
+    });
 
-  return newPermission;
+    return newPermission;
+  }
+  catch (err) {
+    // Safety net for the check-then-insert race: a concurrent create can slip past the
+    // getPermissionByName check and hit the UNIQUE(name) constraint. Map it to the same 400.
+    if (err instanceof UniqueViolationError) throw new BadRequestError('Supplied permission name is not unique');
+    throw err;
+  }
 }
 
 interface EditPermissionParams {

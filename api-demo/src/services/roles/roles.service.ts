@@ -1,6 +1,7 @@
 import { BadRequestError } from 'http-errors-enhanced';
 
 import { paginationOffset, buildPaginatedResult } from '#utils/functions';
+import { UniqueViolationError } from '#lib/database';
 
 import type { RolesRepository } from '#repositories/roles/roles.repository';
 import type { UsersRolesRepository } from '#repositories/users-roles/users-roles.repository';
@@ -61,14 +62,22 @@ async function createRole(repository: RolesRepository, params: CreateRoleParams)
   const existing = await repository.getRoleByName({ name });
   if (existing) throw new BadRequestError('Supplied role name is not unique');
 
-  const {
-    role: newRole,
-  } = await repository.addRole({
-    name,
-    description,
-  });
+  try {
+    const {
+      role: newRole,
+    } = await repository.addRole({
+      name,
+      description,
+    });
 
-  return newRole;
+    return newRole;
+  }
+  catch (err) {
+    // Safety net for the check-then-insert race: a concurrent create can slip past the
+    // getRoleByName check and hit the UNIQUE(name) constraint. Map it to the same 400.
+    if (err instanceof UniqueViolationError) throw new BadRequestError('Supplied role name is not unique');
+    throw err;
+  }
 }
 
 interface EditRoleParams {
