@@ -1,4 +1,4 @@
-import { cwd } from '#utils/functions';
+import { cwd, likeContains } from '#utils/functions';
 
 import type { DatabaseDecorator } from '../../types/database.ts';
 import type { IUsersGetUsersParams, IUsersGetUsersResult } from './types/get-users.typed.queries.ts';
@@ -35,14 +35,18 @@ const deactivateUserQuery = cwd('set-user-deactivated', relPath);
 function createUsersRepository(db: DatabaseDecorator) {
   return {
     getUsers: ({
-      userId,
+      search,
       status,
+      sort,
+      order,
       limit,
       offset,
     }: IUsersGetUsersParams) => {
       const queryParams = {
-        userId,
+        search: likeContains(search ?? null),
         status,
+        sort,
+        order,
         limit,
         offset,
       };

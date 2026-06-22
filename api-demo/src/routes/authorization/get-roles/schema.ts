@@ -12,6 +12,15 @@ const route = {
 const querystring = {
   type: 'object',
   properties: {
+    order: {
+      type: 'string',
+      enum: [
+        'ASC',
+        'DESC',
+      ],
+      default: 'ASC',
+      description: 'Sort order',
+    },
     page: {
       type: 'string',
       format: 'integer',
@@ -26,20 +35,26 @@ const querystring = {
       default: '50',
       description: 'Number of items per page (max 100, default 50)',
     },
-    role_id: {
+    search: {
       type: 'string',
-      format: 'uuid',
-      description: 'Optional role id to fetch a single role',
+      description: 'Search term to filter roles by name or role_id',
+    },
+    sort: {
+      type: 'string',
+      enum: [
+        'name',
+      ],
+      default: 'name',
+      description: 'Field to sort by',
     },
   },
-  required: ['page', 'per_page'],
 };
 
 const response = {
   200: {
     type: 'object',
     properties: {
-      output: {
+      data: {
         type: 'object',
         propertyNames: {
           type: 'string',
@@ -76,10 +91,10 @@ const response = {
         additionalProperties: false,
       },
     },
-    required: ['output', 'count', 'pagination'],
+    required: ['data', 'count', 'pagination'],
     additionalProperties: false,
     example: {
-      output: {
+      data: {
         'a3bb189e-8bf9-3888-9912-ace4e6543002': {
           name: 'ADMIN',
           description: 'Full access to all resources',

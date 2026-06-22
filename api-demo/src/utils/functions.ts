@@ -118,7 +118,7 @@ interface PaginationOptions {
 
 // Maps a list query result onto the paginated response envelope. The list queries build
 // their rows as a single id-keyed JSON object under `key` and expose the pre-pagination
-// row count as `total`; this turns that into { output, count, pagination }.
+// row count as `total`; this turns that into { data, count, pagination }.
 // NOTE: Result can be any query shape; we extract the `key` property and `total` field.
 function buildPaginatedResult<T>(
   result: unknown,
@@ -126,12 +126,12 @@ function buildPaginatedResult<T>(
     page, perPage, key,
   }: PaginationOptions,
 ): PaginatedResult<T> {
-  const output = (((result as Record<PropertyKey, unknown>)?.[key]) ?? {}) as { [id: string]: T };
-  const count = paginationCount(output);
+  const data = (((result as Record<PropertyKey, unknown>)?.[key]) ?? {}) as { [id: string]: T };
+  const count = paginationCount(data);
   const pages = paginationPages(((result as { total?: number | null })?.total), perPage);
 
   return {
-    output,
+    data,
     count,
     pagination: {
       page,
@@ -156,6 +156,18 @@ function sha256Hex(value: string): string {
   return crypto.createHash('sha256').update(value).digest('hex');
 }
 
+// Builds a SQL LIKE "contains" pattern (%term%) for a free-text search term,
+// escaping the LIKE wildcards (\ % _) so user input matches literally. Returns
+// null for an absent or empty term so callers can pass it straight to a nullable
+// ILIKE param (a null pattern disables the filter via COALESCE(..., TRUE)).
+function likeContains(term: string | null | undefined): string | null {
+  if (!term) return null;
+
+  const escaped = term.replace(/[\\%_]/g, '\\$&');
+
+  return `%${escaped}%`;
+}
+
 export {
   routePropertiesCore,
   routePropertiesOnRequest,
@@ -169,4 +181,5 @@ export {
   buildPaginatedResult,
   randomAlphaNumeric,
   sha256Hex,
+  likeContains,
 };

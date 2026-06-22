@@ -1,32 +1,40 @@
 import { fetchRoles } from '#services/roles/roles.service';
 
 import type { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
+import type { SortOrder } from '../../../types/general.ts';
 
 interface Request {
   Querystring: {
+    order: SortOrder;
     page: string;
     per_page: string;
-    role_id?: string;
+    search?: string;
+    // Always present at runtime: the schema validates the enum and supplies the default.
+    sort: string;
   };
 }
 
 async function getRoles(this: FastifyInstance, request: FastifyRequest<Request>, reply: FastifyReply) {
   const {
     query: {
+      order,
       page: pageRaw,
       per_page: perPageRaw,
-      role_id: roleIdRaw,
+      search: searchRaw,
+      sort,
     },
   } = request;
 
   const page = +pageRaw;
   const perPage = +perPageRaw;
-  const roleId = roleIdRaw ?? null;
+  const search = searchRaw ?? null;
 
   const fetchRolesParams = {
     page,
     perPage,
-    roleId,
+    search,
+    sort,
+    order,
   };
 
   const result = await fetchRoles(this.repositories.roles, fetchRolesParams);

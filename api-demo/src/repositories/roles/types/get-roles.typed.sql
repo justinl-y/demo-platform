@@ -9,9 +9,22 @@ WITH t_roles AS (
 	FROM
 	  internal.roles AS r
 	WHERE
-	  COALESCE((r.id = :roleId), TRUE)
+		COALESCE(
+			r.name ILIKE :search
+			OR r.id::text ILIKE :search
+		, TRUE)
 	ORDER BY
-		r.name ASC
+		-- Direction can't be parameterized, so each direction is a separate gated term.
+		CASE WHEN :order! = 'DESC' THEN
+			CASE :sort!
+				WHEN 'name' THEN r.name
+			END
+		END DESC
+		, CASE WHEN :order = 'ASC' THEN
+			CASE :sort
+				WHEN 'name' THEN r.name
+			END
+		END ASC
 		, r.id ASC
 	LIMIT
 		:limit!

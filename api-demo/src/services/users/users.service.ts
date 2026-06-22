@@ -7,13 +7,15 @@ import { captureSentryException } from '#lib/sentry-instrument';
 import { Config } from '#config/index';
 
 import type { UsersRepository } from '#repositories/users/users.repository';
-import type { PaginatedResult, UserStatus } from '../../types/general.ts';
+import type { PaginatedResult, UserStatus, SortOrder } from '../../types/general.ts';
 
 interface FetchUsersParams {
   page: number;
   perPage: number;
-  userId: string | null;
+  search: string | null;
   status: UserStatus[] | null;
+  sort: string;
+  order: SortOrder;
 }
 
 interface UserItem {
@@ -27,15 +29,19 @@ async function fetchUsers(repository: UsersRepository, params: FetchUsersParams)
   const {
     page,
     perPage,
+    search,
     status,
-    userId,
+    sort,
+    order,
   } = params;
 
   const offset = paginationOffset(page, perPage);
 
   const getUsersParams = {
-    userId,
+    search,
     status,
+    sort,
+    order,
     limit: perPage,
     offset,
   };

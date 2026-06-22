@@ -1,4 +1,4 @@
-import { cwd } from '#utils/functions';
+import { cwd, likeContains } from '#utils/functions';
 
 import type { DatabaseDecorator } from '../../types/database.ts';
 import type { IPermissionsGetPermissionsParams, IPermissionsGetPermissionsResult } from './types/get-permissions.typed.queries.ts';
@@ -19,12 +19,16 @@ const removePermissionQuery = cwd('remove-permission', relPath);
 function createPermissionsRepository(db: DatabaseDecorator) {
   return {
     getPermissions: ({
-      permissionId,
+      search,
+      sort,
+      order,
       limit,
       offset,
     }: IPermissionsGetPermissionsParams) => {
       const queryParams = {
-        permissionId,
+        search: likeContains(search ?? null),
+        sort,
+        order,
         limit,
         offset,
       };

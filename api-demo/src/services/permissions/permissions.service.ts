@@ -5,12 +5,14 @@ import { UniqueViolationError } from '#lib/database';
 
 import type { PermissionsRepository } from '#repositories/permissions/permissions.repository';
 import type { RolePermissionsRepository } from '#repositories/roles-permissions/roles-permissions.repository';
-import type { PaginatedResult } from '../../types/general.ts';
+import type { PaginatedResult, SortOrder } from '../../types/general.ts';
 
 interface FetchPermissionsParams {
   page: number;
   perPage: number;
-  permissionId: string | null;
+  search: string | null;
+  sort: string;
+  order: SortOrder;
 }
 
 interface PermissionItem {
@@ -22,13 +24,17 @@ async function fetchPermissions(repository: PermissionsRepository, params: Fetch
   const {
     page,
     perPage,
-    permissionId,
+    search,
+    sort,
+    order,
   } = params;
 
   const offset = paginationOffset(page, perPage);
 
   const getPermissionsParams = {
-    permissionId,
+    search,
+    sort,
+    order,
     limit: perPage,
     offset,
   };

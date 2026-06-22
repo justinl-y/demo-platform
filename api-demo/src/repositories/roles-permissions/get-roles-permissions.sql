@@ -35,6 +35,8 @@ FROM
 					'permission_id', p.id
 					, 'permission_name', p.name
 				)
+				ORDER BY
+					p.name ASC
 			) AS permissions
 		FROM
 			internal.roles_permissions AS rp

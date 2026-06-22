@@ -28,7 +28,11 @@ interface SeededRole {
 
 // GET /users/roles has no write route yet, so the role-assignment tests seed
 // internal.roles and the internal.users_roles join table directly.
-async function createRandomRole(): Promise<SeededRole> {
+async function createRandomRole({
+  name: nameOverride,
+}: { name?: string } = {}): Promise<SeededRole> {
+  const name = nameOverride ?? `TEST_ROLE_${faker.string.alphanumeric(16).toUpperCase()}`;
+
   const insertSql = `INSERT INTO internal.roles
       (name, description)
     VALUES
@@ -38,7 +42,7 @@ async function createRandomRole(): Promise<SeededRole> {
       , name AS role_name;`;
 
   const [role] = await query<SeededRole>(insertSql, [
-    `TEST_ROLE_${faker.string.alphanumeric(16).toUpperCase()}`,
+    name,
     faker.lorem.sentence(),
   ]);
 
@@ -130,18 +134,18 @@ describe(`${fileNumber} - Users`, () => {
       });
 
       test('Response body has correct shape', () => {
-        expect(rep.body).toHaveProperty('output');
+        expect(rep.body).toHaveProperty('data');
         expect(rep.body).toHaveProperty('count');
         expect(rep.body).toHaveProperty('pagination');
-        expect(rep.body.output).toBeTypeOf('object');
-        expect(Array.isArray(rep.body.output)).toBe(false);
+        expect(rep.body.data).toBeTypeOf('object');
+        expect(Array.isArray(rep.body.data)).toBe(false);
         expect(rep.body.count).toBeTypeOf('number');
         expect(rep.body.pagination).toHaveProperty('page');
         expect(rep.body.pagination).toHaveProperty('pages');
       });
 
       test('Response entries have correct shape', () => {
-        const user = rep.body.output[activeUserId];
+        const user = rep.body.data[activeUserId];
 
         expect(user).toBeDefined();
         expect(user).toHaveProperty('email');
@@ -154,29 +158,29 @@ describe(`${fileNumber} - Users`, () => {
       test('"status=ACTIVE&status=DEACTIVATED" returns both active and deactivated users', async () => {
         const res = await authAPISuper.get('/users?status=ACTIVE&status=DEACTIVATED');
 
-        expect(res.body.output[activeUserId]).toBeDefined();
-        expect(res.body.output[deactivatedUserId]).toBeDefined();
+        expect(res.body.data[activeUserId]).toBeDefined();
+        expect(res.body.data[deactivatedUserId]).toBeDefined();
       });
 
       test('"status=ACTIVE" returns only active users', async () => {
         const res = await authAPISuper.get('/users?status=ACTIVE');
 
-        expect(res.body.output[activeUserId]).toBeDefined();
-        expect(res.body.output[deactivatedUserId]).toBeUndefined();
+        expect(res.body.data[activeUserId]).toBeDefined();
+        expect(res.body.data[deactivatedUserId]).toBeUndefined();
       });
 
       test('"status=DEACTIVATED" returns only deactivated users', async () => {
         const res = await authAPISuper.get('/users?status=DEACTIVATED');
 
-        expect(res.body.output[activeUserId]).toBeUndefined();
-        expect(res.body.output[deactivatedUserId]).toBeDefined();
+        expect(res.body.data[activeUserId]).toBeUndefined();
+        expect(res.body.data[deactivatedUserId]).toBeDefined();
       });
 
       test('"per_page=1" returns exactly one user', async () => {
         const res = await authAPISuper.get('/users?per_page=1');
 
         expect(res.statusCode).toBe(200);
-        expect(Object.keys(res.body.output)).toHaveLength(1);
+        expect(Object.keys(res.body.data)).toHaveLength(1);
         expect(res.body.count).toBe(1);
         expect(res.body.pagination.pages).toBeGreaterThanOrEqual(1);
       });
@@ -187,97 +191,95 @@ describe(`${fileNumber} - Users`, () => {
           authAPISuper.get('/users?per_page=1&page=2'),
         ]);
 
-        expect(Object.keys(res1.body.output)).toHaveLength(1);
-        expect(Object.keys(res2.body.output)).toHaveLength(1);
-        expect(Object.keys(res1.body.output)[0]).not.toBe(Object.keys(res2.body.output)[0]);
+        expect(Object.keys(res1.body.data)).toHaveLength(1);
+        expect(Object.keys(res2.body.data)).toHaveLength(1);
+        expect(Object.keys(res1.body.data)[0]).not.toBe(Object.keys(res2.body.data)[0]);
       });
 
-      test('"page=9999" returns empty output with count 0', async () => {
+      test('"page=9999" returns empty data with count 0', async () => {
         const res = await authAPISuper.get('/users?page=9999&per_page=100');
 
         expect(res.statusCode).toBe(200);
-        expect(res.body.output).toEqual({});
+        expect(res.body.data).toEqual({});
         expect(res.body.count).toBe(0);
       });
     });
   });
 
-  describe('GET /users - single', () => {
-    let activeUserId: string;
-    let activeUserEmail: string;
+  describe('GET /users - search, sort & order', () => {
+    // Two users sharing a unique token in their email so a search isolates them
+    // from every other seeded user, with emails that sort predictably against
+    // each other. The token is prefixed with a non-hex letter so it can never be
+    // a substring of any user's UUID (which the search also matches on).
+    let token: string;
+    let userIdLow: string; // email aaa-<token> — sorts first ascending
+    let userIdHigh: string; // email zzz-<token> — sorts last ascending
 
     beforeAll(async () => {
+      token = `s${faker.string.alphanumeric(11)}`.toLowerCase();
+
       ({
-        userId: activeUserId, email: activeUserEmail,
-      } = await createRandomUser());
+        userId: userIdLow,
+      } = await createRandomUser({ email: `aaa-${token}@example.com` }));
+
+      ({
+        userId: userIdHigh,
+      } = await createRandomUser({ email: `zzz-${token}@example.com` }));
     });
 
-    const getResponse = (userId: string) => authAPISuper.get(`/users?user_id=${userId}`);
-
     describe('Request Failure', () => {
-      test('Non-UUID string "user_id" returns 400', async () => {
-        const res = await authAPISuper.get('/users?user_id=not-a-uuid');
+      test('"sort" with invalid value returns 400', async () => {
+        const res = await authAPISuper.get('/users?sort=invalid');
 
         expect(res.statusCode).toBe(400);
-        expect(res.body.message).toBe('querystring/user_id must match format "uuid"');
+        expect(res.body.message).toContain('querystring/sort');
       });
 
-      test('Integer "user_id" returns 400', async () => {
-        const res = await authAPISuper.get('/users?user_id=12345');
+      test('"order" with invalid value returns 400', async () => {
+        const res = await authAPISuper.get('/users?order=invalid');
 
         expect(res.statusCode).toBe(400);
-        expect(res.body.message).toBe('querystring/user_id must match format "uuid"');
-      });
-
-      test('Unknown UUID returns 200 with empty output and count 0', async () => {
-        const unknownUuid = '00000000-0000-0000-0000-000000000000';
-        const res = await getResponse(unknownUuid);
-
-        expect(res.statusCode).toBe(200);
-        expect(res.body.output).toEqual({});
-        expect(res.body.count).toBe(0);
+        expect(res.body.message).toContain('querystring/order');
       });
     });
 
     describe('Request Success', () => {
-      let rep: Supertest.Response;
+      test('"search" by email substring returns only the matching users', async () => {
+        const res = await authAPISuper.get(`/users?search=${token}`);
 
-      beforeAll(async () => {
-        rep = await getResponse(activeUserId);
+        expect(res.statusCode).toBe(200);
+        expect(Object.keys(res.body.data).sort()).toEqual([userIdLow, userIdHigh].sort());
+        expect(res.body.count).toBe(2);
       });
 
-      test('Success response returns 200', () => {
-        expect(rep.statusCode).toBe(200);
+      test('"search" by user_id returns that single user', async () => {
+        const res = await authAPISuper.get(`/users?search=${userIdLow}`);
+
+        expect(res.statusCode).toBe(200);
+        expect(Object.keys(res.body.data)).toEqual([userIdLow]);
+        expect(res.body.count).toBe(1);
       });
 
-      test('Response body has correct shape', () => {
-        expect(rep.body).toHaveProperty('output');
-        expect(rep.body).toHaveProperty('count');
-        expect(rep.body).toHaveProperty('pagination');
-        expect(rep.body.output).toBeTypeOf('object');
-        expect(Array.isArray(rep.body.output)).toBe(false);
-        expect(rep.body.count).toBeTypeOf('number');
+      test('"search" with no match returns empty data and count 0', async () => {
+        const res = await authAPISuper.get('/users?search=no-such-user-zzzzzzzz');
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.data).toEqual({});
+        expect(res.body.count).toBe(0);
       });
 
-      test('Response entry has correct shape', () => {
-        const user = rep.body.output[activeUserId];
+      test('"sort=email&order=ASC" returns matched users ascending by email', async () => {
+        const res = await authAPISuper.get(`/users?search=${token}&sort=email&order=ASC`);
 
-        expect(user).toBeDefined();
-        expect(user).toHaveProperty('email');
-        expect(user).toHaveProperty('full_name');
-        expect(user).toHaveProperty('known_as');
-        expect(user).toHaveProperty('status');
-        expect(user.status).toBeTypeOf('string');
+        expect(res.statusCode).toBe(200);
+        expect(Object.keys(res.body.data)).toEqual([userIdLow, userIdHigh]);
       });
 
-      test('Response contains only the requested user', () => {
-        expect(Object.keys(rep.body.output)).toHaveLength(1);
-        expect(rep.body.output[activeUserId]).toBeDefined();
-        expect(rep.body.count).toBe(1);
-      });
+      test('"sort=email&order=DESC" returns matched users descending by email', async () => {
+        const res = await authAPISuper.get(`/users?search=${token}&sort=email&order=DESC`);
 
-      test('Returned user has correct data', () => {
-        expect(rep.body.output[activeUserId].email).toBe(activeUserEmail);
+        expect(res.statusCode).toBe(200);
+        expect(Object.keys(res.body.data)).toEqual([userIdHigh, userIdLow]);
       });
     });
   });
@@ -1051,22 +1053,24 @@ describe(`${fileNumber} - Users`, () => {
       });
 
       test('Response body has correct shape', () => {
-        expect(rep.body).toHaveProperty('output');
+        expect(rep.body).toHaveProperty('data');
         expect(rep.body).toHaveProperty('count');
         expect(rep.body).toHaveProperty('pagination');
-        expect(rep.body.output).toBeTypeOf('object');
-        expect(Array.isArray(rep.body.output)).toBe(false);
+        expect(rep.body.data).toBeTypeOf('object');
+        expect(Array.isArray(rep.body.data)).toBe(false);
         expect(rep.body.count).toBeTypeOf('number');
         expect(rep.body.pagination).toHaveProperty('page');
         expect(rep.body.pagination).toHaveProperty('pages');
       });
 
       test('Response entries have correct shape', () => {
-        const [entry] = Object.values(rep.body.output) as Array<Record<string, unknown>>;
+        const [entry] = Object.values(rep.body.data) as Array<Record<string, unknown>>;
 
         expect(entry).toBeDefined();
         expect(entry).toHaveProperty('user_id');
         expect(entry).toHaveProperty('user_email');
+        expect(entry).toHaveProperty('user_full_name');
+        expect(entry.user_full_name).toBeTypeOf('string');
         expect(entry).toHaveProperty('roles');
         expect(entry.roles).toBeTypeOf('object');
         expect(Array.isArray(entry.roles)).toBe(false);
@@ -1076,16 +1080,16 @@ describe(`${fileNumber} - Users`, () => {
         const res = await authAPISuper.get('/users/roles?per_page=1');
 
         expect(res.statusCode).toBe(200);
-        expect(Object.keys(res.body.output)).toHaveLength(1);
+        expect(Object.keys(res.body.data)).toHaveLength(1);
         expect(res.body.count).toBe(1);
         expect(res.body.pagination.pages).toBeGreaterThanOrEqual(1);
       });
 
-      test('"page=9999" returns empty output with count 0', async () => {
+      test('"page=9999" returns empty data with count 0', async () => {
         const res = await authAPISuper.get('/users/roles?page=9999&per_page=100');
 
         expect(res.statusCode).toBe(200);
-        expect(res.body.output).toEqual({});
+        expect(res.body.data).toEqual({});
         expect(res.body.count).toBe(0);
       });
     });
@@ -1130,11 +1134,11 @@ describe(`${fileNumber} - Users`, () => {
         expect(res.body.message).toBe('querystring/user_id must match format "uuid"');
       });
 
-      test('Unknown UUID returns 200 with empty output and count 0', async () => {
+      test('Unknown UUID returns 200 with empty data and count 0', async () => {
         const res = await getResponse('00000000-0000-0000-0000-000000000000');
 
         expect(res.statusCode).toBe(200);
-        expect(res.body.output).toEqual({});
+        expect(res.body.data).toEqual({});
         expect(res.body.count).toBe(0);
       });
     });
@@ -1151,16 +1155,17 @@ describe(`${fileNumber} - Users`, () => {
       });
 
       test('Response contains only the requested user', () => {
-        expect(Object.keys(rep.body.output)).toEqual([userWithRolesId]);
+        expect(Object.keys(rep.body.data)).toEqual([userWithRolesId]);
         expect(rep.body.count).toBe(1);
       });
 
       test('Response entry has correct shape', () => {
-        const user = rep.body.output[userWithRolesId];
+        const user = rep.body.data[userWithRolesId];
 
         expect(user).toBeDefined();
         expect(user.user_id).toBe(userWithRolesId);
         expect(user.user_email).toBe(userWithRolesEmail);
+        expect(user.user_full_name).toBeTypeOf('string');
         expect(user.roles).toBeTypeOf('object');
         expect(Array.isArray(user.roles)).toBe(false);
       });
@@ -1168,7 +1173,7 @@ describe(`${fileNumber} - Users`, () => {
       test('Assigned roles are keyed by role id with id and name', () => {
         const {
           roles,
-        } = rep.body.output[userWithRolesId];
+        } = rep.body.data[userWithRolesId];
 
         expect(Object.keys(roles)).toHaveLength(2);
         expect(roles[roleOne.role_id]).toEqual({
@@ -1185,8 +1190,27 @@ describe(`${fileNumber} - Users`, () => {
         const res = await getResponse(userWithoutRolesId);
 
         expect(res.statusCode).toBe(200);
-        expect(res.body.output[userWithoutRolesId]).toBeDefined();
-        expect(res.body.output[userWithoutRolesId].roles).toEqual({});
+        expect(res.body.data[userWithoutRolesId]).toBeDefined();
+        expect(res.body.data[userWithoutRolesId].roles).toEqual({});
+      });
+
+      test('Assigned roles are ordered by role name ascending', async () => {
+        const token = `Q${faker.string.alphanumeric(11).toUpperCase()}`;
+        const {
+          userId,
+        } = await createRandomUser();
+
+        // Seeded/assigned in reverse name order so a pass proves name ordering
+        // rather than insertion order.
+        const roleHigh = await createRandomRole({ name: `ZZZ_${token}` });
+        const roleLow = await createRandomRole({ name: `AAA_${token}` });
+        await assignRoleToUser(userId, roleHigh.role_id);
+        await assignRoleToUser(userId, roleLow.role_id);
+
+        const res = await getResponse(userId);
+
+        expect(res.statusCode).toBe(200);
+        expect(Object.keys(res.body.data[userId].roles)).toEqual([roleLow.role_id, roleHigh.role_id]);
       });
     });
   });

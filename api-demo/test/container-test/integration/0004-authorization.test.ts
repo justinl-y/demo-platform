@@ -41,10 +41,14 @@ interface DbPermission {
   description: string;
 }
 
-async function createRandomPermission(): Promise<DbPermission> {
+async function createRandomPermission({
+  name: nameOverride,
+}: { name?: string } = {}): Promise<DbPermission> {
   const {
-    name, description,
+    name: randomName, description,
   } = randomPermissionBody();
+
+  const name = nameOverride ?? randomName;
 
   const insertSql = `INSERT INTO internal.permissions
       (name, description)
@@ -80,10 +84,14 @@ interface DbRole {
   description: string;
 }
 
-async function createRandomRole(): Promise<DbRole> {
+async function createRandomRole({
+  name: nameOverride,
+}: { name?: string } = {}): Promise<DbRole> {
   const {
-    name, description,
+    name: randomName, description,
   } = randomRoleBody();
+
+  const name = nameOverride ?? randomName;
 
   const insertSql = `INSERT INTO internal.roles
       (name, description)
@@ -255,13 +263,6 @@ describe(`${fileNumber} - Authorization`, () => {
           expect(res.statusCode).toBe(400);
           expect(res.body.message).toBe('querystring/per_page must match pattern "^([1-9][0-9]?|100)$"');
         });
-
-        test('"permission_id" of non-UUID returns 400', async () => {
-          const res = await authAPISuper.get('/permissions?permission_id=not-a-uuid');
-
-          expect(res.statusCode).toBe(400);
-          expect(res.body.message).toBe('querystring/permission_id must match format "uuid"');
-        });
       });
 
       describe('Request Success', () => {
@@ -276,18 +277,18 @@ describe(`${fileNumber} - Authorization`, () => {
         });
 
         test('Response body has correct shape', () => {
-          expect(rep.body).toHaveProperty('output');
+          expect(rep.body).toHaveProperty('data');
           expect(rep.body).toHaveProperty('count');
           expect(rep.body).toHaveProperty('pagination');
-          expect(rep.body.output).toBeTypeOf('object');
-          expect(Array.isArray(rep.body.output)).toBe(false);
+          expect(rep.body.data).toBeTypeOf('object');
+          expect(Array.isArray(rep.body.data)).toBe(false);
           expect(rep.body.count).toBeTypeOf('number');
           expect(rep.body.pagination).toHaveProperty('page');
           expect(rep.body.pagination).toHaveProperty('pages');
         });
 
         test('Response entries have correct shape', () => {
-          const permission = rep.body.output[seededPermission.permission_id];
+          const permission = rep.body.data[seededPermission.permission_id];
 
           expect(permission).toBeDefined();
           expect(permission).toHaveProperty('name');
@@ -298,44 +299,75 @@ describe(`${fileNumber} - Authorization`, () => {
       });
     });
 
-    describe('GET /permissions - single', () => {
-      let permission: DbPermission;
+    describe('GET /permissions - search, sort & order', () => {
+      // Two permissions sharing a unique token in their name so a search isolates
+      // them from every other seeded permission, with names that sort predictably
+      // against each other. The token is prefixed with a non-hex letter so it can
+      // never be a substring of any permission's UUID (which the search also matches).
+      let token: string;
+      let permLow: DbPermission; // name AAA_<token> — sorts first ascending
+      let permHigh: DbPermission; // name ZZZ_<token> — sorts last ascending
 
       beforeAll(async () => {
-        permission = await createRandomPermission();
+        token = `Q${faker.string.alphanumeric(11).toUpperCase()}`;
+
+        permLow = await createRandomPermission({ name: `AAA_${token}` });
+        permHigh = await createRandomPermission({ name: `ZZZ_${token}` });
       });
 
       describe('Request Failure', () => {
-        test('Non-UUID "permission_id" returns 400', async () => {
-          const res = await authAPISuper.get('/permissions?permission_id=12345');
+        test('"sort" with invalid value returns 400', async () => {
+          const res = await authAPISuper.get('/permissions?sort=invalid');
 
           expect(res.statusCode).toBe(400);
-          expect(res.body.message).toBe('querystring/permission_id must match format "uuid"');
+          expect(res.body.message).toContain('querystring/sort');
+        });
+
+        test('"order" with invalid value returns 400', async () => {
+          const res = await authAPISuper.get('/permissions?order=invalid');
+
+          expect(res.statusCode).toBe(400);
+          expect(res.body.message).toContain('querystring/order');
         });
       });
 
       describe('Request Success', () => {
-        let rep: Supertest.Response;
+        test('"search" by name substring returns only the matching permissions', async () => {
+          const res = await authAPISuper.get(`/permissions?search=${token}`);
 
-        beforeAll(async () => {
-          rep = await authAPISuper.get(`/permissions?permission_id=${permission.permission_id}`);
+          expect(res.statusCode).toBe(200);
+          expect(Object.keys(res.body.data).sort()).toEqual([permLow.permission_id, permHigh.permission_id].sort());
+          expect(res.body.count).toBe(2);
         });
 
-        test('Success response returns 200', () => {
-          expect(rep.statusCode).toBe(200);
+        test('"search" by permission_id returns that single permission', async () => {
+          const res = await authAPISuper.get(`/permissions?search=${permLow.permission_id}`);
+
+          expect(res.statusCode).toBe(200);
+          expect(Object.keys(res.body.data)).toEqual([permLow.permission_id]);
+          expect(res.body.count).toBe(1);
         });
 
-        test('Response "output" contains only the requested permission', () => {
-          expect(rep.body.count).toBe(1);
-          expect(Object.keys(rep.body.output)).toEqual([permission.permission_id]);
+        test('"search" with no match returns empty data and count 0', async () => {
+          const res = await authAPISuper.get('/permissions?search=no-such-permission-zzzzzzzz');
+
+          expect(res.statusCode).toBe(200);
+          expect(res.body.data).toEqual({});
+          expect(res.body.count).toBe(0);
         });
 
-        test('Returned permission matches the seeded record', () => {
-          const result = rep.body.output[permission.permission_id];
+        test('"sort=name&order=ASC" returns matched permissions ascending by name', async () => {
+          const res = await authAPISuper.get(`/permissions?search=${token}&sort=name&order=ASC`);
 
-          expect(result).toBeDefined();
-          expect(result.name).toBe(permission.name);
-          expect(result.description).toBe(permission.description);
+          expect(res.statusCode).toBe(200);
+          expect(Object.keys(res.body.data)).toEqual([permLow.permission_id, permHigh.permission_id]);
+        });
+
+        test('"sort=name&order=DESC" returns matched permissions descending by name', async () => {
+          const res = await authAPISuper.get(`/permissions?search=${token}&sort=name&order=DESC`);
+
+          expect(res.statusCode).toBe(200);
+          expect(Object.keys(res.body.data)).toEqual([permHigh.permission_id, permLow.permission_id]);
         });
       });
     });
@@ -731,13 +763,6 @@ describe(`${fileNumber} - Authorization`, () => {
           expect(res.statusCode).toBe(400);
           expect(res.body.message).toBe('querystring/per_page must match pattern "^([1-9][0-9]?|100)$"');
         });
-
-        test('"role_id" of non-UUID returns 400', async () => {
-          const res = await authAPISuper.get('/roles?role_id=not-a-uuid');
-
-          expect(res.statusCode).toBe(400);
-          expect(res.body.message).toBe('querystring/role_id must match format "uuid"');
-        });
       });
 
       describe('Request Success', () => {
@@ -752,18 +777,18 @@ describe(`${fileNumber} - Authorization`, () => {
         });
 
         test('Response body has correct shape', () => {
-          expect(rep.body).toHaveProperty('output');
+          expect(rep.body).toHaveProperty('data');
           expect(rep.body).toHaveProperty('count');
           expect(rep.body).toHaveProperty('pagination');
-          expect(rep.body.output).toBeTypeOf('object');
-          expect(Array.isArray(rep.body.output)).toBe(false);
+          expect(rep.body.data).toBeTypeOf('object');
+          expect(Array.isArray(rep.body.data)).toBe(false);
           expect(rep.body.count).toBeTypeOf('number');
           expect(rep.body.pagination).toHaveProperty('page');
           expect(rep.body.pagination).toHaveProperty('pages');
         });
 
         test('Response entries have correct shape', () => {
-          const role = rep.body.output[seededRole.role_id];
+          const role = rep.body.data[seededRole.role_id];
 
           expect(role).toBeDefined();
           expect(role).toHaveProperty('name');
@@ -774,44 +799,75 @@ describe(`${fileNumber} - Authorization`, () => {
       });
     });
 
-    describe('GET /roles - single', () => {
-      let role: DbRole;
+    describe('GET /roles - search, sort & order', () => {
+      // Two roles sharing a unique token in their name so a search isolates them
+      // from every other seeded role, with names that sort predictably against each
+      // other. The token is prefixed with a non-hex letter so it can never be a
+      // substring of any role's UUID (which the search also matches).
+      let token: string;
+      let roleLow: DbRole; // name AAA_<token> — sorts first ascending
+      let roleHigh: DbRole; // name ZZZ_<token> — sorts last ascending
 
       beforeAll(async () => {
-        role = await createRandomRole();
+        token = `Q${faker.string.alphanumeric(11).toUpperCase()}`;
+
+        roleLow = await createRandomRole({ name: `AAA_${token}` });
+        roleHigh = await createRandomRole({ name: `ZZZ_${token}` });
       });
 
       describe('Request Failure', () => {
-        test('Non-UUID "role_id" returns 400', async () => {
-          const res = await authAPISuper.get('/roles?role_id=12345');
+        test('"sort" with invalid value returns 400', async () => {
+          const res = await authAPISuper.get('/roles?sort=invalid');
 
           expect(res.statusCode).toBe(400);
-          expect(res.body.message).toBe('querystring/role_id must match format "uuid"');
+          expect(res.body.message).toContain('querystring/sort');
+        });
+
+        test('"order" with invalid value returns 400', async () => {
+          const res = await authAPISuper.get('/roles?order=invalid');
+
+          expect(res.statusCode).toBe(400);
+          expect(res.body.message).toContain('querystring/order');
         });
       });
 
       describe('Request Success', () => {
-        let rep: Supertest.Response;
+        test('"search" by name substring returns only the matching roles', async () => {
+          const res = await authAPISuper.get(`/roles?search=${token}`);
 
-        beforeAll(async () => {
-          rep = await authAPISuper.get(`/roles?role_id=${role.role_id}`);
+          expect(res.statusCode).toBe(200);
+          expect(Object.keys(res.body.data).sort()).toEqual([roleLow.role_id, roleHigh.role_id].sort());
+          expect(res.body.count).toBe(2);
         });
 
-        test('Success response returns 200', () => {
-          expect(rep.statusCode).toBe(200);
+        test('"search" by role_id returns that single role', async () => {
+          const res = await authAPISuper.get(`/roles?search=${roleLow.role_id}`);
+
+          expect(res.statusCode).toBe(200);
+          expect(Object.keys(res.body.data)).toEqual([roleLow.role_id]);
+          expect(res.body.count).toBe(1);
         });
 
-        test('Response "output" contains only the requested role', () => {
-          expect(rep.body.count).toBe(1);
-          expect(Object.keys(rep.body.output)).toEqual([role.role_id]);
+        test('"search" with no match returns empty data and count 0', async () => {
+          const res = await authAPISuper.get('/roles?search=no-such-role-zzzzzzzz');
+
+          expect(res.statusCode).toBe(200);
+          expect(res.body.data).toEqual({});
+          expect(res.body.count).toBe(0);
         });
 
-        test('Returned role matches the seeded record', () => {
-          const result = rep.body.output[role.role_id];
+        test('"sort=name&order=ASC" returns matched roles ascending by name', async () => {
+          const res = await authAPISuper.get(`/roles?search=${token}&sort=name&order=ASC`);
 
-          expect(result).toBeDefined();
-          expect(result.name).toBe(role.name);
-          expect(result.description).toBe(role.description);
+          expect(res.statusCode).toBe(200);
+          expect(Object.keys(res.body.data)).toEqual([roleLow.role_id, roleHigh.role_id]);
+        });
+
+        test('"sort=name&order=DESC" returns matched roles descending by name', async () => {
+          const res = await authAPISuper.get(`/roles?search=${token}&sort=name&order=DESC`);
+
+          expect(res.statusCode).toBe(200);
+          expect(Object.keys(res.body.data)).toEqual([roleHigh.role_id, roleLow.role_id]);
         });
       });
     });
@@ -1391,20 +1447,20 @@ describe(`${fileNumber} - Authorization`, () => {
         });
 
         test('Response body has correct shape', () => {
-          expect(rep.body).toHaveProperty('output');
+          expect(rep.body).toHaveProperty('data');
           expect(rep.body).toHaveProperty('count');
           expect(rep.body).toHaveProperty('pagination');
-          expect(rep.body.output).toBeTypeOf('object');
-          expect(Array.isArray(rep.body.output)).toBe(false);
+          expect(rep.body.data).toBeTypeOf('object');
+          expect(Array.isArray(rep.body.data)).toBe(false);
         });
 
         test('Filtering by "role_id" returns just that role', () => {
           expect(rep.body.count).toBe(1);
-          expect(Object.keys(rep.body.output)).toEqual([role.role_id]);
+          expect(Object.keys(rep.body.data)).toEqual([role.role_id]);
         });
 
         test('The role entry carries role_id and role_name', () => {
-          const entry = rep.body.output[role.role_id];
+          const entry = rep.body.data[role.role_id];
 
           expect(entry.role_id).toBe(role.role_id);
           expect(entry.role_name).toBe(role.name);
@@ -1413,7 +1469,7 @@ describe(`${fileNumber} - Authorization`, () => {
         test('The role entry nests each assigned permission by id with permission_id and permission_name', () => {
           const {
             permissions,
-          } = rep.body.output[role.role_id];
+          } = rep.body.data[role.role_id];
 
           expect(Object.keys(permissions).sort()).toEqual(assignedPermissions.map((permission) => permission.permission_id).sort());
 
@@ -1433,14 +1489,32 @@ describe(`${fileNumber} - Authorization`, () => {
 
           expect(res.statusCode).toBe(200);
           expect(res.body.count).toBe(1);
-          expect(res.body.output[emptyRole.role_id].permissions).toEqual({});
+          expect(res.body.data[emptyRole.role_id].permissions).toEqual({});
+        });
+
+        test('Assigned permissions are ordered by permission name ascending', async () => {
+          const token = `Q${faker.string.alphanumeric(11).toUpperCase()}`;
+          const orderingRole = await createRandomRole();
+
+          // Inserted in reverse name order so a pass proves name ordering rather
+          // than insertion order.
+          const permHigh = await createRandomPermission({ name: `ZZZ_${token}` });
+          const permLow = await createRandomPermission({ name: `AAA_${token}` });
+
+          const insertSql = 'INSERT INTO internal.roles_permissions (role_id, permission_id) VALUES ($1, $2), ($1, $3);';
+          await query(insertSql, [orderingRole.role_id, permHigh.permission_id, permLow.permission_id]);
+
+          const res = await authAPISuper.get(`/roles/permissions?role_id=${orderingRole.role_id}`);
+
+          expect(res.statusCode).toBe(200);
+          expect(Object.keys(res.body.data[orderingRole.role_id].permissions)).toEqual([permLow.permission_id, permHigh.permission_id]);
         });
 
         test('Omitting "role_id" returns all roles', async () => {
           const res = await authAPISuper.get('/roles/permissions');
 
           expect(res.statusCode).toBe(200);
-          expect(res.body.output).toBeTypeOf('object');
+          expect(res.body.data).toBeTypeOf('object');
           expect(res.body.count).toBeGreaterThan(0);
         });
       });
