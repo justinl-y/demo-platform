@@ -9,6 +9,10 @@ import onRequest from './on-request.ts';
 import preHandlers from './pre-handlers.ts';
 
 import getUsers from './get-users/index.ts';
+import getUsersRoles from './get-users-roles/index.ts';
+import postUsersRoles from './post-users-roles/index.ts';
+import putUsersRoles from './put-users-roles/index.ts';
+import deleteUsersRoles from './delete-users-roles/index.ts';
 import postUsers from './post-users/index.ts';
 import putUsers from './put-users/index.ts';
 import patchUsersEmail from './patch-users-email/index.ts';
@@ -41,6 +45,10 @@ const routes = {
   deleteUsersInvite: routePropertiesCore(DELETE, '/users/:user_id/invite', deleteUsersInvite as RouteHandlerMethod, 'INTERNAL_USERS_AUTHORIZE_WRITE'),
   postUsersActivate: routePropertiesCore(POST, '/users/activate', postUsersActivate as RouteHandlerMethod),
   patchUsersDeactivate: routePropertiesCore(PATCH, '/users/:user_id/deactivate', patchUsersDeactivate as RouteHandlerMethod, 'INTERNAL_USERS_AUTHORIZE_WRITE'),
+  getUsersRoles: routePropertiesCore(GET, '/users/roles', getUsersRoles as RouteHandlerMethod, 'INTERNAL_USERS_AUTHORIZE_READ'),
+  postUsersRoles: routePropertiesCore(POST, '/users/:user_id/roles', postUsersRoles as RouteHandlerMethod, 'INTERNAL_USERS_AUTHORIZE_WRITE'),
+  putUsersRoles: routePropertiesCore(PUT, '/users/:user_id/roles', putUsersRoles as RouteHandlerMethod, 'INTERNAL_USERS_AUTHORIZE_WRITE'),
+  deleteUsersRoles: routePropertiesCore(DELETE, '/users/:user_id/roles', deleteUsersRoles as RouteHandlerMethod, 'INTERNAL_USERS_AUTHORIZE_WRITE'),
 };
 
 export type RouteKey = keyof typeof routes;

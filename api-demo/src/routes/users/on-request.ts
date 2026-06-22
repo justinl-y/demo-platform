@@ -6,6 +6,10 @@ import type { RouteKey } from './index.ts';
 function onRequest(this: FastifyInstance, key: RouteKey) {
   const routeOnRequest = {
     getUsers: routePropertiesOnRequest([this.authenticate]),
+    getUsersRoles: routePropertiesOnRequest([this.authenticate]),
+    postUsersRoles: routePropertiesOnRequest([this.authenticate]),
+    putUsersRoles: routePropertiesOnRequest([this.authenticate]),
+    deleteUsersRoles: routePropertiesOnRequest([this.authenticate]),
     postUsers: routePropertiesOnRequest([this.authenticate]),
     putUsers: routePropertiesOnRequest([this.authenticate]),
     patchUsersEmail: routePropertiesOnRequest([this.authenticate]),

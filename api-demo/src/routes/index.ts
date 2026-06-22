@@ -1,9 +1,11 @@
-import auth from './auth/index.ts';
+import authentication from './authentication/index.ts';
+import authorization from './authorization/index.ts';
 import healthCheck from './health-check/index.ts';
 import users from './users/index.ts';
 
 export default [
-  auth,
+  authentication,
+  authorization,
   healthCheck,
   users,
 ];

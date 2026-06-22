@@ -1,0 +1,15 @@
+INSERT INTO internal.users_roles
+	(
+		user_id
+		, role_id
+	)
+SELECT
+	$userId!
+	, r.id
+FROM
+	internal.roles AS r
+WHERE
+	r.id = ANY($roleIds!)
+RETURNING
+	role_id
+;

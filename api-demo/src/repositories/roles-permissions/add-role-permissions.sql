@@ -1,0 +1,15 @@
+INSERT INTO internal.roles_permissions
+	(
+		role_id
+		, permission_id
+	)
+SELECT
+	$roleId!
+	, p.id
+FROM
+	internal.permissions AS p
+WHERE
+	p.id = ANY($permissionIds!)
+RETURNING
+	permission_id
+;

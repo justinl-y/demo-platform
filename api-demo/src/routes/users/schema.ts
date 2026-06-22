@@ -1,4 +1,8 @@
 import getUsers from './get-users/schema.ts';
+import getUsersRoles from './get-users-roles/schema.ts';
+import postUsersRoles from './post-users-roles/schema.ts';
+import putUsersRoles from './put-users-roles/schema.ts';
+import deleteUsersRoles from './delete-users-roles/schema.ts';
 import postUsers from './post-users/schema.ts';
 import putUsers from './put-users/schema.ts';
 import patchUsersEmail from './patch-users-email/schema.ts';
@@ -10,6 +14,10 @@ import patchUsersDeactivate from './patch-users-deactivate/schema.ts';
 
 const schema = {
   getUsers,
+  getUsersRoles,
+  postUsersRoles,
+  putUsersRoles,
+  deleteUsersRoles,
   postUsers,
   putUsers,
   patchUsersEmail,

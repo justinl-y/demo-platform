@@ -1,0 +1,13 @@
+SELECT
+  COALESCE(ARRAY_AGG(DISTINCT p.name) FILTER (WHERE p.name IS NOT NULL), '{}'::varchar[]) AS permissions
+FROM
+  internal.users AS u
+  LEFT JOIN internal.users_roles AS ur ON ur.user_id = u.id
+  LEFT JOIN internal.roles AS r ON r.id = ur.role_id
+  LEFT JOIN internal.roles_permissions AS rp ON rp.role_id = r.id
+  LEFT JOIN internal.permissions AS p ON p.id = rp.permission_id
+WHERE
+  u.id = $userId!
+GROUP BY
+  u.id
+;

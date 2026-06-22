@@ -4,6 +4,7 @@ import type { DatabaseDecorator } from '../../types/database.ts';
 import type { IUsersGetUsersParams, IUsersGetUsersResult } from './types/get-users.typed.queries.ts';
 import type { IUsersGetUserByEmailParams, IUsersGetUserByEmailResult } from './types/get-user-by-email.typed.queries.ts';
 import type { IUsersGetUserByStatusParams, IUsersGetUserByStatusResult } from './types/get-user-by-status.typed.queries.ts';
+import type { IUsersGetNonDeactivatedUserByIdParams, IUsersGetNonDeactivatedUserByIdResult } from './types/get-non-deactivated-user-by-id.typed.queries.ts';
 import type { IUsersAddUserParams, IUsersAddUserResult } from './types/add-user.typed.queries.ts';
 import type { IUsersSetUserParams, IUsersSetUserResult } from './types/set-user.typed.queries.ts';
 import type { IUsersSetUserEmailParams, IUsersSetUserEmailResult } from './types/set-user-email.typed.queries.ts';
@@ -19,6 +20,7 @@ const relPath = import.meta.dirname;
 const getUsersQuery = cwd('get-users', relPath);
 const getUserByEmailQuery = cwd('get-user-by-email', relPath);
 const getUserByStatusQuery = cwd('get-user-by-status', relPath);
+const getNonDeactivatedUserByIdQuery = cwd('get-non-deactivated-user-by-id', relPath);
 const addUserQuery = cwd('add-user', relPath);
 const updateUserQuery = cwd('set-user', relPath);
 const updateUserEmailQuery = cwd('set-user-email', relPath);
@@ -52,6 +54,12 @@ function createUsersRepository(db: DatabaseDecorator) {
       email,
     }: IUsersGetUserByEmailParams) => {
       return db.query<IUsersGetUserByEmailResult>(getUserByEmailQuery, { email }, 'one');
+    },
+
+    getNonDeactivatedUserById: ({
+      userId,
+    }: IUsersGetNonDeactivatedUserByIdParams) => {
+      return db.query<IUsersGetNonDeactivatedUserByIdResult>(getNonDeactivatedUserByIdQuery, { userId }, 'one');
     },
 
     getUserByStatus: ({
