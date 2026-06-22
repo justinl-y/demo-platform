@@ -647,6 +647,22 @@ describe(`${fileNumber} - Authorization`, () => {
           expect(res.statusCode).toBe(400);
           expect(res.body.message).toBe('Invalid permission id');
         });
+
+        test('Permission assigned to a role returns 400 and is not deleted', async () => {
+          const permission = await createRandomPermission();
+          const role = await createRandomRole();
+          await query('INSERT INTO internal.roles_permissions (role_id, permission_id) VALUES ($1, $2);', [role.role_id, permission.permission_id]);
+
+          const res = await getResponse(permission.permission_id);
+
+          expect(res.statusCode).toBe(400);
+          expect(res.body.message).toBe('Permission is assigned to one or more roles');
+
+          const getByIdSql = 'SELECT p.id FROM internal.permissions AS p WHERE p.id = $1;';
+          const rows = await query<{ id: string }>(getByIdSql, [permission.permission_id]);
+
+          expect(rows).toHaveLength(1);
+        });
       });
 
       describe('Request Success', () => {
@@ -1106,6 +1122,22 @@ describe(`${fileNumber} - Authorization`, () => {
 
           expect(res.statusCode).toBe(400);
           expect(res.body.message).toBe('Invalid role id');
+        });
+
+        test('Role assigned to a user returns 400 and is not deleted', async () => {
+          const role = await createRandomRole();
+          const userId = await getUserIdByEmail(READ_ONLY_USER_EMAIL);
+          await query('INSERT INTO internal.users_roles (user_id, role_id) VALUES ($1, $2);', [userId, role.role_id]);
+
+          const res = await getResponse(role.role_id);
+
+          expect(res.statusCode).toBe(400);
+          expect(res.body.message).toBe('Role is assigned to one or more users');
+
+          const getByIdSql = 'SELECT r.id FROM internal.roles AS r WHERE r.id = $1;';
+          const rows = await query<{ id: string }>(getByIdSql, [role.role_id]);
+
+          expect(rows).toHaveLength(1);
         });
       });
 

@@ -19,7 +19,7 @@ async function deletePermissions(this: FastifyInstance, request: FastifyRequest<
     permissionId,
   };
 
-  await deletePermission(this.repositories.permissions, deletePermissionParams);
+  await deletePermission(this.repositories.permissions, this.repositories.rolePermissions, deletePermissionParams);
 
   return reply
     .code(204)

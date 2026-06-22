@@ -3,12 +3,14 @@ import { cwd } from '#utils/functions';
 import type { DatabaseDecorator } from '../../types/database.ts';
 import type { IUsersRolesGetUsersRolesParams, IUsersRolesGetUsersRolesResult } from './types/get-users-roles.typed.queries.ts';
 import type { IUsersRolesGetUserRoleIdsParams, IUsersRolesGetUserRoleIdsResult } from './types/get-user-role-ids.typed.queries.ts';
+import type { IUsersRolesGetRoleUserIdsParams, IUsersRolesGetRoleUserIdsResult } from './types/get-role-user-ids.typed.queries.ts';
 import type { IUsersRolesAddUserRolesParams, IUsersRolesAddUserRolesResult } from './types/add-user-roles.typed.queries.ts';
 import type { IUsersRolesRemoveUserRolesParams, IUsersRolesRemoveUserRolesResult } from './types/remove-user-roles.typed.queries.ts';
 
 const relPath = import.meta.dirname;
 const getUsersRolesQuery = cwd('get-users-roles', relPath);
 const getUserRoleIdsQuery = cwd('get-user-role-ids', relPath);
+const getRoleUserIdsQuery = cwd('get-role-user-ids', relPath);
 const addUserRolesQuery = cwd('add-user-roles', relPath);
 const removeUserRolesQuery = cwd('remove-user-roles', relPath);
 
@@ -32,6 +34,12 @@ function createUsersRolesRepository(db: DatabaseDecorator) {
       userId,
     }: IUsersRolesGetUserRoleIdsParams) => {
       return db.query<IUsersRolesGetUserRoleIdsResult>(getUserRoleIdsQuery, { userId }, 'collection');
+    },
+
+    getRoleUserIds: ({
+      roleId,
+    }: IUsersRolesGetRoleUserIdsParams) => {
+      return db.query<IUsersRolesGetRoleUserIdsResult>(getRoleUserIdsQuery, { roleId }, 'collection');
     },
 
     addUserRoles: async ({

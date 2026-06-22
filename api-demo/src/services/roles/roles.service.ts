@@ -3,6 +3,7 @@ import { BadRequestError } from 'http-errors-enhanced';
 import { paginationOffset, buildPaginatedResult } from '#utils/functions';
 
 import type { RolesRepository } from '#repositories/roles/roles.repository';
+import type { UsersRolesRepository } from '#repositories/users-roles/users-roles.repository';
 import type { PaginatedResult } from '../../types/general.ts';
 
 interface FetchRolesParams {
@@ -113,14 +114,21 @@ interface DeleteRoleResult {
   role_id: string;
 }
 
-async function deleteRole(repository: RolesRepository, params: DeleteRoleParams): Promise<DeleteRoleResult> {
+async function deleteRole(
+  rolesRepository: RolesRepository,
+  usersRolesRepository: UsersRolesRepository,
+  params: DeleteRoleParams,
+): Promise<DeleteRoleResult> {
   const {
     roleId,
   } = params;
 
+  const assignedUsers = await usersRolesRepository.getRoleUserIds({ roleId }) ?? [];
+  if (assignedUsers.length > 0) throw new BadRequestError('Role is assigned to one or more users');
+
   const {
     role: deletedRole,
-  } = await repository.removeRole({
+  } = await rolesRepository.removeRole({
     roleId,
   });
 

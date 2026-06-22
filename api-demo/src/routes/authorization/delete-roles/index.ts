@@ -19,7 +19,7 @@ async function deleteRoles(this: FastifyInstance, request: FastifyRequest<Reques
     roleId,
   };
 
-  await deleteRole(this.repositories.roles, deleteRoleParams);
+  await deleteRole(this.repositories.roles, this.repositories.usersRoles, deleteRoleParams);
 
   return reply
     .code(204)

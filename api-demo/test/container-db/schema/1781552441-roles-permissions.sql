@@ -30,7 +30,7 @@ CREATE TABLE internal.roles_permissions (
   , role_id uuid NOT NULL
   , permission_id uuid NOT NULL
   , FOREIGN KEY (role_id) REFERENCES internal.roles(id) ON DELETE CASCADE
-  , FOREIGN KEY (permission_id) REFERENCES internal.permissions(id) ON DELETE CASCADE
+  , FOREIGN KEY (permission_id) REFERENCES internal.permissions(id)
   , UNIQUE (role_id, permission_id)
 );
 
@@ -41,7 +41,7 @@ CREATE TABLE internal.users_roles (
   , user_id uuid NOT NULL
   , role_id uuid NOT NULL
   , FOREIGN KEY (user_id) REFERENCES internal.users(id) ON DELETE CASCADE
-  , FOREIGN KEY (role_id) REFERENCES internal.roles(id) ON DELETE CASCADE
+  , FOREIGN KEY (role_id) REFERENCES internal.roles(id)
   , UNIQUE (user_id, role_id)
 );
 

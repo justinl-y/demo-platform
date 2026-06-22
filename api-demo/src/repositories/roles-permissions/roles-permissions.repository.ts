@@ -3,12 +3,14 @@ import { cwd } from '#utils/functions';
 import type { DatabaseDecorator } from '../../types/database.ts';
 import type { IRolesPermissionsGetRolesPermissionsParams, IRolesPermissionsGetRolesPermissionsResult } from './types/get-roles-permissions.typed.queries.ts';
 import type { IRolesPermissionsGetRolePermissionIdsParams, IRolesPermissionsGetRolePermissionIdsResult } from './types/get-role-permission-ids.typed.queries.ts';
+import type { IRolesPermissionsGetPermissionRoleIdsParams, IRolesPermissionsGetPermissionRoleIdsResult } from './types/get-permission-role-ids.typed.queries.ts';
 import type { IRolesPermissionsAddRolePermissionsParams, IRolesPermissionsAddRolePermissionsResult } from './types/add-role-permissions.typed.queries.ts';
 import type { IRolesPermissionsRemoveRolePermissionsParams, IRolesPermissionsRemoveRolePermissionsResult } from './types/remove-role-permissions.typed.queries.ts';
 
 const relPath = import.meta.dirname;
 const getRolePermissionsQuery = cwd('get-roles-permissions', relPath);
 const getRolePermissionIdsQuery = cwd('get-role-permission-ids', relPath);
+const getPermissionRoleIdsQuery = cwd('get-permission-role-ids', relPath);
 const addRolePermissionsQuery = cwd('add-role-permissions', relPath);
 const removeRolePermissionsQuery = cwd('remove-role-permissions', relPath);
 
@@ -32,6 +34,12 @@ function createRolePermissionsRepository(db: DatabaseDecorator) {
       roleId,
     }: IRolesPermissionsGetRolePermissionIdsParams) => {
       return db.query<IRolesPermissionsGetRolePermissionIdsResult>(getRolePermissionIdsQuery, { roleId }, 'collection');
+    },
+
+    getPermissionRoleIds: ({
+      permissionId,
+    }: IRolesPermissionsGetPermissionRoleIdsParams) => {
+      return db.query<IRolesPermissionsGetPermissionRoleIdsResult>(getPermissionRoleIdsQuery, { permissionId }, 'collection');
     },
 
     addRolePermissions: async ({

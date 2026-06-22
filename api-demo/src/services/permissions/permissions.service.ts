@@ -3,6 +3,7 @@ import { BadRequestError } from 'http-errors-enhanced';
 import { paginationOffset, buildPaginatedResult } from '#utils/functions';
 
 import type { PermissionsRepository } from '#repositories/permissions/permissions.repository';
+import type { RolePermissionsRepository } from '#repositories/roles-permissions/roles-permissions.repository';
 import type { PaginatedResult } from '../../types/general.ts';
 
 interface FetchPermissionsParams {
@@ -113,14 +114,21 @@ interface DeletePermissionResult {
   permission_id: string;
 }
 
-async function deletePermission(repository: PermissionsRepository, params: DeletePermissionParams): Promise<DeletePermissionResult> {
+async function deletePermission(
+  permissionsRepository: PermissionsRepository,
+  rolePermissionsRepository: RolePermissionsRepository,
+  params: DeletePermissionParams,
+): Promise<DeletePermissionResult> {
   const {
     permissionId,
   } = params;
 
+  const assignedRoles = await rolePermissionsRepository.getPermissionRoleIds({ permissionId }) ?? [];
+  if (assignedRoles.length > 0) throw new BadRequestError('Permission is assigned to one or more roles');
+
   const {
     permission: deletedPermission,
-  } = await repository.removePermission({
+  } = await permissionsRepository.removePermission({
     permissionId,
   });
 
