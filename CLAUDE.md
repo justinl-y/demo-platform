@@ -5,13 +5,15 @@ A monorepo demonstrating a distributed full-stack web application using type-saf
 ## Structure
 
 ```text
-/api-demo   # Backend REST API (Node.js + Fastify + PostgreSQL)
-/shared     # Shared types
+/api-demo   # API tier — Backend REST API (Node.js + Fastify + PostgreSQL DQL/DML)
+/db-demo    # DB tier — PostgreSQL schema (DDL) and init scripts
+/shared     # Shared TypeScript resources
 ```
 
-> Frontend (`/app-demo`) is planned but not yet implemented.
+> Frontend (`/app-demo`) currently exists as a static prototype; the planned modern stack is not yet implemented.
 
 ## Packages
 
 - **api-demo** — see `api-demo/CLAUDE.md` for commands, environments, conventions, and architecture
-- **shared** — shared TypeScript types consumed across packages
+- **db-demo** — PostgreSQL schema/init scripts seeding the API's database; see `db-demo/CLAUDE.md`
+- **shared** — shared TypeScript resources consumed across packages

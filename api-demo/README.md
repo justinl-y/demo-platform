@@ -160,7 +160,7 @@ Once started, the API will be accessible at: <http://localhost:6662>
 
 The test environment uses **three Docker containers**:
 
-- **DB Container**: Uses upstream PostGIS image and mounts the demo DB schema from `test/container-db/schema` into `/docker-entrypoint-initdb.d.`
+- **DB Container**: Uses upstream PostGIS image and mounts the demo DB schema from the top-level `db-demo` package's `schema/` into `/docker-entrypoint-initdb.d.`
 - **API Container**: Hosts the API built from local code.
 - **TEST Container**: Seeds the database and runs endpoint integration tests.
 

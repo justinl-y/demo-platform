@@ -3,7 +3,7 @@ set -e
 echo 'Running pre-commit checks...'
 cd api-demo
 changed=$(git diff --cached --name-only)
-if echo "$changed" | grep -qE '^api-demo/test/container-db/schema' || \
+if echo "$changed" | grep -qE '^db-demo/schema' || \
    echo "$changed" | grep -E '^api-demo/src/.*\.sql$' | grep -qv '\.typed\.sql$'; then
   npm run sql:types:ci
 fi

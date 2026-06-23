@@ -2,7 +2,7 @@ name: PR CI API-DEMO
 
 # "Docker CI Integration Tests" is a required status check, so this workflow
 # triggers on every PR (no path filter at the `on:` level). A change-detection
-# step decides whether api-demo/shared were touched; the real test steps are
+# step decides whether api-demo/db-demo/shared were touched; the real test steps are
 # gated on that result, while the job always runs to completion and reports a
 # real success. This replaces the previous real + no-op twin pair, whose
 # `paths` / `paths-ignore` triggers were not mutually exclusive and could both
@@ -38,7 +38,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Detect whether api-demo or shared changed in this PR
+      # Detect whether api-demo, db-demo or shared changed in this PR
       - name: Detect relevant changes
         id: changes
         uses: dorny/paths-filter@v3
@@ -46,12 +46,13 @@ jobs:
           filters: |
             relevant:
               - 'api-demo/**'
+              - 'db-demo/**'
               - 'shared/**'
 
       # Report success when there is nothing to test
       - name: Skip integration tests
         if: steps.changes.outputs.relevant == 'false'
-        run: echo "No api-demo or shared changes - integration tests not required."
+        run: echo "No api-demo, db-demo or shared changes - integration tests not required."
 
       # Set up Docker Buildx for caching
       - name: Set up Docker Buildx
