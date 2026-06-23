@@ -99,9 +99,10 @@ flowchart TD
 
 ---
 
-## 🏗️ Monorepo Structure (Planned)
+## 🏗️ Monorepo Structure
 
 ```text
-/app-demo # Frontend application
+/app-demo # Frontend application (prototype)
 /api-demo # Backend API service
-/shared   # Shared libraries & utilities
+/db-demo  # Database schema & init scripts
+/shared   # Shared libraries & utilities (planned)
