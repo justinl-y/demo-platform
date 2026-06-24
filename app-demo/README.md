@@ -128,6 +128,8 @@ App-Demo consumes the top-level [`shared`](../shared) package via the `#shared` 
 - **Vite** — `resolve.alias` in `vite.config.ts`
 - **TypeScript** — `paths` in `tsconfig.app.json`
 
+Both map `#shared/*` to `../shared/*` extension-less, so each resolver applies its own `.ts`/`.tsx`/`/index.ts`/asset resolution. `tsconfig.app.json` also lists `../shared` in `include` so those files are part of the type program (without it, a `#shared/*` import resolves but fails type-checking with `TS6307`).
+
 ```ts
 import type { SomeType } from '#shared/types';
 ```
@@ -151,7 +153,16 @@ The same `lint` + `build` gates run in CI on every pull request.
 On push to `master` touching `app-demo/**`, GitHub Actions builds the bundle **on the runner** (`npm ci && npm run build`) and publishes it:
 
 - **Fingerprinted assets** (`assets/*.[hash].js|css`) are synced to S3 with a long, immutable cache (`max-age=31536000, immutable`).
-- **`index.html`** is uploaded last with `no-cache`, so new deployments are picked up immediately while hashed assets stay cached.
+- **`index.html`** is uploaded with `no-cache`, so new deployments are picked up immediately while hashed assets stay cached.
 - The **CloudFront** distribution cache is then invalidated.
 
+Publishing is ordered to avoid a cutover gap: new assets and root static files are uploaded **additively** (no `--delete`) so the currently-live `index.html` keeps resolving everything it references; `index.html` is then swapped in and CloudFront invalidated; only **after** that are superseded assets/root files pruned (`--delete`). A run cancelled mid-deploy therefore leaves, at worst, stale files lingering — never a missing-asset state.
+
 Because the build runs in CI, no compilation happens on a developer machine for production, and `dist/` never needs to exist locally or in version control.
+
+### Follow-ups
+
+- **SPA deep-link routing.** The app is currently a single page, so every request maps to a real S3 object. Once **client-side routing** is added, deep links / refreshes on a route (e.g. `/users/123`) will hit CloudFront → S3, find no object, and error. Before shipping routing, configure CloudFront to serve `index.html` for those misses. Notes for that work:
+  - Map **both 403 and 404** → `/index.html` (a REST-origin + OAC bucket typically returns **403 AccessDenied**, not 404, for a missing key).
+  - Prefer a **CloudFront Function** (viewer-request) that rewrites only extension-less / navigation paths, rather than a blanket error-response rewrite — a catch-all `404 → 200 /index.html` masks genuinely missing **assets** (e.g. a pruned hashed chunk), returning HTML for a `.js` request and causing a confusing MIME/parse error. Keep the error-response caching TTL low.
+  - This is **infrastructure**, not app code: the CloudFront distribution lives outside this repo (referenced only via the `APP_DEMO_CLOUDFRONT_DISTRIBUTION_ID` CI variable), so it ships as a deploy/infra change, not a code change here.

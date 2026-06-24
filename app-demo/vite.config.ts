@@ -33,11 +33,13 @@ export default defineConfig({
   },
   resolve: {
     alias: [
-      // Mirrors the `#shared/*` -> `../shared/*.ts` path mapping in tsconfig.app.json
-      // so the bundler and the type-checker resolve shared modules identically.
+      // Mirrors the `#shared/*` -> `../shared/*` path mapping in tsconfig.app.json so the
+      // bundler and the type-checker resolve shared modules identically. The extension is
+      // left off so each resolver applies its own extension/index resolution (.ts, .tsx,
+      // /index.ts, assets) as `shared/` grows.
       {
         find: /^#shared\/(.*)$/,
-        replacement: `${fileURLToPath(new URL('../shared', import.meta.url))}/$1.ts`,
+        replacement: `${fileURLToPath(new URL('../shared', import.meta.url))}/$1`,
       },
     ],
   },

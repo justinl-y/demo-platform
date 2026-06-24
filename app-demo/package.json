@@ -17,8 +17,8 @@
     "css:types": "tcm src -p '**/*.module.css'",
     "css:types:watch": "tcm src -p '**/*.module.css' --watch",
     "css:types:ci": "tcm src -p '**/*.module.css' -l",
-    "lint": "eslint --config eslint.config.ts",
-    "lint-fix": "eslint --fix --config eslint.config.ts",
+    "lint": "eslint . --config eslint.config.ts",
+    "lint-fix": "eslint . --fix --config eslint.config.ts",
     "preview": "vite preview",
     "prepare": "command -v git >/dev/null 2>&1 && git config core.hooksPath .githooks || true"
   },

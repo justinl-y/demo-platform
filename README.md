@@ -13,7 +13,7 @@ A **single-page application** that the browser loads and runs — delivered as f
 ### 🏛️ Frontend Features
 
 - ⚛️ React + TypeScript (strict)
-- ⚡ Vite build tooling (SWC)
+- ⚡ Vite build tooling (Oxc)
 - 🎨 CSS Modules with type-checked class names
 - 🔗 Shared types with the API via the `#shared` alias
 - 🤖 GitHub Actions CI/CD
@@ -22,6 +22,8 @@ A **single-page application** that the browser loads and runs — delivered as f
 
 - 🪣 S3 static hosting (origin)
 - ⚙️ CloudFront (CDN + SSL)
+
+> Follow-up: adding client-side routing will need a CloudFront SPA fallback (deep links → `index.html`) — see [app-demo follow-ups](./app-demo/README.md#follow-ups).
 
 [Read more here ...](./app-demo/README.md)
 

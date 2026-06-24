@@ -56,12 +56,14 @@ jobs:
           aws s3 sync ./app-demo/dist/assets "s3://${{ vars.APP_DEMO_S3_BUCKET_NAME }}/assets" \
             --cache-control "public, max-age=31536000, immutable"
 
-      # Sync remaining static files (favicon, etc.) — unfingerprinted, so use a short
-      # revalidating cache. Excludes assets/ (handled above) and index.html (handled below).
-      - name: Sync root static files to S3
+      # Upload remaining static files (favicon, etc.) — additive, no --delete, so the
+      # currently-live index.html keeps resolving the files it references until it is
+      # replaced below. Unfingerprinted, so use a short revalidating cache. Excludes
+      # assets/ (handled above) and index.html (handled below). Stale files are pruned
+      # at the end, after the cutover + invalidation.
+      - name: Upload root static files to S3
         run: |
           aws s3 sync ./app-demo/dist "s3://${{ vars.APP_DEMO_S3_BUCKET_NAME }}" \
-            --delete \
             --exclude "assets/*" \
             --exclude "index.html" \
             --cache-control "public, max-age=300, must-revalidate"
@@ -79,11 +81,21 @@ jobs:
             --distribution-id "${{ vars.APP_DEMO_CLOUDFRONT_DISTRIBUTION_ID }}" \
             --paths "/*"
 
-      # Prune superseded assets — runs last, once the new index.html is live and the
-      # cache invalidated, so no served HTML still references the hashes being removed.
-      # (If the run is cancelled before this step, old assets simply linger — harmless.)
+      # Prune superseded files — runs last, once the new index.html is live and the cache
+      # invalidated, so no served HTML still references anything being removed. Covers both
+      # the hashed assets and the unfingerprinted root files (e.g. an old flat-site script.js
+      # on the migration deploy). index.html is excluded — it is the live entry point.
+      # (If the run is cancelled before this step, stale files simply linger — harmless.)
       - name: Prune superseded assets from S3
         run: |
           aws s3 sync ./app-demo/dist/assets "s3://${{ vars.APP_DEMO_S3_BUCKET_NAME }}/assets" \
             --delete \
             --cache-control "public, max-age=31536000, immutable"
+
+      - name: Prune superseded root files from S3
+        run: |
+          aws s3 sync ./app-demo/dist "s3://${{ vars.APP_DEMO_S3_BUCKET_NAME }}" \
+            --delete \
+            --exclude "assets/*" \
+            --exclude "index.html" \
+            --cache-control "public, max-age=300, must-revalidate"

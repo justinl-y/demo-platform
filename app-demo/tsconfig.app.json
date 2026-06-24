@@ -10,8 +10,8 @@
     "jsx": "react-jsx",
     "types": ["vite/client"],
     "paths": {
-      "#shared/*": ["../shared/*.ts"]
+      "#shared/*": ["../shared/*"]
     }
   },
-  "include": ["src"]
+  "include": ["src", "../shared"]
 }
