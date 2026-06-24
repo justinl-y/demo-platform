@@ -102,6 +102,7 @@
     "@tsconfig/node24": "^24.0.4",
     "@types/lodash": "^4.17.24",
     "@types/node": "^25.5.0",
+    "@types/pg": "^8.20.0",
     "eslint": "^9.36.0",
     "jiti": "^2.6.1",
     "lint-staged": "^16.4.0",
