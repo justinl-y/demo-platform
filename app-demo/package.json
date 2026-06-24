@@ -1,13 +1,47 @@
 {
   "name": "app-demo",
-  "version": "1.0.0",
-  "description": "App demo for the demo platform project",
   "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "User interface for the demo platform project",
   "license": "ISC",
   "author": "Justin Levett-Yeats",
-  "type": "module",
-  "main": "index.html",
+  "engines": {
+    "npm": ">=11.6.0 <12.0.0",
+    "node": ">=24.8.0 <26.0.0"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "typecheck": "tsc -b",
+    "css:types": "tcm src -p '**/*.module.css'",
+    "css:types:watch": "tcm src -p '**/*.module.css' --watch",
+    "css:types:ci": "tcm src -p '**/*.module.css' -l",
+    "lint": "eslint . --config eslint.config.ts",
+    "lint-fix": "eslint . --fix --config eslint.config.ts",
+    "preview": "vite preview",
+    "prepare": "command -v git >/dev/null 2>&1 && git config core.hooksPath .githooks || true"
+  },
+  "lint-staged": {
+    "**/*.{js,ts,tsx}": "eslint --config eslint.config.ts"
+  },
+  "dependencies": {
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.2",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.3",
+    "eslint": "^9.36.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.3",
+    "jiti": "^2.6.1",
+    "lint-staged": "^16.4.0",
+    "neostandard": "^0.13.0",
+    "typed-css-modules": "^0.9.1",
+    "typescript": "~6.0.2",
+    "vite": "^8.1.0"
   }
 }

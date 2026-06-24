@@ -1,38 +1,8 @@
-:root {
-  --bg: #0b0d12;
-  --bg-soft: #11141c;
-  --text: #e8ecf3;
-  --muted: #8b93a7;
-  --accent: #7c5cff;
-  --accent-2: #22d3ee;
-  --accent-3: #f472b6;
-  --ring: rgba(124, 92, 255, 0.45);
-  --card: rgba(255, 255, 255, 0.04);
-  --border: rgba(255, 255, 255, 0.08);
-}
-
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-html,
-body {
-  height: 100%;
-}
-
-body {
-  font-family: "Space Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
-  color: var(--text);
-  background: radial-gradient(1200px 800px at 80% -10%, #1a1230 0%, transparent 60%),
-    radial-gradient(900px 700px at -10% 110%, #0b2a36 0%, transparent 55%),
-    var(--bg);
-  overflow-x: hidden;
-  position: relative;
-  -webkit-font-smoothing: antialiased;
-  letter-spacing: -0.01em;
-}
+/* Component styles for App.tsx.
+   Class names are locally scoped by Vite — `.card` here becomes a hashed name
+   like `_card_1a2b3` and is reached via the imported `styles` object.
+   `@keyframes` names are scoped too; their `animation:` references are rewritten
+   automatically. The `var(--…)` tokens resolve from the global :root in index.css. */
 
 /* Animated aurora background */
 .aurora {
@@ -53,21 +23,21 @@ body {
   will-change: transform;
 }
 
-.blob--a {
+.blobA {
   background: var(--accent);
   top: -140px;
   left: -120px;
   animation: drift 18s ease-in-out infinite;
 }
 
-.blob--b {
+.blobB {
   background: var(--accent-2);
   bottom: -180px;
   right: -100px;
   animation: drift 22s ease-in-out infinite reverse;
 }
 
-.blob--c {
+.blobC {
   background: var(--accent-3);
   top: 30%;
   left: 50%;
@@ -142,7 +112,7 @@ body {
   letter-spacing: 0.08em;
 }
 
-.badge__dot {
+.badgeDot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
@@ -174,7 +144,7 @@ body {
   white-space: nowrap;
 }
 
-.domain__sep {
+.domainSep {
   color: var(--accent);
   -webkit-text-fill-color: var(--accent);
   opacity: 0.7;
@@ -209,13 +179,13 @@ body {
   border-top: 1px solid var(--border);
 }
 
-.meta__item {
+.metaItem {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.meta__label {
+.metaLabel {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.12em;
@@ -223,7 +193,7 @@ body {
   font-weight: 500;
 }
 
-.meta__value {
+.metaValue {
   font-family: "JetBrains Mono", ui-monospace, monospace;
   font-size: 14px;
   color: var(--text);
@@ -260,7 +230,7 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .blob,
-  .badge__dot,
+  .badgeDot,
   .pulse,
   .cursor {
     animation: none;

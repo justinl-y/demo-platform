@@ -1,11 +1,34 @@
 #!/bin/sh
 set -e
 echo 'Running pre-commit checks...'
-cd api-demo
+
 changed=$(git diff --cached --name-only)
-if echo "$changed" | grep -qE '^db-demo/schema' || \
-   echo "$changed" | grep -E '^api-demo/src/.*\.sql$' | grep -qv '\.typed\.sql$'; then
-  npm run sql:types:ci
+
+# api-demo: only when api-demo files, the db-demo schema it generates SQL types
+# from, or the shared package it consumes are staged. Regenerate-verify SQL types
+# when schema/SQL changed, then typecheck + lint staged files.
+if echo "$changed" | grep -qE '^api-demo/|^db-demo/schema|^shared/'; then
+  (
+    cd api-demo
+    if echo "$changed" | grep -qE '^db-demo/schema' || \
+       echo "$changed" | grep -E '^api-demo/src/.*\.sql$' | grep -qv '\.typed\.sql$'; then
+      npm run sql:types:ci
+    fi
+    npm run typecheck
+    npx lint-staged
+  )
 fi
-npm run typecheck
-npx lint-staged
+
+# app-demo: only when app-demo files or the shared package it consumes are staged.
+# Verify generated CSS-module types are current when a *.module.css changed, then
+# typecheck + lint staged files.
+if echo "$changed" | grep -qE '^app-demo/|^shared/'; then
+  (
+    cd app-demo
+    if echo "$changed" | grep -qE '^app-demo/src/.*\.module\.css$'; then
+      npm run css:types:ci
+    fi
+    npm run typecheck
+    npx lint-staged
+  )
+fi
