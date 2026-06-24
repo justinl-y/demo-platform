@@ -15,8 +15,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  static-checks:
-    name: Static Site Checks
+  build-checks:
+    name: Lint & Build
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -27,25 +27,26 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Set up Node.js for the lint tooling
+      # Set up Node.js with npm dependency caching
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app-demo/package-lock.json
 
-      # Check JavaScript syntax
-      - name: Check JavaScript syntax
-        run: |
-          shopt -s nullglob
-          for file in *.js; do
-            echo "Checking ${file}"
-            node --check "${file}"
-          done
+      # Install dependencies from the lockfile
+      - name: Install dependencies
+        run: npm ci
 
-      # Lint HTML
-      - name: Lint HTML
-        run: npx --yes htmlhint "*.html"
+      # Verify committed CSS-module type declarations are in sync with the source CSS
+      - name: Verify CSS module types
+        run: npm run css:types:ci
 
-      # Validate CSS
-      - name: Validate CSS
-        run: npx --yes csstree-validator *.css
+      # Lint (neostandard + React rules)
+      - name: Lint
+        run: npm run lint
+
+      # Build — also type-checks via `tsc -b`
+      - name: Build
+        run: npm run build

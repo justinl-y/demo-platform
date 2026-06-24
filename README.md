@@ -8,8 +8,22 @@ The goal of this project is to demonstrate modern **full-stack web development p
 
 ## 🖥️ Frontend Application
 
-*Coming soon!*  
-This section will include a modern frontend application (e.g., **React/Next.js**) integrated with the backend API.  
+A **single-page application** that the browser loads and runs — delivered as fingerprinted static assets over a CDN, ready to integrate with the backend API. It currently presents a staging landing page on the stack below.
+
+### 🏛️ Frontend Features
+
+- ⚛️ React + TypeScript (strict)
+- ⚡ Vite build tooling (SWC)
+- 🎨 CSS Modules with type-checked class names
+- 🔗 Shared types with the API via the `#shared` alias
+- 🤖 GitHub Actions CI/CD
+
+### ☁️ Frontend Hosting (AWS)
+
+- 🪣 S3 static hosting (origin)
+- ⚙️ CloudFront (CDN + SSL)
+
+[Read more here ...](./app-demo/README.md)
 
 ---
 
@@ -92,7 +106,7 @@ flowchart TD
 
 ## 📌 Future Improvements
 
-- 🖥️ Frontend implementation
+- 🔌 Wire the front end to the API
 - 🎨 UI/UX polish and sample data
 - 🏗️ Infrastructure as Code (Terraform/CDK)  
 - 🚢 Migrate to ECS/EKS
@@ -102,7 +116,7 @@ flowchart TD
 ## 🏗️ Monorepo Structure
 
 ```text
-/app-demo # Frontend application (prototype)
+/app-demo # Frontend SPA (React + TypeScript + Vite)
 /api-demo # Backend API service
 /db-demo  # Database schema & init scripts
-/shared   # Shared libraries & utilities (planned)
+/shared   # Shared TypeScript resources

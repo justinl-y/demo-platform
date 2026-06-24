@@ -24,6 +24,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Set up Node.js for the Vite build
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app-demo/package-lock.json
+
+      # Build the production bundle into app-demo/dist
+      - name: Install and build
+        working-directory: ./app-demo
+        run: |
+          npm ci
+          npm run build
+
       # Configure AWS credentials
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -32,18 +47,29 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ vars.AWS_REGION }}
 
-      # Sync static assets to S3 (5 minute browser cache since files are not fingerprinted)
-      - name: Sync site to S3
+      # Upload content-hashed assets (dist/assets) — additive, no --delete. The new
+      # hashes are added alongside the previous build's so the currently-live index.html
+      # keeps resolving until it is replaced below. Safe to cache for a year, immutable.
+      # Superseded assets are pruned at the end, after the cutover + invalidation.
+      - name: Upload hashed assets to S3
         run: |
-          aws s3 sync ./app-demo "s3://${{ vars.APP_DEMO_S3_BUCKET_NAME }}" \
-            --delete \
-            --exclude ".*" \
-            --cache-control "public, max-age=300"
+          aws s3 sync ./app-demo/dist/assets "s3://${{ vars.APP_DEMO_S3_BUCKET_NAME }}/assets" \
+            --cache-control "public, max-age=31536000, immutable"
 
-      # Always serve the latest HTML entry point
+      # Sync remaining static files (favicon, etc.) — unfingerprinted, so use a short
+      # revalidating cache. Excludes assets/ (handled above) and index.html (handled below).
+      - name: Sync root static files to S3
+        run: |
+          aws s3 sync ./app-demo/dist "s3://${{ vars.APP_DEMO_S3_BUCKET_NAME }}" \
+            --delete \
+            --exclude "assets/*" \
+            --exclude "index.html" \
+            --cache-control "public, max-age=300, must-revalidate"
+
+      # Upload the entry point last, never cached, so new bundles are picked up immediately
       - name: Upload index.html with no-cache
         run: |
-          aws s3 cp ./app-demo/index.html "s3://${{ vars.APP_DEMO_S3_BUCKET_NAME }}/index.html" \
+          aws s3 cp ./app-demo/dist/index.html "s3://${{ vars.APP_DEMO_S3_BUCKET_NAME }}/index.html" \
             --cache-control "no-cache"
 
       # Invalidate the CloudFront edge cache
@@ -52,3 +78,12 @@ jobs:
           aws cloudfront create-invalidation \
             --distribution-id "${{ vars.APP_DEMO_CLOUDFRONT_DISTRIBUTION_ID }}" \
             --paths "/*"
+
+      # Prune superseded assets — runs last, once the new index.html is live and the
+      # cache invalidated, so no served HTML still references the hashes being removed.
+      # (If the run is cancelled before this step, old assets simply linger — harmless.)
+      - name: Prune superseded assets from S3
+        run: |
+          aws s3 sync ./app-demo/dist/assets "s3://${{ vars.APP_DEMO_S3_BUCKET_NAME }}/assets" \
+            --delete \
+            --cache-control "public, max-age=31536000, immutable"
