@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'app-demo/**'
+      - 'shared/**'
       - '.github/workflows/pr-ci-app-demo.yml'
     types: [opened, synchronize, reopened, ready_for_review]
 
