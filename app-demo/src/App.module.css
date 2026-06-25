@@ -10,39 +10,48 @@
   inset: 0;
   z-index: 0;
   overflow: hidden;
-  filter: blur(80px);
   opacity: 0.7;
+  /* No `filter: blur()` here on purpose. A filter on this container forces the
+     browser to re-rasterise the whole layer every frame because the blobs
+     inside it move — that was the main source of jank. Instead the softness is
+     baked into each blob as a radial-gradient (see .blob), so the only per-frame
+     work is a compositor transform, which needs no repaint. */
+  contain: layout paint;
 }
 
 .blob {
   position: absolute;
-  width: 520px;
-  height: 520px;
-  border-radius: 50%;
-  mix-blend-mode: screen;
+  /* Slightly larger than the old blurred circles so the gradient's soft falloff
+     covers a comparable footprint. The radial-gradient fades to transparent, so
+     the box reads as a soft glow with no `filter` and no per-frame re-raster —
+     only the compositor transform animates. */
+  width: 640px;
+  height: 640px;
   will-change: transform;
 }
 
 .blobA {
-  background: var(--accent);
-  top: -140px;
-  left: -120px;
+  background: radial-gradient(closest-side, var(--accent), transparent);
+  opacity: 0.85;
+  top: -200px;
+  left: -180px;
   animation: drift 18s ease-in-out infinite;
 }
 
 .blobB {
-  background: var(--accent-2);
-  bottom: -180px;
-  right: -100px;
+  background: radial-gradient(closest-side, var(--accent-2), transparent);
+  opacity: 0.85;
+  bottom: -240px;
+  right: -160px;
   animation: drift 22s ease-in-out infinite reverse;
 }
 
 .blobC {
-  background: var(--accent-3);
-  top: 30%;
-  left: 50%;
-  width: 380px;
-  height: 380px;
+  background: radial-gradient(closest-side, var(--accent-3), transparent);
+  top: 28%;
+  left: 46%;
+  width: 480px;
+  height: 480px;
   animation: drift 26s ease-in-out infinite;
   opacity: 0.6;
 }
@@ -75,11 +84,13 @@
 .card {
   width: min(880px, 100%);
   padding: 56px 56px 48px;
-  background: var(--card);
+  /* A near-opaque dark fill instead of `backdrop-filter`. The old frosted glass
+     re-blurred the moving aurora behind the card every frame (a per-frame GPU
+     cost); a solid translucent fill needs zero per-frame work and still lets the
+     aurora glow bleed subtly at the edges while keeping text contrast. */
+  background: rgba(17, 20, 28, 0.72);
   border: 1px solid var(--border);
   border-radius: 24px;
-  backdrop-filter: blur(20px) saturate(140%);
-  -webkit-backdrop-filter: blur(20px) saturate(140%);
   box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.6),
     inset 0 1px 0 rgba(255, 255, 255, 0.06);
   animation: rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
