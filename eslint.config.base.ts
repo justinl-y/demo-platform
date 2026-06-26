@@ -1,4 +1,5 @@
 import neostandard, { plugins } from 'neostandard';
+import importX from 'eslint-plugin-import-x';
 
 const stylistic = plugins['@stylistic'].configs.customize({
   semi: true,
@@ -34,6 +35,22 @@ export default function baseConfig ({ ignores = [] }: { ignores?: string[] } = {
             multiline: true,
             minProperties: 1,
           },
+        }],
+      },
+    },
+    {
+      // Phantom-dependency guard for the npm-workspaces hoist: flag imports of any
+      // package not declared in the nearest package.json. Without this a workspace
+      // can accidentally import a sibling's hoisted dependency and only fail when
+      // built in isolation. The default (nearest package.json per file) resolves
+      // each workspace — and the self-contained test/container-test package — to
+      // its own manifest. devDependencies:true keeps the focus on truly-undeclared
+      // imports rather than prod/dev separation; relative and `#`-subpath imports
+      // are ignored.
+      plugins: { 'import-x': importX },
+      rules: {
+        'import-x/no-extraneous-dependencies': ['error', {
+          devDependencies: true,
         }],
       },
     },

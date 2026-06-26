@@ -33,6 +33,7 @@
   "devDependencies": {
     "@types/node": "^24.13.2",
     "eslint": "^9.36.0",
+    "eslint-plugin-import-x": "^4.17.0",
     "jiti": "^2.6.1",
     "lint-staged": "^16.4.0",
     "neostandard": "^0.13.0",
