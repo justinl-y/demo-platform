@@ -6,6 +6,8 @@ It demonstrates modern **back-end development practices**, including **REST and 
 
 This project showcases how to build a **scalable and maintainable back-end web service** using **Docker, Node.js, TypeScript, Fastify and PostgreSQL**, with automated workflows and developer-friendly development environments.
 
+> **Setup**: api-demo is one package in an [npm workspaces](../README.md) monorepo. Install dependencies once at the **repository root** (`npm install`) for host tooling such as `lint`, `typecheck`, and `sql:types`. The Dockerized environments below install their own dependencies inside the container, so they don't depend on a host install.
+
 ## 🏛️ Architecture
 
 API-Demo follows **REST principles** and a three-layer **repository architecture** — route handlers, services, and repositories — to separate HTTP concerns, business logic and database access.

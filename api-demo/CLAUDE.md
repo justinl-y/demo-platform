@@ -4,7 +4,7 @@ A RESTful web API serving as the primary data service for the demo platform. Bui
 
 ## Commands
 
-All commands run from `api-demo/`:
+Dependencies are installed once at the repo root (`npm install`) — api-demo is an npm workspace, so there is no per-package install. All commands below run from `api-demo/` (or from the repo root with `-w api-demo`):
 
 | Command | Purpose |
 | --- | --- |

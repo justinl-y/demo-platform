@@ -1,14 +1,12 @@
 {
-  "extends": "@tsconfig/node24/tsconfig.json",
+  // Node 24 base + the workspace's shared strictness/module core
+  // (root tsconfig.base.json). Array order: later wins, so the shared core
+  // layers on top of @tsconfig/node24.
+  "extends": [
+    "@tsconfig/node24/tsconfig.json",
+    "../tsconfig.base.json"
+  ],
   "compilerOptions": {
-    "allowImportingTsExtensions": true,
-    "noImplicitAny": true,
-    "isolatedModules": true,
-    "forceConsistentCasingInFileNames": true,
-    "verbatimModuleSyntax": true,
-    "rewriteRelativeImportExtensions": true,
-    "moduleDetection": "force",
-    "noEmit": true,
     "outDir": "./dist",
     "rootDir": ".",
     "types": [

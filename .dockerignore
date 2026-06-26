@@ -1,0 +1,21 @@
+# api-demo Docker builds use the repo root as their build context (so the root
+# workspaces package.json + package-lock.json are available to `npm ci`). Keep
+# the context small and free of host-built artefacts.
+**/node_modules
+**/dist
+.git
+.github
+.githooks
+.vscode
+.DS_Store
+**/coverage
+**/.vitest
+**/*.log
+**/*.tmp
+**/*.swp
+.env
+.env.*
+**/.env
+**/.env.*
+**/.build.npm-token.env
+**/.build.npm-token.env.*

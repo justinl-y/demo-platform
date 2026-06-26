@@ -63,8 +63,7 @@
     "ci-up": "bash scripts/ci-up.sh",
     "ci-down": "docker compose -p ci -f docker-compose-ci.yml down -v",
     "lint": "eslint --config eslint.config.ts",
-    "lint-fix": "eslint --fix --config eslint.config.ts",
-    "prepare": "command -v git >/dev/null 2>&1 && git config core.hooksPath .githooks || true"
+    "lint-fix": "eslint --fix --config eslint.config.ts"
   },
   "lint-staged": {
     "**/*.js": "eslint --config eslint.config.ts",
@@ -101,14 +100,8 @@
     "@pgtyped/runtime": "^2.4.2",
     "@tsconfig/node24": "^24.0.4",
     "@types/lodash": "^4.17.24",
-    "@types/node": "^25.5.0",
     "@types/pg": "^8.20.0",
-    "eslint": "^9.36.0",
-    "jiti": "^2.6.1",
-    "lint-staged": "^16.4.0",
-    "neostandard": "^0.13.0",
     "tsc-alias": "^1.8.16",
-    "tsx": "^4.21.0",
-    "typescript": "^5.8.3"
+    "tsx": "^4.21.0"
   }
 }

@@ -1,10 +1,12 @@
 # syntax=docker/dockerfile:1.7
 FROM node:24-alpine
 
-ENV SCRIPTS_HOME="/srv"
-ENV API_HOME="/srv/api"
+# Build context is the repository root so the root workspaces package.json +
+# package-lock.json are available to `npm ci`.
+ENV WORKSPACE_ROOT="/srv"
+ENV API_HOME="/srv/api-demo"
 
-WORKDIR ${API_HOME}
+WORKDIR ${WORKSPACE_ROOT}
 
 RUN cat <<'EOF' > /usr/local/bin/npm-ci-with-token
 #!/bin/sh
@@ -28,19 +30,28 @@ EOF
 
 RUN chmod +x /usr/local/bin/npm-ci-with-token
 
-COPY scripts/run-api.sh ${SCRIPTS_HOME}/run.sh
-RUN chmod +x ${SCRIPTS_HOME}/run.sh
+COPY api-demo/scripts/run-api.sh ${WORKSPACE_ROOT}/run.sh
+RUN chmod +x ${WORKSPACE_ROOT}/run.sh
 
 RUN --mount=type=cache,target=/root/.npm npm i pm2@6.0.14 -g
 
-COPY package*.json ${API_HOME}/
-COPY tsconfig.json ${API_HOME}/
+# Root manifests + the api-demo workspace manifest. A scoped npm ci only needs
+# these; sibling workspaces are omitted so their churn never busts the cache.
+COPY package.json package-lock.json ${WORKSPACE_ROOT}/
+COPY api-demo/package.json ${API_HOME}/package.json
+# Root tsconfig.base.json — api-demo/tsconfig.json extends ../tsconfig.base.json.
+COPY tsconfig.base.json ${WORKSPACE_ROOT}/tsconfig.base.json
+COPY api-demo/tsconfig.json ${API_HOME}/tsconfig.json
 
 # Keep local image builds fast by installing dependencies from lockfile only.
-RUN --mount=type=secret,id=npm_token --mount=type=cache,target=/root/.npm npm-ci-with-token "--include=dev"
+RUN --mount=type=secret,id=npm_token --mount=type=cache,target=/root/.npm \
+	npm-ci-with-token "--workspace=api-demo" "--include-workspace-root"
 
-COPY src ${API_HOME}/src
-COPY pm2 ${API_HOME}/pm2
+COPY api-demo/src ${API_HOME}/src
+COPY api-demo/pm2 ${API_HOME}/pm2
+
+# Run the app from the workspace directory so pm2 / tsx resolve src and config.
+WORKDIR ${API_HOME}
 
 # check for ts errors as using node native ts support
 RUN npm run typecheck

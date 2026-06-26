@@ -117,6 +117,8 @@ flowchart TD
 
 ## 🏗️ Monorepo Structure
 
+Managed as an [npm workspaces](https://docs.npmjs.com/cli/using-npm/workspaces) monorepo — run `npm install` once at the repository root to install every package against a single root lockfile (there is no per-package install). Run a package's scripts from its directory or from the root with `-w <package>`.
+
 ```text
 /app-demo # Frontend SPA (React + TypeScript + Vite)
 /api-demo # Backend API service

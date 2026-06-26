@@ -31,14 +31,14 @@ jobs:
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: app-demo/package-lock.json
+          cache-dependency-path: package-lock.json
 
-      # Build the production bundle into app-demo/dist
+      # Build the production bundle into app-demo/dist. Install at the workspaces
+      # root (single lockfile); build the app-demo workspace only.
       - name: Install and build
-        working-directory: ./app-demo
         run: |
           npm ci
-          npm run build
+          npm run build --workspace=app-demo
 
       # Configure AWS credentials
       - name: Configure AWS credentials
