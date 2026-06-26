@@ -1,0 +1,9 @@
+{
+  "name": "shared",
+  "version": "1.0.0",
+  "description": "Shared TypeScript resources consumed across the demo platform packages",
+  "private": true,
+  "license": "ISC",
+  "author": "Justin Levett-Yeats",
+  "type": "module"
+}

@@ -1,34 +1,5 @@
-import neostandard, { plugins } from 'neostandard';
+import baseConfig from '../eslint.config.base.ts';
 
-const stylistic = plugins['@stylistic'].configs.customize({
-  semi: true,
-  arrowParens: true,
-});
-
-// neostandard options here: https://github.com/neostandard/neostandard?tab=readme-ov-file
-// @stylistic customizable options here: https://github.com/eslint-stylistic/eslint-stylistic/blob/main/packages/eslint-plugin/configs/customize.ts
-export default [
-  ...neostandard({
-    ignores: [
-      '**/node_modules/**',
-      '**/dist/**',
-      '**/*.typed.queries.ts',
-    ],
-    ts: true,
-  }),
-  {
-    ...stylistic,
-    rules: {
-      ...stylistic.rules,
-      'no-void': ['error', { allowAsStatement: true }],
-      '@stylistic/no-extra-semi': 'error',
-      '@stylistic/object-property-newline': ['error', { allowAllPropertiesOnSameLine: false }],
-      '@stylistic/object-curly-newline': ['error', {
-        ObjectPattern: {
-          multiline: true,
-          minProperties: 1,
-        },
-      }],
-    },
-  },
-];
+// Shared neostandard + @stylistic base (see ../eslint.config.base.ts). The only
+// package-specific addition is ignoring pgtyped-generated query files.
+export default baseConfig({ ignores: ['**/*.typed.queries.ts'] });

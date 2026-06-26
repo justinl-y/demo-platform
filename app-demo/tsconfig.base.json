@@ -1,19 +1,9 @@
 {
+  /* Strictness/module core is shared via the root tsconfig.base.json. */
+  "extends": "../tsconfig.base.json",
   "compilerOptions": {
     "composite": true,
     "target": "es2023",
-
-    /* Strictness — aligned with api-demo */
-    "strict": true,
-    "noImplicitAny": true,
-    "isolatedModules": true,
-    "forceConsistentCasingInFileNames": true,
-    "verbatimModuleSyntax": true,
-    "moduleDetection": "force",
-    "allowImportingTsExtensions": true,
-    "rewriteRelativeImportExtensions": true,
-    "noEmit": true,
-    "skipLibCheck": true,
 
     /* Additional front-end strictness (kept from the Vite template) */
     "erasableSyntaxOnly": true,

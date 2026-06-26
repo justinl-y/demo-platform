@@ -18,33 +18,52 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./api-demo
     timeout-minutes: 30
     steps:
       # Checkout the repository
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # Generate deployment version label
       - name: Generate deployment version label
         id: version
         run: echo "label=$(date +'%Y%m%d%H%M%S')-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
 
-      # Zip source bundle
-      - name: Zip source bundle
+      # Assemble the EB source bundle. Because api-demo is now an npm workspace,
+      # its image is built with the repository root as the Docker build context
+      # (so the root package.json + package-lock.json are available to `npm ci`).
+      # EB reads docker-compose.yml + .ebextensions + .platform from the bundle
+      # root, so the bundle is rooted at the repo (not api-demo) and preserves the
+      # workspace directory layout the Dockerfile COPYs from.
+      - name: Assemble EB source bundle
         run: |
-          zip -r deploy.zip . \
-            --exclude ".git*" \
-            --exclude "test/*" \
-            --exclude "node_modules/*" \
-            --exclude ".github/*"
+          mkdir -p deploy/api-demo
+          # Platform config + the compose file EB builds from, at the bundle root
+          cp api-demo/docker-compose.yml deploy/docker-compose.yml
+          cp -r api-demo/.ebextensions deploy/.ebextensions
+          cp -r api-demo/.platform deploy/.platform
+          # Root workspaces manifests (single, unified lockfile). A scoped
+          # `npm ci --workspace=api-demo` only needs these + api-demo's package.json,
+          # so sibling workspace manifests are intentionally not bundled.
+          cp package.json package-lock.json deploy/
+          # Root tsconfig.base.json — api-demo/tsconfig.json extends ../tsconfig.base.json.
+          cp tsconfig.base.json deploy/
+          # api-demo build inputs (Dockerfile, manifests, sources, proxy, pm2)
+          cp api-demo/package.json api-demo/tsconfig.json api-demo/tsconfig.build.json deploy/api-demo/
+          cp api-demo/Dockerfile deploy/api-demo/
+          cp -r api-demo/src deploy/api-demo/src
+          cp -r api-demo/pm2 deploy/api-demo/pm2
+          cp -r api-demo/proxy deploy/api-demo/proxy
+
+      # Zip the assembled bundle (bundle root = deploy/)
+      - name: Zip source bundle
+        working-directory: ./deploy
+        run: zip -r ../api-demo/deploy.zip . -x ".git*"
 
       # Inspect ZIP contents (optional)
       - name: Inspect ZIP contents
         run: |
-          if unzip -l deploy.zip | grep -Eq '\.ebextensions/|\.platform/'; then
+          if unzip -l api-demo/deploy.zip | grep -Eq '\.ebextensions/|\.platform/'; then
             echo "EB config detected"
           else
             echo "Warning: No EB config found; ensure your platform settings are correct"
@@ -52,7 +71,7 @@ jobs:
 
       # Verify ZIP exists
       - name: Verify ZIP location
-        run: test -f deploy.zip
+        run: test -f api-demo/deploy.zip
 
       # Deploy to Elastic Beanstalk
       - name: Deploy to Elastic Beanstalk

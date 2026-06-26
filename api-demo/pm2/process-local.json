@@ -3,7 +3,7 @@
     {
       "name": "api-demo",
       "script": "src/index.ts",
-      "interpreter": "node_modules/.bin/tsx",
+      "interpreter": "/srv/node_modules/.bin/tsx",
       "error_file": "/dev/null",
       "out_file": "/dev/null",
       "exec_mode": "fork",

@@ -1,7 +1,11 @@
+# Elastic Beanstalk Docker Compose platform file. The deploy workflow stages
+# this at the bundle root (alongside the root workspaces package.json +
+# package-lock.json), so build contexts are repo-root-relative, not api-demo/.
 services:
   api:
     build:
       context: .
+      dockerfile: api-demo/Dockerfile
       secrets:
         - npm_token
     restart: on-failure
@@ -25,7 +29,7 @@ services:
     # 1 - to route traffic through a nginx proxy server...
     # 2 - format logs ...
     # 3 - route traffic via upstream.conf to exposed api port 8000 for termination
-    build: proxy
+    build: api-demo/proxy
     links:
       - api
     ports:

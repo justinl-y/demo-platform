@@ -1,11 +1,15 @@
 # syntax=docker/dockerfile:1.7
 FROM node:24-alpine
 
+# Build context is the repository root so the root workspaces package.json +
+# package-lock.json are available to `npm ci`.
+
 # with mounted volumes file permissions can only be changed on the host machine, not within Docker,
 # thus executable scripts requiring explicit permissions via Docker must be in a separate, non-mounted folder
-ENV SCRIPTS_HOME="/srv"
+ENV WORKSPACE_ROOT="/srv"
+ENV API_HOME="/srv/api-demo"
 
-WORKDIR ${SCRIPTS_HOME}
+WORKDIR ${WORKSPACE_ROOT}
 
 RUN apk add --no-cache bash
 
@@ -31,23 +35,28 @@ EOF
 
 RUN chmod +x /usr/local/bin/npm-ci-with-token
 
-COPY scripts/run-api.sh ${SCRIPTS_HOME}/run.sh
-COPY test/wait-db-container.sh ${SCRIPTS_HOME}
-RUN chmod +x ${SCRIPTS_HOME}/run.sh ${SCRIPTS_HOME}/wait-db-container.sh
-
-# the mounted volume will be at /srv/api
-ENV API_HOME="/srv/api"
-
-WORKDIR ${API_HOME}
+COPY api-demo/scripts/run-api.sh ${WORKSPACE_ROOT}/run.sh
+COPY api-demo/test/wait-db-container.sh ${WORKSPACE_ROOT}
+RUN chmod +x ${WORKSPACE_ROOT}/run.sh ${WORKSPACE_ROOT}/wait-db-container.sh
 
 RUN --mount=type=cache,target=/root/.npm npm i pm2@6.0.14 -g
 
-COPY package*.json ${API_HOME}/
-COPY tsconfig.json ${API_HOME}/
-COPY src ${API_HOME}/src
-COPY pm2 ${API_HOME}/pm2
+# Root manifests + the api-demo workspace manifest. A scoped npm ci only needs
+# these; sibling workspaces are omitted so their churn never busts the cache.
+COPY package.json package-lock.json ${WORKSPACE_ROOT}/
+COPY api-demo/package.json ${API_HOME}/package.json
+# Root tsconfig.base.json — api-demo/tsconfig.json extends ../tsconfig.base.json.
+COPY tsconfig.base.json ${WORKSPACE_ROOT}/tsconfig.base.json
+COPY api-demo/tsconfig.json ${API_HOME}/tsconfig.json
+COPY api-demo/src ${API_HOME}/src
+COPY api-demo/pm2 ${API_HOME}/pm2
 
-RUN --mount=type=secret,id=npm_token --mount=type=cache,target=/root/.npm npm-ci-with-token "--include=dev"
+# Install the api-demo workspace (dev deps included) from the unified lockfile.
+RUN --mount=type=secret,id=npm_token --mount=type=cache,target=/root/.npm \
+	npm-ci-with-token "--workspace=api-demo" "--include-workspace-root"
+
+# Run the app from the workspace directory so pm2 / tsx resolve src and config.
+WORKDIR ${API_HOME}
 
 # check for ts errors as using node native ts support
 RUN npm run typecheck

@@ -24,8 +24,8 @@ services:
       retries: 30
   api:
     build:
-      context: .
-      dockerfile: Dockerfile.ci
+      context: ..
+      dockerfile: api-demo/Dockerfile.ci
       secrets:
         - npm_token
     command: /srv/run.sh
@@ -43,10 +43,10 @@ services:
       - '6663:8000'
     tty: true
     volumes:
-      - ./src:/srv/api/src
-      - ./pm2:/srv/api/pm2
-      - ./package.json:/srv/api/package.json
-      - ./tsconfig.json:/srv/api/tsconfig.json
+      - ./src:/srv/api-demo/src
+      - ./pm2:/srv/api-demo/pm2
+      - ./package.json:/srv/api-demo/package.json
+      - ./tsconfig.json:/srv/api-demo/tsconfig.json
       - coverage:/coverage
     healthcheck:
       test: ["CMD-SHELL", "node -e \"require('net').createConnection({host:'127.0.0.1', port:8000}).on('connect',()=>process.exit(0)).on('error',()=>process.exit(1));\""]
@@ -74,8 +74,8 @@ services:
       - ./test/container-test:/usr/app
       # Required by vitest resolve.alias (vitest.config.ts resolves #lib/*, #utils/*, etc. from this path).
       - ./src:/src:ro
-      # Required by c8 coverage report: paths in V8 coverage JSON use /srv/api/src (API container path).
-      - ./src:/srv/api/src:ro
+      # Required by c8 coverage report: paths in V8 coverage JSON use /srv/api-demo/src (API container path).
+      - ./src:/srv/api-demo/src:ro
       - coverage:/coverage
 
 volumes:

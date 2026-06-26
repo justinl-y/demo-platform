@@ -72,16 +72,18 @@ app-demo/
 
 **Requirements**: Node `>=24.8.0`, npm `>=11.6.0` (see `engines` in `package.json`).
 
+This package is an [npm workspace](../README.md) — run `npm install` **once at the repo root** to install every workspace's dependencies against the single root lockfile (there is no per-package `npm install`).
+
 ```bash
-npm install
-npm run dev
+npm install            # run at the repo root, installs all workspaces
+npm run dev            # from app-demo/, or `npm run dev -w app-demo` from the root
 ```
 
 The dev server starts at <http://localhost:5173> with hot module replacement. The port is fixed (`strictPort`) — startup fails loudly if 5173 is already in use rather than silently moving to another port.
 
 ### Commands
 
-All commands run from `app-demo/`:
+All commands run from `app-demo/` (or from the repo root with `-w app-demo`):
 
 | Command | Purpose |
 | --- | --- |
@@ -150,7 +152,7 @@ The same `lint` + `build` gates run in CI on every pull request.
 
 ## ☁️ Deployment
 
-On push to `master` touching `app-demo/**`, GitHub Actions builds the bundle **on the runner** (`npm ci && npm run build`) and publishes it:
+On push to `master` touching `app-demo/**`, GitHub Actions builds the bundle **on the runner** — `npm ci` at the repo root (single workspaces lockfile) then `npm run build -w app-demo` — and publishes it:
 
 - **Fingerprinted assets** (`assets/*.[hash].js|css`) are synced to S3 with a long, immutable cache (`max-age=31536000, immutable`).
 - **`index.html`** is uploaded with `no-cache`, so new deployments are picked up immediately while hashed assets stay cached.

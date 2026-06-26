@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  // Shared strictness/module core for the workspace packages. Each package's
+  // tsconfig extends this and adds its environment-specific options (target,
+  // lib, module resolution, jsx, paths). Kept free of target/lib/module so it
+  // can be layered onto both the browser (app-demo) and Node (api-demo) tiers.
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitAny": true,
+    "isolatedModules": true,
+    "forceConsistentCasingInFileNames": true,
+    "verbatimModuleSyntax": true,
+    "rewriteRelativeImportExtensions": true,
+    "moduleDetection": "force",
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "skipLibCheck": true
+  }
+}

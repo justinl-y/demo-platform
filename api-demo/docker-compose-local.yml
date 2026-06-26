@@ -2,8 +2,8 @@
 services:
   api:
     build:
-      context: .
-      dockerfile: Dockerfile.local
+      context: ..
+      dockerfile: api-demo/Dockerfile.local
       secrets:
         - npm_token
     environment:
@@ -17,10 +17,10 @@ services:
       - '6662:8000'
     tty: true
     volumes:
-      - ./src:/srv/api/src
-      - ./pm2:/srv/api/pm2
-      - ./package.json:/srv/api/package.json
-      - ./tsconfig.json:/srv/api/tsconfig.json
+      - ./src:/srv/api-demo/src
+      - ./pm2:/srv/api-demo/pm2
+      - ./package.json:/srv/api-demo/package.json
+      - ./tsconfig.json:/srv/api-demo/tsconfig.json
 
 secrets:
   npm_token:

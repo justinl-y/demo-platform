@@ -1,15 +1,24 @@
 # syntax=docker/dockerfile:1.7
 
+# Build context is the repository root (see docker-compose / CI), so the root
+# workspaces package.json + package-lock.json are available and `npm ci` can
+# install the api-demo workspace from the single, unified lockfile.
+
 # ── Base ─────────────────────────────────────────────────────────────────────
-# Shared foundation for the builder and runtime-deps stages. Sets the working
-# directory and installs a helper script that performs `npm ci`, optionally
-# injecting an npm auth token from a BuildKit secret so private registry
-# packages can be pulled without leaking the token into any image layer.
+# Shared foundation for the builder and runtime-deps stages. Sets the workspace
+# root as the working directory and installs a helper script that performs
+# `npm ci`, optionally injecting an npm auth token from a BuildKit secret so
+# private registry packages can be pulled without leaking the token into any
+# image layer.
 FROM node:24-alpine AS base
 
-ENV API_HOME="/srv/api"
+# Workspaces install root; the api-demo workspace lives at ${API_HOME}. npm
+# hoists dependencies to ${WORKSPACE_ROOT}/node_modules, which Node resolves by
+# walking up from ${API_HOME} at runtime.
+ENV WORKSPACE_ROOT="/srv"
+ENV API_HOME="/srv/api-demo"
 
-WORKDIR ${API_HOME}
+WORKDIR ${WORKSPACE_ROOT}
 
 # Write the npm-ci-with-token helper to a shared bin location so it can be
 # reused by both the builder and runtime-deps stages. The script:
@@ -39,26 +48,34 @@ EOF
 
 RUN chmod +x /usr/local/bin/npm-ci-with-token
 
-# Copy manifests early so that dependency install layers are cached
-# independently from source changes.
-COPY package*.json ${API_HOME}/
+# Copy the root manifests plus the api-demo workspace manifest early so the
+# dependency install layer is cached independently from source changes. A scoped
+# `npm ci --workspace=api-demo` only needs the root package.json + lockfile and
+# the target workspace's package.json; sibling workspaces (app-demo, etc.) are
+# deliberately omitted so their churn never busts this image's cache.
+COPY package.json package-lock.json ${WORKSPACE_ROOT}/
+COPY api-demo/package.json ${API_HOME}/package.json
 
 # ── Builder ───────────────────────────────────────────────────────────────────
-# Installs all dependencies (including devDependencies) and compiles TypeScript
-# to dist/ via tsc + tsc-alias. Fails the build on type errors.
+# Installs the api-demo workspace's dependencies (including devDependencies) and
+# compiles TypeScript to dist/. Fails the build on type errors.
 FROM base AS builder
 
-# Install all deps (dev included). The npm cache is mounted so it persists
-# across builds without being committed to the image.
-RUN --mount=type=secret,id=npm_token --mount=type=cache,target=/root/.npm npm-ci-with-token
+# Install api-demo deps (dev included). Scoped to the workspace so sibling
+# workspaces (app-demo, etc.) are not installed into the image. The npm cache is
+# mounted so it persists across builds without being committed to the image.
+RUN --mount=type=secret,id=npm_token --mount=type=cache,target=/root/.npm \
+	npm-ci-with-token "--workspace=api-demo" "--include-workspace-root"
 
-COPY tsconfig.json ${API_HOME}/
-COPY tsconfig.build.json ${API_HOME}/
-COPY src ${API_HOME}/src
+# Root tsconfig.base.json — api-demo/tsconfig.json extends ../tsconfig.base.json.
+COPY tsconfig.base.json ${WORKSPACE_ROOT}/tsconfig.base.json
+COPY api-demo/tsconfig.json ${API_HOME}/tsconfig.json
+COPY api-demo/tsconfig.build.json ${API_HOME}/tsconfig.build.json
+COPY api-demo/src ${API_HOME}/src
 
-# Compile TypeScript to dist/ and rewrite path aliases to relative imports.
-# Fails the build on type errors.
-RUN npm run build
+# Compile TypeScript to dist/ and copy SQL files. Subpath imports (#utils, …)
+# are resolved at runtime via the package.json "imports" map. Fails on type errors.
+RUN npm run build --workspace=api-demo
 
 # ── Runtime deps ──────────────────────────────────────────────────────────────
 # Installs only production dependencies (--omit=dev) to keep the final image
@@ -66,16 +83,18 @@ RUN npm run build
 # copied across.
 FROM base AS runtime-deps
 
-RUN --mount=type=secret,id=npm_token --mount=type=cache,target=/root/.npm npm-ci-with-token "--omit=dev"
+RUN --mount=type=secret,id=npm_token --mount=type=cache,target=/root/.npm \
+	npm-ci-with-token "--workspace=api-demo" "--include-workspace-root" "--omit=dev"
 
 # ── Runtime ───────────────────────────────────────────────────────────────────
 # Final image. Assembles only the artefacts needed to run the API:
-#   - production node_modules  (from runtime-deps)
+#   - production node_modules  (from runtime-deps, hoisted at ${WORKSPACE_ROOT})
 #   - compiled JavaScript      (from builder)
 #   - pm2 process config       (from build context)
 FROM node:24-alpine AS runtime
 
-ENV API_HOME="/srv/api"
+ENV WORKSPACE_ROOT="/srv"
+ENV API_HOME="/srv/api-demo"
 
 WORKDIR ${API_HOME}
 
@@ -83,13 +102,16 @@ WORKDIR ${API_HOME}
 RUN --mount=type=cache,target=/root/.npm npm i -g pm2@6.0.14
 
 # Copy only what is needed at runtime — keeps the image free of dev tooling.
-COPY --from=runtime-deps ${API_HOME}/package*.json ${API_HOME}/
-COPY --from=runtime-deps ${API_HOME}/node_modules ${API_HOME}/node_modules
+# The hoisted node_modules + root manifest, then the api-demo workspace (its
+# package.json and any non-hoisted nested node_modules), then the compiled code.
+COPY --from=runtime-deps ${WORKSPACE_ROOT}/node_modules ${WORKSPACE_ROOT}/node_modules
+COPY --from=runtime-deps ${WORKSPACE_ROOT}/package.json ${WORKSPACE_ROOT}/package.json
+COPY --from=runtime-deps ${API_HOME} ${API_HOME}
 COPY --from=builder ${API_HOME}/dist ${API_HOME}/dist
-COPY pm2 ${API_HOME}/pm2
+COPY api-demo/pm2 ${API_HOME}/pm2
 
 # Drop root privileges before the process starts.
-RUN chown -R node:node ${API_HOME}
+RUN chown -R node:node ${WORKSPACE_ROOT}
 USER node
 
 EXPOSE 8000
