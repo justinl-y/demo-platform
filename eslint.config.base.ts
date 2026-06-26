@@ -51,6 +51,10 @@ export default function baseConfig ({ ignores = [] }: { ignores?: string[] } = {
       rules: {
         'import-x/no-extraneous-dependencies': ['error', {
           devDependencies: true,
+          // Also check `import type` — type-only imports are skipped by default,
+          // which is how an undeclared `import type { … } from 'ajv'` slipped
+          // through and only failed under the container's scoped install.
+          includeTypes: true,
         }],
       },
     },

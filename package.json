@@ -38,5 +38,9 @@
     "lint-staged": "^16.4.0",
     "neostandard": "^0.13.0",
     "typescript": "^5.8.3"
+  },
+  "comment:dependencies": "ajv is declared here only to control workspace hoisting: it forces a single ajv@8 into the top-level node_modules so the api-demo runtime stack (fastify, ajv-formats, ajv-keywords) all share one module instance. Without it, eslint's transitive ajv@6 takes the top slot and ajv@8 gets duplicated, corrupting ajv-keywords' generated validators. eslint keeps its own nested ajv@6.",
+  "dependencies": {
+    "ajv": "^8.17.1"
   }
 }
