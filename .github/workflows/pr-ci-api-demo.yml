@@ -36,7 +36,7 @@ jobs:
     steps:
       # Checkout the code
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # Detect whether api-demo, db-demo or shared changed in this PR
       - name: Detect relevant changes
@@ -57,7 +57,7 @@ jobs:
       # Set up Docker Buildx for caching
       - name: Set up Docker Buildx
         if: steps.changes.outputs.relevant == 'true'
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       # Show Docker versions for debugging
       - name: Show Docker versions
