@@ -278,17 +278,17 @@ describe(`${fileNumber} - Authorization`, () => {
 
         test('Response body has correct shape', () => {
           expect(rep.body).toHaveProperty('data');
-          expect(rep.body).toHaveProperty('count');
           expect(rep.body).toHaveProperty('pagination');
           expect(rep.body.data).toBeTypeOf('object');
-          expect(Array.isArray(rep.body.data)).toBe(false);
-          expect(rep.body.count).toBeTypeOf('number');
+          expect(Array.isArray(rep.body.data)).toBe(true);
+          expect(rep.body.pagination.count_page).toBeTypeOf('number');
+          expect(rep.body.pagination.count_total).toBeTypeOf('number');
           expect(rep.body.pagination).toHaveProperty('page');
           expect(rep.body.pagination).toHaveProperty('pages');
         });
 
         test('Response entries have correct shape', () => {
-          const permission = rep.body.data[seededPermission.permission_id];
+          const permission = rep.body.data.find((p: { permission_id: string }) => p.permission_id === seededPermission.permission_id);
 
           expect(permission).toBeDefined();
           expect(permission).toHaveProperty('name');
@@ -336,38 +336,41 @@ describe(`${fileNumber} - Authorization`, () => {
           const res = await authAPISuper.get(`/permissions?search=${token}`);
 
           expect(res.statusCode).toBe(200);
-          expect(Object.keys(res.body.data).sort()).toEqual([permLow.permission_id, permHigh.permission_id].sort());
-          expect(res.body.count).toBe(2);
+          expect(res.body.data.map((p: { permission_id: string }) => p.permission_id).sort()).toEqual([permLow.permission_id, permHigh.permission_id].sort());
+          expect(res.body.pagination.count_page).toBe(2);
+          expect(res.body.pagination.count_total).toBe(2);
         });
 
         test('"search" by permission_id returns that single permission', async () => {
           const res = await authAPISuper.get(`/permissions?search=${permLow.permission_id}`);
 
           expect(res.statusCode).toBe(200);
-          expect(Object.keys(res.body.data)).toEqual([permLow.permission_id]);
-          expect(res.body.count).toBe(1);
+          expect(res.body.data.map((p: { permission_id: string }) => p.permission_id)).toEqual([permLow.permission_id]);
+          expect(res.body.pagination.count_page).toBe(1);
+          expect(res.body.pagination.count_total).toBe(1);
         });
 
         test('"search" with no match returns empty data and count 0', async () => {
           const res = await authAPISuper.get('/permissions?search=no-such-permission-zzzzzzzz');
 
           expect(res.statusCode).toBe(200);
-          expect(res.body.data).toEqual({});
-          expect(res.body.count).toBe(0);
+          expect(res.body.data).toEqual([]);
+          expect(res.body.pagination.count_page).toBe(0);
+          expect(res.body.pagination.count_total).toBe(0);
         });
 
         test('"sort=name&order=ASC" returns matched permissions ascending by name', async () => {
           const res = await authAPISuper.get(`/permissions?search=${token}&sort=name&order=ASC`);
 
           expect(res.statusCode).toBe(200);
-          expect(Object.keys(res.body.data)).toEqual([permLow.permission_id, permHigh.permission_id]);
+          expect(res.body.data.map((p: { permission_id: string }) => p.permission_id)).toEqual([permLow.permission_id, permHigh.permission_id]);
         });
 
         test('"sort=name&order=DESC" returns matched permissions descending by name', async () => {
           const res = await authAPISuper.get(`/permissions?search=${token}&sort=name&order=DESC`);
 
           expect(res.statusCode).toBe(200);
-          expect(Object.keys(res.body.data)).toEqual([permHigh.permission_id, permLow.permission_id]);
+          expect(res.body.data.map((p: { permission_id: string }) => p.permission_id)).toEqual([permHigh.permission_id, permLow.permission_id]);
         });
       });
     });
@@ -778,17 +781,17 @@ describe(`${fileNumber} - Authorization`, () => {
 
         test('Response body has correct shape', () => {
           expect(rep.body).toHaveProperty('data');
-          expect(rep.body).toHaveProperty('count');
           expect(rep.body).toHaveProperty('pagination');
           expect(rep.body.data).toBeTypeOf('object');
-          expect(Array.isArray(rep.body.data)).toBe(false);
-          expect(rep.body.count).toBeTypeOf('number');
+          expect(Array.isArray(rep.body.data)).toBe(true);
+          expect(rep.body.pagination.count_page).toBeTypeOf('number');
+          expect(rep.body.pagination.count_total).toBeTypeOf('number');
           expect(rep.body.pagination).toHaveProperty('page');
           expect(rep.body.pagination).toHaveProperty('pages');
         });
 
         test('Response entries have correct shape', () => {
-          const role = rep.body.data[seededRole.role_id];
+          const role = rep.body.data.find((r: { role_id: string }) => r.role_id === seededRole.role_id);
 
           expect(role).toBeDefined();
           expect(role).toHaveProperty('name');
@@ -836,38 +839,41 @@ describe(`${fileNumber} - Authorization`, () => {
           const res = await authAPISuper.get(`/roles?search=${token}`);
 
           expect(res.statusCode).toBe(200);
-          expect(Object.keys(res.body.data).sort()).toEqual([roleLow.role_id, roleHigh.role_id].sort());
-          expect(res.body.count).toBe(2);
+          expect(res.body.data.map((r: { role_id: string }) => r.role_id).sort()).toEqual([roleLow.role_id, roleHigh.role_id].sort());
+          expect(res.body.pagination.count_page).toBe(2);
+          expect(res.body.pagination.count_total).toBe(2);
         });
 
         test('"search" by role_id returns that single role', async () => {
           const res = await authAPISuper.get(`/roles?search=${roleLow.role_id}`);
 
           expect(res.statusCode).toBe(200);
-          expect(Object.keys(res.body.data)).toEqual([roleLow.role_id]);
-          expect(res.body.count).toBe(1);
+          expect(res.body.data.map((r: { role_id: string }) => r.role_id)).toEqual([roleLow.role_id]);
+          expect(res.body.pagination.count_page).toBe(1);
+          expect(res.body.pagination.count_total).toBe(1);
         });
 
         test('"search" with no match returns empty data and count 0', async () => {
           const res = await authAPISuper.get('/roles?search=no-such-role-zzzzzzzz');
 
           expect(res.statusCode).toBe(200);
-          expect(res.body.data).toEqual({});
-          expect(res.body.count).toBe(0);
+          expect(res.body.data).toEqual([]);
+          expect(res.body.pagination.count_page).toBe(0);
+          expect(res.body.pagination.count_total).toBe(0);
         });
 
         test('"sort=name&order=ASC" returns matched roles ascending by name', async () => {
           const res = await authAPISuper.get(`/roles?search=${token}&sort=name&order=ASC`);
 
           expect(res.statusCode).toBe(200);
-          expect(Object.keys(res.body.data)).toEqual([roleLow.role_id, roleHigh.role_id]);
+          expect(res.body.data.map((r: { role_id: string }) => r.role_id)).toEqual([roleLow.role_id, roleHigh.role_id]);
         });
 
         test('"sort=name&order=DESC" returns matched roles descending by name', async () => {
           const res = await authAPISuper.get(`/roles?search=${token}&sort=name&order=DESC`);
 
           expect(res.statusCode).toBe(200);
-          expect(Object.keys(res.body.data)).toEqual([roleHigh.role_id, roleLow.role_id]);
+          expect(res.body.data.map((r: { role_id: string }) => r.role_id)).toEqual([roleHigh.role_id, roleLow.role_id]);
         });
       });
     });
@@ -1448,19 +1454,19 @@ describe(`${fileNumber} - Authorization`, () => {
 
         test('Response body has correct shape', () => {
           expect(rep.body).toHaveProperty('data');
-          expect(rep.body).toHaveProperty('count');
           expect(rep.body).toHaveProperty('pagination');
           expect(rep.body.data).toBeTypeOf('object');
-          expect(Array.isArray(rep.body.data)).toBe(false);
+          expect(Array.isArray(rep.body.data)).toBe(true);
         });
 
         test('Filtering by "role_id" returns just that role', () => {
-          expect(rep.body.count).toBe(1);
-          expect(Object.keys(rep.body.data)).toEqual([role.role_id]);
+          expect(rep.body.pagination.count_page).toBe(1);
+          expect(rep.body.pagination.count_total).toBe(1);
+          expect(rep.body.data.map((r: { role_id: string }) => r.role_id)).toEqual([role.role_id]);
         });
 
         test('The role entry carries role_id and role_name', () => {
-          const entry = rep.body.data[role.role_id];
+          const entry = rep.body.data.find((r: { role_id: string }) => r.role_id === role.role_id);
 
           expect(entry.role_id).toBe(role.role_id);
           expect(entry.role_name).toBe(role.name);
@@ -1469,7 +1475,7 @@ describe(`${fileNumber} - Authorization`, () => {
         test('The role entry nests each assigned permission by id with permission_id and permission_name', () => {
           const {
             permissions,
-          } = rep.body.data[role.role_id];
+          } = rep.body.data.find((r: { role_id: string }) => r.role_id === role.role_id);
 
           expect(Object.keys(permissions).sort()).toEqual(assignedPermissions.map((permission) => permission.permission_id).sort());
 
@@ -1488,8 +1494,9 @@ describe(`${fileNumber} - Authorization`, () => {
           const res = await authAPISuper.get(`/roles/permissions?role_id=${emptyRole.role_id}`);
 
           expect(res.statusCode).toBe(200);
-          expect(res.body.count).toBe(1);
-          expect(res.body.data[emptyRole.role_id].permissions).toEqual({});
+          expect(res.body.pagination.count_page).toBe(1);
+          expect(res.body.pagination.count_total).toBe(1);
+          expect(res.body.data.find((r: { role_id: string }) => r.role_id === emptyRole.role_id).permissions).toEqual({});
         });
 
         test('Assigned permissions are ordered by permission name ascending', async () => {
@@ -1507,7 +1514,7 @@ describe(`${fileNumber} - Authorization`, () => {
           const res = await authAPISuper.get(`/roles/permissions?role_id=${orderingRole.role_id}`);
 
           expect(res.statusCode).toBe(200);
-          expect(Object.keys(res.body.data[orderingRole.role_id].permissions)).toEqual([permLow.permission_id, permHigh.permission_id]);
+          expect(Object.keys(res.body.data.find((r: { role_id: string }) => r.role_id === orderingRole.role_id).permissions)).toEqual([permLow.permission_id, permHigh.permission_id]);
         });
 
         test('Omitting "role_id" returns all roles', async () => {
@@ -1515,7 +1522,7 @@ describe(`${fileNumber} - Authorization`, () => {
 
           expect(res.statusCode).toBe(200);
           expect(res.body.data).toBeTypeOf('object');
-          expect(res.body.count).toBeGreaterThan(0);
+          expect(res.body.pagination.count_total).toBeGreaterThan(0);
         });
       });
     });

@@ -74,14 +74,14 @@ const response = {
     type: 'object',
     properties: {
       data: {
-        type: 'object',
-        propertyNames: {
-          type: 'string',
-          format: 'uuid',
-        },
-        additionalProperties: {
+        type: 'array',
+        items: {
           type: 'object',
           properties: {
+            user_id: {
+              type: 'string',
+              format: 'uuid',
+            },
             email: {
               type: 'string',
               format: 'email',
@@ -97,12 +97,9 @@ const response = {
               type: 'string',
             },
           },
-          required: ['email', 'full_name', 'known_as', 'status'],
+          required: ['user_id', 'email', 'full_name', 'known_as', 'status'],
           additionalProperties: false,
         },
-      },
-      count: {
-        type: 'integer',
       },
       pagination: {
         type: 'object',
@@ -110,41 +107,55 @@ const response = {
           page: {
             type: 'integer',
           },
+          per_page: {
+            type: 'integer',
+          },
           pages: {
             type: 'integer',
           },
+          count_page: {
+            type: 'integer',
+          },
+          count_total: {
+            type: 'integer',
+          },
         },
-        required: ['page', 'pages'],
+        required: ['page', 'per_page', 'pages', 'count_page', 'count_total'],
         additionalProperties: false,
       },
     },
-    required: ['data', 'count', 'pagination'],
+    required: ['data', 'pagination'],
     additionalProperties: false,
     example: {
-      data: {
-        'a3bb189e-8bf9-3888-9912-ace4e6543002': {
+      data: [
+        {
+          user_id: 'a3bb189e-8bf9-3888-9912-ace4e6543002',
           email: 'user1@example.com',
           full_name: 'string',
           known_as: 'string',
           status: 'ACTIVE',
         },
-        'f47ac10b-58cc-4372-a567-0e02b2c3d479': {
+        {
+          user_id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
           email: 'user2@example.com',
           full_name: 'string',
           known_as: 'string',
           status: 'ACTIVE',
         },
-        'e7b2f4d1-9c3a-4f6e-b8d2-1a5e7c9f3b8d': {
+        {
+          user_id: 'e7b2f4d1-9c3a-4f6e-b8d2-1a5e7c9f3b8d',
           email: 'user3@example.com',
           full_name: 'string',
           known_as: 'string',
           status: 'DEACTIVATED',
         },
-      },
-      count: 3,
+      ],
       pagination: {
         page: 1,
+        per_page: 50,
         pages: 1,
+        count_page: 3,
+        count_total: 3,
       },
     },
   },

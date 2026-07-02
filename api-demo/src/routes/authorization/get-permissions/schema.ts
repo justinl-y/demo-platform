@@ -55,14 +55,14 @@ const response = {
     type: 'object',
     properties: {
       data: {
-        type: 'object',
-        propertyNames: {
-          type: 'string',
-          format: 'uuid',
-        },
-        additionalProperties: {
+        type: 'array',
+        items: {
           type: 'object',
           properties: {
+            permission_id: {
+              type: 'string',
+              format: 'uuid',
+            },
             name: {
               type: 'string',
             },
@@ -70,12 +70,9 @@ const response = {
               type: 'string',
             },
           },
-          required: ['name', 'description'],
+          required: ['permission_id', 'name', 'description'],
           additionalProperties: false,
         },
-      },
-      count: {
-        type: 'integer',
       },
       pagination: {
         type: 'object',
@@ -83,34 +80,44 @@ const response = {
           page: {
             type: 'integer',
           },
+          per_page: {
+            type: 'integer',
+          },
           pages: {
             type: 'integer',
           },
+          count_page: {
+            type: 'integer',
+          },
+          count_total: {
+            type: 'integer',
+          },
         },
-        required: [
-          'page',
-          'pages',
-        ],
+        required: ['page', 'per_page', 'pages', 'count_page', 'count_total'],
         additionalProperties: false,
       },
     },
-    required: ['data', 'count', 'pagination'],
+    required: ['data', 'pagination'],
     additionalProperties: false,
     example: {
-      data: {
-        'a3bb189e-8bf9-3888-9912-ace4e6543002': {
+      data: [
+        {
+          permission_id: 'a3bb189e-8bf9-3888-9912-ace4e6543002',
           name: 'INTERNAL_USERS_READ',
           description: 'Read users',
         },
-        'f47ac10b-58cc-4372-a567-0e02b2c3d479': {
+        {
+          permission_id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
           name: 'INTERNAL_USERS_WRITE',
           description: 'Create/update/delete users',
         },
-      },
-      count: 2,
+      ],
       pagination: {
         page: 1,
+        per_page: 50,
         pages: 1,
+        count_page: 2,
+        count_total: 2,
       },
     },
   },

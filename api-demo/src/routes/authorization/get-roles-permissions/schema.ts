@@ -40,12 +40,8 @@ const response = {
     type: 'object',
     properties: {
       data: {
-        type: 'object',
-        propertyNames: {
-          type: 'string',
-          format: 'uuid',
-        },
-        additionalProperties: {
+        type: 'array',
+        items: {
           type: 'object',
           properties: {
             role_id: {
@@ -81,28 +77,34 @@ const response = {
           additionalProperties: false,
         },
       },
-      count: {
-        type: 'integer',
-      },
       pagination: {
         type: 'object',
         properties: {
           page: {
             type: 'integer',
           },
+          per_page: {
+            type: 'integer',
+          },
           pages: {
             type: 'integer',
           },
+          count_page: {
+            type: 'integer',
+          },
+          count_total: {
+            type: 'integer',
+          },
         },
-        required: ['page', 'pages'],
+        required: ['page', 'per_page', 'pages', 'count_page', 'count_total'],
         additionalProperties: false,
       },
     },
-    required: ['data', 'count', 'pagination'],
+    required: ['data', 'pagination'],
     additionalProperties: false,
     example: {
-      data: {
-        'a3bb189e-8bf9-3888-9912-ace4e6543002': {
+      data: [
+        {
           role_id: 'a3bb189e-8bf9-3888-9912-ace4e6543002',
           role_name: 'ADMIN',
           permissions: {
@@ -112,11 +114,13 @@ const response = {
             },
           },
         },
-      },
-      count: 1,
+      ],
       pagination: {
         page: 1,
+        per_page: 50,
         pages: 1,
+        count_page: 1,
+        count_total: 1,
       },
     },
   },

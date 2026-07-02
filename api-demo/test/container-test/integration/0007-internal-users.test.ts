@@ -135,17 +135,17 @@ describe(`${fileNumber} - Internal Users`, () => {
 
       test('Response body has correct shape', () => {
         expect(rep.body).toHaveProperty('data');
-        expect(rep.body).toHaveProperty('count');
         expect(rep.body).toHaveProperty('pagination');
         expect(rep.body.data).toBeTypeOf('object');
-        expect(Array.isArray(rep.body.data)).toBe(false);
-        expect(rep.body.count).toBeTypeOf('number');
+        expect(Array.isArray(rep.body.data)).toBe(true);
+        expect(rep.body.pagination.count_page).toBeTypeOf('number');
+        expect(rep.body.pagination.count_total).toBeTypeOf('number');
         expect(rep.body.pagination).toHaveProperty('page');
         expect(rep.body.pagination).toHaveProperty('pages');
       });
 
       test('Response entries have correct shape', () => {
-        const user = rep.body.data[activeUserId];
+        const user = rep.body.data.find((u: { user_id: string }) => u.user_id === activeUserId);
 
         expect(user).toBeDefined();
         expect(user).toHaveProperty('email');
@@ -158,30 +158,31 @@ describe(`${fileNumber} - Internal Users`, () => {
       test('"status=ACTIVE&status=DEACTIVATED" returns both active and deactivated users', async () => {
         const res = await authAPISuper.get('/internal-users?status=ACTIVE&status=DEACTIVATED');
 
-        expect(res.body.data[activeUserId]).toBeDefined();
-        expect(res.body.data[deactivatedUserId]).toBeDefined();
+        expect(res.body.data.find((u: { user_id: string }) => u.user_id === activeUserId)).toBeDefined();
+        expect(res.body.data.find((u: { user_id: string }) => u.user_id === deactivatedUserId)).toBeDefined();
       });
 
       test('"status=ACTIVE" returns only active users', async () => {
         const res = await authAPISuper.get('/internal-users?status=ACTIVE');
 
-        expect(res.body.data[activeUserId]).toBeDefined();
-        expect(res.body.data[deactivatedUserId]).toBeUndefined();
+        expect(res.body.data.find((u: { user_id: string }) => u.user_id === activeUserId)).toBeDefined();
+        expect(res.body.data.find((u: { user_id: string }) => u.user_id === deactivatedUserId)).toBeUndefined();
       });
 
       test('"status=DEACTIVATED" returns only deactivated users', async () => {
         const res = await authAPISuper.get('/internal-users?status=DEACTIVATED');
 
-        expect(res.body.data[activeUserId]).toBeUndefined();
-        expect(res.body.data[deactivatedUserId]).toBeDefined();
+        expect(res.body.data.find((u: { user_id: string }) => u.user_id === activeUserId)).toBeUndefined();
+        expect(res.body.data.find((u: { user_id: string }) => u.user_id === deactivatedUserId)).toBeDefined();
       });
 
       test('"per_page=1" returns exactly one user', async () => {
         const res = await authAPISuper.get('/internal-users?per_page=1');
 
         expect(res.statusCode).toBe(200);
-        expect(Object.keys(res.body.data)).toHaveLength(1);
-        expect(res.body.count).toBe(1);
+        expect(res.body.data.map((u: { user_id: string }) => u.user_id)).toHaveLength(1);
+        expect(res.body.pagination.count_page).toBe(1);
+        expect(res.body.pagination.count_total).toBe(res.body.pagination.pages);
         expect(res.body.pagination.pages).toBeGreaterThanOrEqual(1);
       });
 
@@ -191,17 +192,18 @@ describe(`${fileNumber} - Internal Users`, () => {
           authAPISuper.get('/internal-users?per_page=1&page=2'),
         ]);
 
-        expect(Object.keys(res1.body.data)).toHaveLength(1);
-        expect(Object.keys(res2.body.data)).toHaveLength(1);
-        expect(Object.keys(res1.body.data)[0]).not.toBe(Object.keys(res2.body.data)[0]);
+        expect(res1.body.data.map((u: { user_id: string }) => u.user_id)).toHaveLength(1);
+        expect(res2.body.data.map((u: { user_id: string }) => u.user_id)).toHaveLength(1);
+        expect(res1.body.data.map((u: { user_id: string }) => u.user_id)[0]).not.toBe(res2.body.data.map((u: { user_id: string }) => u.user_id)[0]);
       });
 
       test('"page=9999" returns empty data with count 0', async () => {
         const res = await authAPISuper.get('/internal-users?page=9999&per_page=100');
 
         expect(res.statusCode).toBe(200);
-        expect(res.body.data).toEqual({});
-        expect(res.body.count).toBe(0);
+        expect(res.body.data).toEqual([]);
+        expect(res.body.pagination.count_page).toBe(0);
+        expect(res.body.pagination.count_total).toBeGreaterThan(0);
       });
     });
   });
@@ -248,38 +250,41 @@ describe(`${fileNumber} - Internal Users`, () => {
         const res = await authAPISuper.get(`/internal-users?search=${token}`);
 
         expect(res.statusCode).toBe(200);
-        expect(Object.keys(res.body.data).sort()).toEqual([userIdLow, userIdHigh].sort());
-        expect(res.body.count).toBe(2);
+        expect(res.body.data.map((u: { user_id: string }) => u.user_id).sort()).toEqual([userIdLow, userIdHigh].sort());
+        expect(res.body.pagination.count_page).toBe(2);
+        expect(res.body.pagination.count_total).toBe(2);
       });
 
       test('"search" by user_id returns that single user', async () => {
         const res = await authAPISuper.get(`/internal-users?search=${userIdLow}`);
 
         expect(res.statusCode).toBe(200);
-        expect(Object.keys(res.body.data)).toEqual([userIdLow]);
-        expect(res.body.count).toBe(1);
+        expect(res.body.data.map((u: { user_id: string }) => u.user_id)).toEqual([userIdLow]);
+        expect(res.body.pagination.count_page).toBe(1);
+        expect(res.body.pagination.count_total).toBe(1);
       });
 
       test('"search" with no match returns empty data and count 0', async () => {
         const res = await authAPISuper.get('/internal-users?search=no-such-user-zzzzzzzz');
 
         expect(res.statusCode).toBe(200);
-        expect(res.body.data).toEqual({});
-        expect(res.body.count).toBe(0);
+        expect(res.body.data).toEqual([]);
+        expect(res.body.pagination.count_page).toBe(0);
+        expect(res.body.pagination.count_total).toBe(0);
       });
 
       test('"sort=email&order=ASC" returns matched users ascending by email', async () => {
         const res = await authAPISuper.get(`/internal-users?search=${token}&sort=email&order=ASC`);
 
         expect(res.statusCode).toBe(200);
-        expect(Object.keys(res.body.data)).toEqual([userIdLow, userIdHigh]);
+        expect(res.body.data.map((u: { user_id: string }) => u.user_id)).toEqual([userIdLow, userIdHigh]);
       });
 
       test('"sort=email&order=DESC" returns matched users descending by email', async () => {
         const res = await authAPISuper.get(`/internal-users?search=${token}&sort=email&order=DESC`);
 
         expect(res.statusCode).toBe(200);
-        expect(Object.keys(res.body.data)).toEqual([userIdHigh, userIdLow]);
+        expect(res.body.data.map((u: { user_id: string }) => u.user_id)).toEqual([userIdHigh, userIdLow]);
       });
     });
   });
@@ -1054,17 +1059,17 @@ describe(`${fileNumber} - Internal Users`, () => {
 
       test('Response body has correct shape', () => {
         expect(rep.body).toHaveProperty('data');
-        expect(rep.body).toHaveProperty('count');
         expect(rep.body).toHaveProperty('pagination');
         expect(rep.body.data).toBeTypeOf('object');
-        expect(Array.isArray(rep.body.data)).toBe(false);
-        expect(rep.body.count).toBeTypeOf('number');
+        expect(Array.isArray(rep.body.data)).toBe(true);
+        expect(rep.body.pagination.count_page).toBeTypeOf('number');
+        expect(rep.body.pagination.count_total).toBeTypeOf('number');
         expect(rep.body.pagination).toHaveProperty('page');
         expect(rep.body.pagination).toHaveProperty('pages');
       });
 
       test('Response entries have correct shape', () => {
-        const [entry] = Object.values(rep.body.data) as Array<Record<string, unknown>>;
+        const [entry] = rep.body.data as Array<Record<string, unknown>>;
 
         expect(entry).toBeDefined();
         expect(entry).toHaveProperty('user_id');
@@ -1080,8 +1085,9 @@ describe(`${fileNumber} - Internal Users`, () => {
         const res = await authAPISuper.get('/internal-users/roles?per_page=1');
 
         expect(res.statusCode).toBe(200);
-        expect(Object.keys(res.body.data)).toHaveLength(1);
-        expect(res.body.count).toBe(1);
+        expect(res.body.data.map((u: { user_id: string }) => u.user_id)).toHaveLength(1);
+        expect(res.body.pagination.count_page).toBe(1);
+        expect(res.body.pagination.count_total).toBe(res.body.pagination.pages);
         expect(res.body.pagination.pages).toBeGreaterThanOrEqual(1);
       });
 
@@ -1089,8 +1095,9 @@ describe(`${fileNumber} - Internal Users`, () => {
         const res = await authAPISuper.get('/internal-users/roles?page=9999&per_page=100');
 
         expect(res.statusCode).toBe(200);
-        expect(res.body.data).toEqual({});
-        expect(res.body.count).toBe(0);
+        expect(res.body.data).toEqual([]);
+        expect(res.body.pagination.count_page).toBe(0);
+        expect(res.body.pagination.count_total).toBeGreaterThan(0);
       });
     });
   });
@@ -1138,8 +1145,9 @@ describe(`${fileNumber} - Internal Users`, () => {
         const res = await getResponse('00000000-0000-0000-0000-000000000000');
 
         expect(res.statusCode).toBe(200);
-        expect(res.body.data).toEqual({});
-        expect(res.body.count).toBe(0);
+        expect(res.body.data).toEqual([]);
+        expect(res.body.pagination.count_page).toBe(0);
+        expect(res.body.pagination.count_total).toBe(0);
       });
     });
 
@@ -1155,12 +1163,13 @@ describe(`${fileNumber} - Internal Users`, () => {
       });
 
       test('Response contains only the requested user', () => {
-        expect(Object.keys(rep.body.data)).toEqual([userWithRolesId]);
-        expect(rep.body.count).toBe(1);
+        expect(rep.body.data.map((u: { user_id: string }) => u.user_id)).toEqual([userWithRolesId]);
+        expect(rep.body.pagination.count_page).toBe(1);
+        expect(rep.body.pagination.count_total).toBe(1);
       });
 
       test('Response entry has correct shape', () => {
-        const user = rep.body.data[userWithRolesId];
+        const user = rep.body.data.find((u: { user_id: string }) => u.user_id === userWithRolesId);
 
         expect(user).toBeDefined();
         expect(user.user_id).toBe(userWithRolesId);
@@ -1173,7 +1182,7 @@ describe(`${fileNumber} - Internal Users`, () => {
       test('Assigned roles are keyed by role id with id and name', () => {
         const {
           roles,
-        } = rep.body.data[userWithRolesId];
+        } = rep.body.data.find((u: { user_id: string }) => u.user_id === userWithRolesId);
 
         expect(Object.keys(roles)).toHaveLength(2);
         expect(roles[roleOne.role_id]).toEqual({
@@ -1190,8 +1199,8 @@ describe(`${fileNumber} - Internal Users`, () => {
         const res = await getResponse(userWithoutRolesId);
 
         expect(res.statusCode).toBe(200);
-        expect(res.body.data[userWithoutRolesId]).toBeDefined();
-        expect(res.body.data[userWithoutRolesId].roles).toEqual({});
+        expect(res.body.data.find((u: { user_id: string }) => u.user_id === userWithoutRolesId)).toBeDefined();
+        expect(res.body.data.find((u: { user_id: string }) => u.user_id === userWithoutRolesId).roles).toEqual({});
       });
 
       test('Assigned roles are ordered by role name ascending', async () => {
@@ -1210,7 +1219,7 @@ describe(`${fileNumber} - Internal Users`, () => {
         const res = await getResponse(userId);
 
         expect(res.statusCode).toBe(200);
-        expect(Object.keys(res.body.data[userId].roles)).toEqual([roleLow.role_id, roleHigh.role_id]);
+        expect(Object.keys(res.body.data.find((u: { user_id: string }) => u.user_id === userId).roles)).toEqual([roleLow.role_id, roleHigh.role_id]);
       });
     });
   });

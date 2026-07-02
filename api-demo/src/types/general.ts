@@ -1,15 +1,15 @@
 interface GetResult {
-  count: number;
   pagination: {
     page: number;
+    per_page: number;
     pages: number;
+    count_page: number;
+    count_total: number;
   };
 }
 
 interface PaginatedResult<T> extends GetResult {
-  data: {
-    [id: string]: T;
-  };
+  data: T[];
 }
 
 type SentEmailType = 'INVITATION' | 'PASSWORD_RESET';

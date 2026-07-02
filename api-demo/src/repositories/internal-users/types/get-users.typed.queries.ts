@@ -31,7 +31,7 @@ export interface IInternalUsersGetUsersQuery {
   result: IInternalUsersGetUsersResult;
 }
 
-const internalUsersGetUsersIR: any = {"usedParamSet":{"status":true,"search":true,"order":true,"sort":true,"limit":true,"offset":true},"params":[{"name":"status","required":false,"transform":{"type":"scalar"},"locs":[{"a":258,"b":264}]},{"name":"search","required":false,"transform":{"type":"scalar"},"locs":[{"a":312,"b":318},{"a":340,"b":346},{"a":371,"b":377}]},{"name":"order","required":true,"transform":{"type":"scalar"},"locs":[{"a":643,"b":649},{"a":873,"b":878}]},{"name":"sort","required":true,"transform":{"type":"scalar"},"locs":[{"a":673,"b":678},{"a":901,"b":905}]},{"name":"limit","required":true,"transform":{"type":"scalar"},"locs":[{"a":1107,"b":1113}]},{"name":"offset","required":true,"transform":{"type":"scalar"},"locs":[{"a":1125,"b":1132}]}],"statement":"                                                             \nWITH t_users AS (\n\tSELECT\n\t  u.id AS user_id\n\t  , u.email\n\t  , u.full_name\n\t  , u.known_as\n\t\t, u.status\n\t\t, COUNT(*) OVER () AS total\n\tFROM\n\t  internal.users AS u\n\tWHERE\n\t\tCOALESCE(u.status = ANY(:status), TRUE)\n\t  AND COALESCE(\n\t\t\tu.full_name ILIKE :search\n\t\t\tOR u.email ILIKE :search\n\t\t\tOR u.id::text ILIKE :search\n\t\t, TRUE)\n\tORDER BY\n\t\t-- Direction can't be parameterized, so each direction is a separate gated\n\t\t-- term. created_at is rendered as fixed-width text (zero-padded, 6-digit\n\t\t-- microseconds) so it shares the text CASE and still sorts chronologically.\n\t\tCASE WHEN :order! = 'DESC' THEN\n\t\t\tCASE :sort!\n\t\t\t\tWHEN 'name' THEN split_part(u.full_name, ' ', -1)\n\t\t\t\tWHEN 'email' THEN u.email\n\t\t\t\tWHEN 'created_at' THEN to_char(u.created_at, 'YYYY-MM-DD HH24:MI:SS.US')\n\t\t\tEND\n\t\tEND DESC\n\t\t, CASE WHEN :order = 'ASC' THEN\n\t\t\tCASE :sort\n\t\t\t\tWHEN 'name' THEN split_part(u.full_name, ' ', -1)\n\t\t\t\tWHEN 'email' THEN u.email\n\t\t\t\tWHEN 'created_at' THEN to_char(u.created_at, 'YYYY-MM-DD HH24:MI:SS.US')\n\t\t\tEND\n\t\tEND ASC\n\t\t, u.id ASC\n\tLIMIT\n\t\t:limit!\n\tOFFSET\n\t\t:offset!\n)\nSELECT\n\tjson_object_agg(\n\t\ttu.user_id\n\t\t,json_build_object(\n\t\t\t'email', tu.email\n\t\t\t, 'full_name', tu.full_name\n\t\t\t, 'known_as', tu.known_as\n\t\t\t, 'status', tu.status\n\t\t)\n\t) AS users\n\t, COALESCE(MAX(tu.total), 0)::int AS total\nFROM\n\tt_users AS tu"};
+const internalUsersGetUsersIR: any = {"usedParamSet":{"status":true,"search":true,"order":true,"sort":true,"limit":true,"offset":true},"params":[{"name":"status","required":false,"transform":{"type":"scalar"},"locs":[{"a":240,"b":246}]},{"name":"search","required":false,"transform":{"type":"scalar"},"locs":[{"a":293,"b":299},{"a":321,"b":327},{"a":352,"b":358}]},{"name":"order","required":true,"transform":{"type":"scalar"},"locs":[{"a":730,"b":736},{"a":961,"b":966}]},{"name":"sort","required":true,"transform":{"type":"scalar"},"locs":[{"a":761,"b":766},{"a":990,"b":994}]},{"name":"limit","required":true,"transform":{"type":"scalar"},"locs":[{"a":1201,"b":1207}]},{"name":"offset","required":true,"transform":{"type":"scalar"},"locs":[{"a":1221,"b":1228}]}],"statement":"                                                             \nWITH t_users AS (\n\tSELECT\n\t\tu.id AS user_id\n\t\t, u.email\n\t\t, u.full_name\n\t\t, u.known_as\n\t\t, u.status\n\t\t, u.created_at\n\tFROM\n\t\tinternal.users AS u\n\tWHERE\n\t\tCOALESCE(u.status = ANY(:status), TRUE)\n\t\tAND COALESCE(\n\t\t\tu.full_name ILIKE :search\n\t\t\tOR u.email ILIKE :search\n\t\t\tOR u.id::text ILIKE :search\n\t\t, TRUE)\n),\nt_page AS (\n\tSELECT\n\t\tp.*\n\t\t, ROW_NUMBER() OVER () AS ord\n\tFROM (\n\t\tSELECT\n\t\t\t*\n\t\tFROM\n\t\t\tt_users\n\t\tORDER BY\n\t\t\t-- Direction can't be parameterized, so each direction is a separate gated\n\t\t\t-- term. created_at is rendered as fixed-width text (zero-padded, 6-digit\n\t\t\t-- microseconds) so it shares the text CASE and still sorts chronologically.\n\t\t\tCASE WHEN :order! = 'DESC' THEN\n\t\t\t\tCASE :sort!\n\t\t\t\t\tWHEN 'name' THEN split_part(full_name, ' ', -1)\n\t\t\t\t\tWHEN 'email' THEN email\n\t\t\t\t\tWHEN 'created_at' THEN to_char(created_at, 'YYYY-MM-DD HH24:MI:SS.US')\n\t\t\t\tEND\n\t\t\tEND DESC\n\t\t\t, CASE WHEN :order = 'ASC' THEN\n\t\t\t\tCASE :sort\n\t\t\t\t\tWHEN 'name' THEN split_part(full_name, ' ', -1)\n\t\t\t\t\tWHEN 'email' THEN email\n\t\t\t\t\tWHEN 'created_at' THEN to_char(created_at, 'YYYY-MM-DD HH24:MI:SS.US')\n\t\t\t\tEND\n\t\t\tEND ASC\n\t\t\t, user_id ASC\n\t\tLIMIT\n\t\t\t:limit!\n\t\tOFFSET\n\t\t\t:offset!\n\t) AS p\n)\nSELECT\n\tCOALESCE(\n\t\tjson_agg(\n\t\t\tjson_build_object(\n\t\t\t\t'user_id', tp.user_id\n\t\t\t\t, 'email', tp.email\n\t\t\t\t, 'full_name', tp.full_name\n\t\t\t\t, 'known_as', tp.known_as\n\t\t\t\t, 'status', tp.status\n\t\t\t)\n\t\t\tORDER BY tp.ord\n\t\t)\n\t, '[]'::json) AS users\n\t, COALESCE((SELECT COUNT(*) FROM t_users), 0)::int AS total\nFROM\n\tt_page AS tp"};
 
 /**
  * Query generated from SQL:
@@ -39,58 +39,72 @@ const internalUsersGetUsersIR: any = {"usedParamSet":{"status":true,"search":tru
  *                                                              
  * WITH t_users AS (
  * 	SELECT
- * 	  u.id AS user_id
- * 	  , u.email
- * 	  , u.full_name
- * 	  , u.known_as
+ * 		u.id AS user_id
+ * 		, u.email
+ * 		, u.full_name
+ * 		, u.known_as
  * 		, u.status
- * 		, COUNT(*) OVER () AS total
+ * 		, u.created_at
  * 	FROM
- * 	  internal.users AS u
+ * 		internal.users AS u
  * 	WHERE
  * 		COALESCE(u.status = ANY(:status), TRUE)
- * 	  AND COALESCE(
+ * 		AND COALESCE(
  * 			u.full_name ILIKE :search
  * 			OR u.email ILIKE :search
  * 			OR u.id::text ILIKE :search
  * 		, TRUE)
- * 	ORDER BY
- * 		-- Direction can't be parameterized, so each direction is a separate gated
- * 		-- term. created_at is rendered as fixed-width text (zero-padded, 6-digit
- * 		-- microseconds) so it shares the text CASE and still sorts chronologically.
- * 		CASE WHEN :order! = 'DESC' THEN
- * 			CASE :sort!
- * 				WHEN 'name' THEN split_part(u.full_name, ' ', -1)
- * 				WHEN 'email' THEN u.email
- * 				WHEN 'created_at' THEN to_char(u.created_at, 'YYYY-MM-DD HH24:MI:SS.US')
- * 			END
- * 		END DESC
- * 		, CASE WHEN :order = 'ASC' THEN
- * 			CASE :sort
- * 				WHEN 'name' THEN split_part(u.full_name, ' ', -1)
- * 				WHEN 'email' THEN u.email
- * 				WHEN 'created_at' THEN to_char(u.created_at, 'YYYY-MM-DD HH24:MI:SS.US')
- * 			END
- * 		END ASC
- * 		, u.id ASC
- * 	LIMIT
- * 		:limit!
- * 	OFFSET
- * 		:offset!
+ * ),
+ * t_page AS (
+ * 	SELECT
+ * 		p.*
+ * 		, ROW_NUMBER() OVER () AS ord
+ * 	FROM (
+ * 		SELECT
+ * 			*
+ * 		FROM
+ * 			t_users
+ * 		ORDER BY
+ * 			-- Direction can't be parameterized, so each direction is a separate gated
+ * 			-- term. created_at is rendered as fixed-width text (zero-padded, 6-digit
+ * 			-- microseconds) so it shares the text CASE and still sorts chronologically.
+ * 			CASE WHEN :order! = 'DESC' THEN
+ * 				CASE :sort!
+ * 					WHEN 'name' THEN split_part(full_name, ' ', -1)
+ * 					WHEN 'email' THEN email
+ * 					WHEN 'created_at' THEN to_char(created_at, 'YYYY-MM-DD HH24:MI:SS.US')
+ * 				END
+ * 			END DESC
+ * 			, CASE WHEN :order = 'ASC' THEN
+ * 				CASE :sort
+ * 					WHEN 'name' THEN split_part(full_name, ' ', -1)
+ * 					WHEN 'email' THEN email
+ * 					WHEN 'created_at' THEN to_char(created_at, 'YYYY-MM-DD HH24:MI:SS.US')
+ * 				END
+ * 			END ASC
+ * 			, user_id ASC
+ * 		LIMIT
+ * 			:limit!
+ * 		OFFSET
+ * 			:offset!
+ * 	) AS p
  * )
  * SELECT
- * 	json_object_agg(
- * 		tu.user_id
- * 		,json_build_object(
- * 			'email', tu.email
- * 			, 'full_name', tu.full_name
- * 			, 'known_as', tu.known_as
- * 			, 'status', tu.status
+ * 	COALESCE(
+ * 		json_agg(
+ * 			json_build_object(
+ * 				'user_id', tp.user_id
+ * 				, 'email', tp.email
+ * 				, 'full_name', tp.full_name
+ * 				, 'known_as', tp.known_as
+ * 				, 'status', tp.status
+ * 			)
+ * 			ORDER BY tp.ord
  * 		)
- * 	) AS users
- * 	, COALESCE(MAX(tu.total), 0)::int AS total
+ * 	, '[]'::json) AS users
+ * 	, COALESCE((SELECT COUNT(*) FROM t_users), 0)::int AS total
  * FROM
- * 	t_users AS tu
+ * 	t_page AS tp
  * ```
  */
 export const internalUsersGetUsers = new PreparedQuery<IInternalUsersGetUsersParams,IInternalUsersGetUsersResult>(internalUsersGetUsersIR);
