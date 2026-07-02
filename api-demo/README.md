@@ -56,7 +56,7 @@ All endpoints are served from the API base URL. Auth endpoints use JWT cookies; 
 | `POST` | `/login` | — | Authenticate with email + password. Sets `access_token` and `refresh_token` HttpOnly cookies. |
 | `POST` | `/refresh` | cookie | Refresh the access token using the `refresh_token` cookie. Issues new cookies. |
 | `POST` | `/logout` | cookie | Invalidate the session and clear both cookies. |
-| `GET` | `/internal-users` | cookie | Get paginated users. Optional filters: `status`, `user_id`, `page`, `per_page`. |
+| `GET` | `/internal-users` | cookie | Get one or more internal users |
 | `POST` | `/internal-users` | cookie | Create a new user. |
 | `DELETE` | `/internal-users/:user_id` | cookie | Delete a user. |
 | `PUT` | `/internal-users/:user_id` | cookie | Update a user's full name and known as. |
@@ -65,7 +65,7 @@ All endpoints are served from the API base URL. Auth endpoints use JWT cookies; 
 | `PATCH` | `/internal-users/:user_id/invite` | cookie | Invite a user. |
 | `DELETE` | `/internal-users/:user_id/invite` | cookie | Cancel a user invitation. |
 | `POST` | `/internal-users/activate` | — | Activate an invited user via the activation token and set the account password. |
-| `GET` | `/internal-users/roles` | cookie | Get users with their assigned roles. Optional filter: `user_id`. |
+| `GET` | `/internal-users/roles` | cookie | Get users with their assigned roles. |
 | `POST` | `/internal-users/:user_id/roles` | cookie | Assign a user's initial roles (user must have none). |
 | `PUT` | `/internal-users/:user_id/roles` | cookie | Replace a user's roles. |
 | `DELETE` | `/internal-users/:user_id/roles` | cookie | Remove all of a user's roles. |

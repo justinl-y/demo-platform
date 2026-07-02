@@ -19,6 +19,10 @@ WITH t_users AS (
 t_page AS (
 	SELECT
 		p.*
+		-- `ord` preserves the requested sort into the JSON array below: the inner
+		-- subquery is ORDER BY-ed then LIMIT/OFFSET-ed, and ROW_NUMBER() OVER () numbers
+		-- rows in that produced order (Postgres carries a subquery's ORDER BY into the
+		-- window step), so json_agg(... ORDER BY tp.ord) re-emits rows in sort order.
 		, ROW_NUMBER() OVER () AS ord
 	FROM (
 		SELECT
