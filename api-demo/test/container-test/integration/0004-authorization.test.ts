@@ -187,12 +187,12 @@ describe(`${fileNumber} - Authorization`, () => {
       // ADMIN holds INTERNAL_PERMISSIONS_*, so the permission routes alone cannot show a
       // non-super user being allowed.
       describe('User with the required permission', () => {
-        test('PATCH /users/:id/invite is not forbidden with INTERNAL_USERS_AUTHORIZE_WRITE', async () => {
+        test('PATCH /internal-users/:id/invite is not forbidden with INTERNAL_USERS_AUTHORIZE_WRITE', async () => {
           // carol is INTERNAL_USER_ADMIN — has INTERNAL_USERS_AUTHORIZE_WRITE, so authorization must not block her.
           const targetId = await getUserIdByEmail('bob.johnson@example.com');
           const moderatorAPI = await authAPIUser('carol.williams@example.com');
 
-          const res = await moderatorAPI.patch(`/users/${targetId}/invite`, {
+          const res = await moderatorAPI.patch(`/internal-users/${targetId}/invite`, {
             email: 'invite.test@example.com',
           });
 
@@ -202,24 +202,24 @@ describe(`${fileNumber} - Authorization`, () => {
       });
 
       describe('User without the required permission', () => {
-        test('PATCH /users/:id/invite is forbidden without INTERNAL_USERS_AUTHORIZE_WRITE', async () => {
+        test('PATCH /internal-users/:id/invite is forbidden without INTERNAL_USERS_AUTHORIZE_WRITE', async () => {
           // bob is INTERNAL_USER_READ — INTERNAL_USERS_READ only, lacks INTERNAL_USERS_AUTHORIZE_WRITE.
           const targetId = await getUserIdByEmail('bob.johnson@example.com');
           const staffAPI = await authAPIUser('bob.johnson@example.com');
 
-          const res = await staffAPI.patch(`/users/${targetId}/invite`, {
+          const res = await staffAPI.patch(`/internal-users/${targetId}/invite`, {
             email: 'invite.test@example.com',
           });
 
           expect(res.statusCode).toBe(403);
         });
 
-        test('DELETE /users/:id is forbidden without INTERNAL_USERS_WRITE', async () => {
+        test('DELETE /internal-users/:id is forbidden without INTERNAL_USERS_WRITE', async () => {
           // bob is INTERNAL_USER_READ — INTERNAL_USERS_READ only, lacks INTERNAL_USERS_WRITE.
           const targetId = await getUserIdByEmail('eve.jones@example.com');
           const staffAPI = await authAPIUser('bob.johnson@example.com');
 
-          const res = await staffAPI.del(`/users/${targetId}`);
+          const res = await staffAPI.del(`/internal-users/${targetId}`);
 
           expect(res.statusCode).toBe(403);
         });

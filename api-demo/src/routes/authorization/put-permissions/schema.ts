@@ -3,7 +3,7 @@ import {
 } from '#utils/functions';
 
 const route = {
-  tags: ['authorization'],
+  tags: ['Authorization'],
   summary: 'Update a permission',
   description: 'Update a permission',
   security: [{ cookieAuth: [] }],

@@ -3,7 +3,7 @@ import {
 } from '#utils/functions';
 
 const route = {
-  tags: ['authorization'],
+  tags: ['Authorization'],
   summary: 'Assign a role\'s initial permissions',
   description: 'Assigns one or more permissions to a role that currently has none, returning the created '
     + 'role-permission resource. Fails if the role already has any permissions — use PUT to replace an '

@@ -3,7 +3,7 @@ import {
 } from '#utils/functions';
 
 const route = {
-  tags: ['authentication'],
+  tags: ['Authentication'],
   summary: 'User login',
   description: 'Authenticates a user with email and password',
 };

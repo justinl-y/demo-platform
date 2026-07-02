@@ -8,7 +8,7 @@ import type {
 
 import type { AuthenticationRepository } from '#repositories/authentication/authentication.repository';
 import type { HealthRepository } from '#repositories/health/health.repository';
-import type { UsersRepository } from '#repositories/users/users.repository';
+import type { InternalUsersRepository } from '#repositories/internal-users/internal-users.repository';
 import type { PermissionsRepository } from '#repositories/permissions/permissions.repository';
 import type { RolesRepository } from '#repositories/roles/roles.repository';
 import type { RolePermissionsRepository } from '#repositories/roles-permissions/roles-permissions.repository';
@@ -27,7 +27,7 @@ declare module 'fastify' {
     repositories: {
       authentication: AuthenticationRepository;
       health: HealthRepository;
-      users: UsersRepository;
+      internalUsers: InternalUsersRepository;
       permissions: PermissionsRepository;
       roles: RolesRepository;
       rolePermissions: RolePermissionsRepository;

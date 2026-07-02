@@ -3,7 +3,7 @@ import {
 } from '#utils/functions';
 
 const route = {
-  tags: ['health'],
+  tags: ['Health Check'],
   summary: 'Database health check endpoint',
   description: 'Returns the current health status of the database server',
   security: [],

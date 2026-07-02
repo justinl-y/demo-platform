@@ -3,7 +3,7 @@ import {
 } from '#utils/functions';
 
 const route = {
-  tags: ['authorization'],
+  tags: ['Authorization'],
   summary: 'Get roles with their assigned permissions',
   description: 'Returns roles with their assigned permissions. Pass an optional "role_id" query parameter to return a single role.',
   security: [{ cookieAuth: [] }],

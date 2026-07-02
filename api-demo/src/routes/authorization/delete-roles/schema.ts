@@ -3,7 +3,7 @@ import {
 } from '#utils/functions';
 
 const route = {
-  tags: ['authorization'],
+  tags: ['Authorization'],
   summary: 'Delete a role',
   description: 'Hard delete a role',
   security: [{ cookieAuth: [] }],

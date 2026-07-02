@@ -59,16 +59,16 @@ src/
   hooks/                # Fastify lifecycle hooks (auth, error handling, Sentry)
   routes/               # Thin HTTP handlers — parse request, call service, send response
     auth/               # post-login, post-refresh, post-logout
-    users/              # get-users, post-users, delete-users, put-users, patch-users-deactivate, patch-users-email
+    internal-users/     # get-internal-users, post-internal-users, delete-internal-users, put-internal-users, patch-internal-users-deactivate, patch-internal-users-email (mounted at /internal-users)
     health-check/       # get-health-db, get-health-eb
   services/             # Business logic — no HTTP, no SQL
     auth/               # login(), refresh(), logout()
     health/             # checkDb(), checkEb()
-    users/              # getUsers(), postUsers(), deleteUsers(), putUsers(), patchUsersDeactivate(), patchUsersEmail()
+    internal-users/     # fetchInternalUsers(), createUser(), deleteUser(), editUser(), deactivateUser(), editUserEmail()
   repositories/         # DB access only — SQL files, pgtyped types, query functions
     auth/               # createAuthRepository — getUserByEmail, getUserWithRefreshToken, setUserRefreshTokenOnLogin, setUserTokenOnRefresh, removeUserRefreshToken
     health/             # createHealthRepository — getPgVersion
-    users/              # createUsersRepository — getUsers, getUserByEmail, addUser, removeUser, updateUser, deactivateUser, updateUserEmail
+    internal-users/     # createInternalUsersRepository — getUsers, getUserByEmail, addUser, removeUser, updateUser, deactivateUser, updateUserEmail
   lib/                  # Framework-level utilities (database, authentication, logger, sentry)
   utils/                # Shared pure utilities and constants
   types/                # Shared TypeScript types
