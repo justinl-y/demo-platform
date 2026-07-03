@@ -147,7 +147,7 @@ describe(`${fileNumber} - Internal Users`, () => {
       test('Response entries have correct shape', () => {
         const user = rep.body.data.find((u: { user_id: string }) => u.user_id === activeUserId);
 
-        expect(user).toBeDefined();
+        if (!user) throw new Error('user missing from response');
         expect(user).toHaveProperty('email');
         expect(user).toHaveProperty('full_name');
         expect(user).toHaveProperty('known_as');
@@ -1171,7 +1171,7 @@ describe(`${fileNumber} - Internal Users`, () => {
       test('Response entry has correct shape', () => {
         const user = rep.body.data.find((u: { user_id: string }) => u.user_id === userWithRolesId);
 
-        expect(user).toBeDefined();
+        if (!user) throw new Error('user missing from response');
         expect(user.user_id).toBe(userWithRolesId);
         expect(user.user_email).toBe(userWithRolesEmail);
         expect(user.user_full_name).toBeTypeOf('string');
@@ -1180,9 +1180,12 @@ describe(`${fileNumber} - Internal Users`, () => {
       });
 
       test('Assigned roles are keyed by role id with id and name', () => {
+        const user = rep.body.data.find((u: { user_id: string }) => u.user_id === userWithRolesId);
+
+        if (!user) throw new Error('user missing from response');
         const {
           roles,
-        } = rep.body.data.find((u: { user_id: string }) => u.user_id === userWithRolesId);
+        } = user;
 
         expect(Object.keys(roles)).toHaveLength(2);
         expect(roles[roleOne.role_id]).toEqual({
@@ -1199,8 +1202,10 @@ describe(`${fileNumber} - Internal Users`, () => {
         const res = await getResponse(userWithoutRolesId);
 
         expect(res.statusCode).toBe(200);
-        expect(res.body.data.find((u: { user_id: string }) => u.user_id === userWithoutRolesId)).toBeDefined();
-        expect(res.body.data.find((u: { user_id: string }) => u.user_id === userWithoutRolesId).roles).toEqual({});
+        const user = res.body.data.find((u: { user_id: string }) => u.user_id === userWithoutRolesId);
+
+        if (!user) throw new Error('user missing from response');
+        expect(user.roles).toEqual({});
       });
 
       test('Assigned roles are ordered by role name ascending', async () => {
@@ -1219,7 +1224,10 @@ describe(`${fileNumber} - Internal Users`, () => {
         const res = await getResponse(userId);
 
         expect(res.statusCode).toBe(200);
-        expect(Object.keys(res.body.data.find((u: { user_id: string }) => u.user_id === userId).roles)).toEqual([roleLow.role_id, roleHigh.role_id]);
+        const user = res.body.data.find((u: { user_id: string }) => u.user_id === userId);
+
+        if (!user) throw new Error('user missing from response');
+        expect(Object.keys(user.roles)).toEqual([roleLow.role_id, roleHigh.role_id]);
       });
     });
   });

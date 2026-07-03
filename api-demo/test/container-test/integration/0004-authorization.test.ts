@@ -290,7 +290,7 @@ describe(`${fileNumber} - Authorization`, () => {
         test('Response entries have correct shape', () => {
           const permission = rep.body.data.find((p: { permission_id: string }) => p.permission_id === seededPermission.permission_id);
 
-          expect(permission).toBeDefined();
+          if (!permission) throw new Error('seeded permission missing from response');
           expect(permission).toHaveProperty('name');
           expect(permission).toHaveProperty('description');
           expect(permission.name).toBeTypeOf('string');
@@ -793,7 +793,7 @@ describe(`${fileNumber} - Authorization`, () => {
         test('Response entries have correct shape', () => {
           const role = rep.body.data.find((r: { role_id: string }) => r.role_id === seededRole.role_id);
 
-          expect(role).toBeDefined();
+          if (!role) throw new Error('seeded role missing from response');
           expect(role).toHaveProperty('name');
           expect(role).toHaveProperty('description');
           expect(role.name).toBeTypeOf('string');
@@ -1468,14 +1468,18 @@ describe(`${fileNumber} - Authorization`, () => {
         test('The role entry carries role_id and role_name', () => {
           const entry = rep.body.data.find((r: { role_id: string }) => r.role_id === role.role_id);
 
+          if (!entry) throw new Error('role missing from roles-permissions response');
           expect(entry.role_id).toBe(role.role_id);
           expect(entry.role_name).toBe(role.name);
         });
 
         test('The role entry nests each assigned permission by id with permission_id and permission_name', () => {
+          const entry = rep.body.data.find((r: { role_id: string }) => r.role_id === role.role_id);
+
+          if (!entry) throw new Error('role missing from roles-permissions response');
           const {
             permissions,
-          } = rep.body.data.find((r: { role_id: string }) => r.role_id === role.role_id);
+          } = entry;
 
           expect(Object.keys(permissions).sort()).toEqual(assignedPermissions.map((permission) => permission.permission_id).sort());
 
@@ -1496,7 +1500,10 @@ describe(`${fileNumber} - Authorization`, () => {
           expect(res.statusCode).toBe(200);
           expect(res.body.pagination.count_page).toBe(1);
           expect(res.body.pagination.count_total).toBe(1);
-          expect(res.body.data.find((r: { role_id: string }) => r.role_id === emptyRole.role_id).permissions).toEqual({});
+          const emptyRoleEntry = res.body.data.find((r: { role_id: string }) => r.role_id === emptyRole.role_id);
+
+          if (!emptyRoleEntry) throw new Error('empty role missing from response');
+          expect(emptyRoleEntry.permissions).toEqual({});
         });
 
         test('Assigned permissions are ordered by permission name ascending', async () => {
@@ -1514,7 +1521,10 @@ describe(`${fileNumber} - Authorization`, () => {
           const res = await authAPISuper.get(`/roles/permissions?role_id=${orderingRole.role_id}`);
 
           expect(res.statusCode).toBe(200);
-          expect(Object.keys(res.body.data.find((r: { role_id: string }) => r.role_id === orderingRole.role_id).permissions)).toEqual([permLow.permission_id, permHigh.permission_id]);
+          const orderingEntry = res.body.data.find((r: { role_id: string }) => r.role_id === orderingRole.role_id);
+
+          if (!orderingEntry) throw new Error('ordering role missing from response');
+          expect(Object.keys(orderingEntry.permissions)).toEqual([permLow.permission_id, permHigh.permission_id]);
         });
 
         test('Omitting "role_id" returns all roles', async () => {
