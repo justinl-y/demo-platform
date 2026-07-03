@@ -3,7 +3,7 @@ import {
 } from '#utils/functions';
 
 const route = {
-  tags: ['health'],
+  tags: ['Health Check'],
   summary: 'Elastic Beanstalk health check endpoint',
   description: 'Returns the current health status of the API service for Elastic Beanstalk',
   security: [],

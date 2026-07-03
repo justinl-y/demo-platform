@@ -72,7 +72,7 @@ else if (apiEnv === 'STAGE') {
   ];
 }
 else {
-  appBaseUrl = 'http://localhost:3000';
+  appBaseUrl = 'http://localhost:5173';
   corsConfig.origin = [
     appBaseUrl,
   ];

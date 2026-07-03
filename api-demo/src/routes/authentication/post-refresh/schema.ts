@@ -3,7 +3,7 @@ import {
 } from '#utils/functions';
 
 const route = {
-  tags: ['authentication'],
+  tags: ['Authentication'],
   summary: 'User refresh tokens',
   description: 'Refreshes the access token and refresh tokens and issues new cookies using the existing refresh token cookie',
 };

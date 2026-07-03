@@ -3,7 +3,7 @@ import { BadRequestError } from 'http-errors-enhanced';
 import { paginationOffset, buildPaginatedResult } from '#utils/functions';
 
 import type { UsersRolesRepository } from '#repositories/users-roles/users-roles.repository';
-import type { UsersRepository } from '#repositories/users/users.repository';
+import type { InternalUsersRepository } from '#repositories/internal-users/internal-users.repository';
 import type { RolesRepository } from '#repositories/roles/roles.repository';
 import type { PaginatedResult } from '../../types/general.ts';
 
@@ -69,7 +69,7 @@ interface AssignUserRolesResult {
 // supplied role ids are validated before the assignments are created.
 async function assignUserRoles(
   usersRolesRepository: UsersRolesRepository,
-  usersRepository: UsersRepository,
+  usersRepository: InternalUsersRepository,
   rolesRepository: RolesRepository,
   params: AssignUserRolesParams,
 ): Promise<AssignUserRolesResult> {
@@ -115,7 +115,7 @@ interface EditUserRolesResult {
 // clears the user's roles.
 async function editUserRoles(
   usersRolesRepository: UsersRolesRepository,
-  usersRepository: UsersRepository,
+  usersRepository: InternalUsersRepository,
   rolesRepository: RolesRepository,
   params: EditUserRolesParams,
 ): Promise<EditUserRolesResult> {
@@ -151,7 +151,7 @@ interface DeleteUserRolesParams {
 // a non-existent or deactivated user is rejected rather than silently succeeding.
 async function deleteUserRoles(
   usersRolesRepository: UsersRolesRepository,
-  usersRepository: UsersRepository,
+  usersRepository: InternalUsersRepository,
   params: DeleteUserRolesParams,
 ): Promise<void> {
   const {

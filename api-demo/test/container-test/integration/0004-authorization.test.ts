@@ -187,12 +187,12 @@ describe(`${fileNumber} - Authorization`, () => {
       // ADMIN holds INTERNAL_PERMISSIONS_*, so the permission routes alone cannot show a
       // non-super user being allowed.
       describe('User with the required permission', () => {
-        test('PATCH /users/:id/invite is not forbidden with INTERNAL_USERS_AUTHORIZE_WRITE', async () => {
+        test('PATCH /internal-users/:id/invite is not forbidden with INTERNAL_USERS_AUTHORIZE_WRITE', async () => {
           // carol is INTERNAL_USER_ADMIN — has INTERNAL_USERS_AUTHORIZE_WRITE, so authorization must not block her.
           const targetId = await getUserIdByEmail('bob.johnson@example.com');
           const moderatorAPI = await authAPIUser('carol.williams@example.com');
 
-          const res = await moderatorAPI.patch(`/users/${targetId}/invite`, {
+          const res = await moderatorAPI.patch(`/internal-users/${targetId}/invite`, {
             email: 'invite.test@example.com',
           });
 
@@ -202,24 +202,24 @@ describe(`${fileNumber} - Authorization`, () => {
       });
 
       describe('User without the required permission', () => {
-        test('PATCH /users/:id/invite is forbidden without INTERNAL_USERS_AUTHORIZE_WRITE', async () => {
+        test('PATCH /internal-users/:id/invite is forbidden without INTERNAL_USERS_AUTHORIZE_WRITE', async () => {
           // bob is INTERNAL_USER_READ — INTERNAL_USERS_READ only, lacks INTERNAL_USERS_AUTHORIZE_WRITE.
           const targetId = await getUserIdByEmail('bob.johnson@example.com');
           const staffAPI = await authAPIUser('bob.johnson@example.com');
 
-          const res = await staffAPI.patch(`/users/${targetId}/invite`, {
+          const res = await staffAPI.patch(`/internal-users/${targetId}/invite`, {
             email: 'invite.test@example.com',
           });
 
           expect(res.statusCode).toBe(403);
         });
 
-        test('DELETE /users/:id is forbidden without INTERNAL_USERS_WRITE', async () => {
+        test('DELETE /internal-users/:id is forbidden without INTERNAL_USERS_WRITE', async () => {
           // bob is INTERNAL_USER_READ — INTERNAL_USERS_READ only, lacks INTERNAL_USERS_WRITE.
           const targetId = await getUserIdByEmail('eve.jones@example.com');
           const staffAPI = await authAPIUser('bob.johnson@example.com');
 
-          const res = await staffAPI.del(`/users/${targetId}`);
+          const res = await staffAPI.del(`/internal-users/${targetId}`);
 
           expect(res.statusCode).toBe(403);
         });
@@ -278,19 +278,19 @@ describe(`${fileNumber} - Authorization`, () => {
 
         test('Response body has correct shape', () => {
           expect(rep.body).toHaveProperty('data');
-          expect(rep.body).toHaveProperty('count');
           expect(rep.body).toHaveProperty('pagination');
           expect(rep.body.data).toBeTypeOf('object');
-          expect(Array.isArray(rep.body.data)).toBe(false);
-          expect(rep.body.count).toBeTypeOf('number');
+          expect(Array.isArray(rep.body.data)).toBe(true);
+          expect(rep.body.pagination.count_page).toBeTypeOf('number');
+          expect(rep.body.pagination.count_total).toBeTypeOf('number');
           expect(rep.body.pagination).toHaveProperty('page');
           expect(rep.body.pagination).toHaveProperty('pages');
         });
 
         test('Response entries have correct shape', () => {
-          const permission = rep.body.data[seededPermission.permission_id];
+          const permission = rep.body.data.find((p: { permission_id: string }) => p.permission_id === seededPermission.permission_id);
 
-          expect(permission).toBeDefined();
+          if (!permission) throw new Error('seeded permission missing from response');
           expect(permission).toHaveProperty('name');
           expect(permission).toHaveProperty('description');
           expect(permission.name).toBeTypeOf('string');
@@ -336,38 +336,41 @@ describe(`${fileNumber} - Authorization`, () => {
           const res = await authAPISuper.get(`/permissions?search=${token}`);
 
           expect(res.statusCode).toBe(200);
-          expect(Object.keys(res.body.data).sort()).toEqual([permLow.permission_id, permHigh.permission_id].sort());
-          expect(res.body.count).toBe(2);
+          expect(res.body.data.map((p: { permission_id: string }) => p.permission_id).sort()).toEqual([permLow.permission_id, permHigh.permission_id].sort());
+          expect(res.body.pagination.count_page).toBe(2);
+          expect(res.body.pagination.count_total).toBe(2);
         });
 
         test('"search" by permission_id returns that single permission', async () => {
           const res = await authAPISuper.get(`/permissions?search=${permLow.permission_id}`);
 
           expect(res.statusCode).toBe(200);
-          expect(Object.keys(res.body.data)).toEqual([permLow.permission_id]);
-          expect(res.body.count).toBe(1);
+          expect(res.body.data.map((p: { permission_id: string }) => p.permission_id)).toEqual([permLow.permission_id]);
+          expect(res.body.pagination.count_page).toBe(1);
+          expect(res.body.pagination.count_total).toBe(1);
         });
 
         test('"search" with no match returns empty data and count 0', async () => {
           const res = await authAPISuper.get('/permissions?search=no-such-permission-zzzzzzzz');
 
           expect(res.statusCode).toBe(200);
-          expect(res.body.data).toEqual({});
-          expect(res.body.count).toBe(0);
+          expect(res.body.data).toEqual([]);
+          expect(res.body.pagination.count_page).toBe(0);
+          expect(res.body.pagination.count_total).toBe(0);
         });
 
         test('"sort=name&order=ASC" returns matched permissions ascending by name', async () => {
           const res = await authAPISuper.get(`/permissions?search=${token}&sort=name&order=ASC`);
 
           expect(res.statusCode).toBe(200);
-          expect(Object.keys(res.body.data)).toEqual([permLow.permission_id, permHigh.permission_id]);
+          expect(res.body.data.map((p: { permission_id: string }) => p.permission_id)).toEqual([permLow.permission_id, permHigh.permission_id]);
         });
 
         test('"sort=name&order=DESC" returns matched permissions descending by name', async () => {
           const res = await authAPISuper.get(`/permissions?search=${token}&sort=name&order=DESC`);
 
           expect(res.statusCode).toBe(200);
-          expect(Object.keys(res.body.data)).toEqual([permHigh.permission_id, permLow.permission_id]);
+          expect(res.body.data.map((p: { permission_id: string }) => p.permission_id)).toEqual([permHigh.permission_id, permLow.permission_id]);
         });
       });
     });
@@ -778,19 +781,19 @@ describe(`${fileNumber} - Authorization`, () => {
 
         test('Response body has correct shape', () => {
           expect(rep.body).toHaveProperty('data');
-          expect(rep.body).toHaveProperty('count');
           expect(rep.body).toHaveProperty('pagination');
           expect(rep.body.data).toBeTypeOf('object');
-          expect(Array.isArray(rep.body.data)).toBe(false);
-          expect(rep.body.count).toBeTypeOf('number');
+          expect(Array.isArray(rep.body.data)).toBe(true);
+          expect(rep.body.pagination.count_page).toBeTypeOf('number');
+          expect(rep.body.pagination.count_total).toBeTypeOf('number');
           expect(rep.body.pagination).toHaveProperty('page');
           expect(rep.body.pagination).toHaveProperty('pages');
         });
 
         test('Response entries have correct shape', () => {
-          const role = rep.body.data[seededRole.role_id];
+          const role = rep.body.data.find((r: { role_id: string }) => r.role_id === seededRole.role_id);
 
-          expect(role).toBeDefined();
+          if (!role) throw new Error('seeded role missing from response');
           expect(role).toHaveProperty('name');
           expect(role).toHaveProperty('description');
           expect(role.name).toBeTypeOf('string');
@@ -836,38 +839,41 @@ describe(`${fileNumber} - Authorization`, () => {
           const res = await authAPISuper.get(`/roles?search=${token}`);
 
           expect(res.statusCode).toBe(200);
-          expect(Object.keys(res.body.data).sort()).toEqual([roleLow.role_id, roleHigh.role_id].sort());
-          expect(res.body.count).toBe(2);
+          expect(res.body.data.map((r: { role_id: string }) => r.role_id).sort()).toEqual([roleLow.role_id, roleHigh.role_id].sort());
+          expect(res.body.pagination.count_page).toBe(2);
+          expect(res.body.pagination.count_total).toBe(2);
         });
 
         test('"search" by role_id returns that single role', async () => {
           const res = await authAPISuper.get(`/roles?search=${roleLow.role_id}`);
 
           expect(res.statusCode).toBe(200);
-          expect(Object.keys(res.body.data)).toEqual([roleLow.role_id]);
-          expect(res.body.count).toBe(1);
+          expect(res.body.data.map((r: { role_id: string }) => r.role_id)).toEqual([roleLow.role_id]);
+          expect(res.body.pagination.count_page).toBe(1);
+          expect(res.body.pagination.count_total).toBe(1);
         });
 
         test('"search" with no match returns empty data and count 0', async () => {
           const res = await authAPISuper.get('/roles?search=no-such-role-zzzzzzzz');
 
           expect(res.statusCode).toBe(200);
-          expect(res.body.data).toEqual({});
-          expect(res.body.count).toBe(0);
+          expect(res.body.data).toEqual([]);
+          expect(res.body.pagination.count_page).toBe(0);
+          expect(res.body.pagination.count_total).toBe(0);
         });
 
         test('"sort=name&order=ASC" returns matched roles ascending by name', async () => {
           const res = await authAPISuper.get(`/roles?search=${token}&sort=name&order=ASC`);
 
           expect(res.statusCode).toBe(200);
-          expect(Object.keys(res.body.data)).toEqual([roleLow.role_id, roleHigh.role_id]);
+          expect(res.body.data.map((r: { role_id: string }) => r.role_id)).toEqual([roleLow.role_id, roleHigh.role_id]);
         });
 
         test('"sort=name&order=DESC" returns matched roles descending by name', async () => {
           const res = await authAPISuper.get(`/roles?search=${token}&sort=name&order=DESC`);
 
           expect(res.statusCode).toBe(200);
-          expect(Object.keys(res.body.data)).toEqual([roleHigh.role_id, roleLow.role_id]);
+          expect(res.body.data.map((r: { role_id: string }) => r.role_id)).toEqual([roleHigh.role_id, roleLow.role_id]);
         });
       });
     });
@@ -1448,28 +1454,32 @@ describe(`${fileNumber} - Authorization`, () => {
 
         test('Response body has correct shape', () => {
           expect(rep.body).toHaveProperty('data');
-          expect(rep.body).toHaveProperty('count');
           expect(rep.body).toHaveProperty('pagination');
           expect(rep.body.data).toBeTypeOf('object');
-          expect(Array.isArray(rep.body.data)).toBe(false);
+          expect(Array.isArray(rep.body.data)).toBe(true);
         });
 
         test('Filtering by "role_id" returns just that role', () => {
-          expect(rep.body.count).toBe(1);
-          expect(Object.keys(rep.body.data)).toEqual([role.role_id]);
+          expect(rep.body.pagination.count_page).toBe(1);
+          expect(rep.body.pagination.count_total).toBe(1);
+          expect(rep.body.data.map((r: { role_id: string }) => r.role_id)).toEqual([role.role_id]);
         });
 
         test('The role entry carries role_id and role_name', () => {
-          const entry = rep.body.data[role.role_id];
+          const entry = rep.body.data.find((r: { role_id: string }) => r.role_id === role.role_id);
 
+          if (!entry) throw new Error('role missing from roles-permissions response');
           expect(entry.role_id).toBe(role.role_id);
           expect(entry.role_name).toBe(role.name);
         });
 
         test('The role entry nests each assigned permission by id with permission_id and permission_name', () => {
+          const entry = rep.body.data.find((r: { role_id: string }) => r.role_id === role.role_id);
+
+          if (!entry) throw new Error('role missing from roles-permissions response');
           const {
             permissions,
-          } = rep.body.data[role.role_id];
+          } = entry;
 
           expect(Object.keys(permissions).sort()).toEqual(assignedPermissions.map((permission) => permission.permission_id).sort());
 
@@ -1488,8 +1498,12 @@ describe(`${fileNumber} - Authorization`, () => {
           const res = await authAPISuper.get(`/roles/permissions?role_id=${emptyRole.role_id}`);
 
           expect(res.statusCode).toBe(200);
-          expect(res.body.count).toBe(1);
-          expect(res.body.data[emptyRole.role_id].permissions).toEqual({});
+          expect(res.body.pagination.count_page).toBe(1);
+          expect(res.body.pagination.count_total).toBe(1);
+          const emptyRoleEntry = res.body.data.find((r: { role_id: string }) => r.role_id === emptyRole.role_id);
+
+          if (!emptyRoleEntry) throw new Error('empty role missing from response');
+          expect(emptyRoleEntry.permissions).toEqual({});
         });
 
         test('Assigned permissions are ordered by permission name ascending', async () => {
@@ -1507,7 +1521,10 @@ describe(`${fileNumber} - Authorization`, () => {
           const res = await authAPISuper.get(`/roles/permissions?role_id=${orderingRole.role_id}`);
 
           expect(res.statusCode).toBe(200);
-          expect(Object.keys(res.body.data[orderingRole.role_id].permissions)).toEqual([permLow.permission_id, permHigh.permission_id]);
+          const orderingEntry = res.body.data.find((r: { role_id: string }) => r.role_id === orderingRole.role_id);
+
+          if (!orderingEntry) throw new Error('ordering role missing from response');
+          expect(Object.keys(orderingEntry.permissions)).toEqual([permLow.permission_id, permHigh.permission_id]);
         });
 
         test('Omitting "role_id" returns all roles', async () => {
@@ -1515,7 +1532,7 @@ describe(`${fileNumber} - Authorization`, () => {
 
           expect(res.statusCode).toBe(200);
           expect(res.body.data).toBeTypeOf('object');
-          expect(res.body.count).toBeGreaterThan(0);
+          expect(res.body.pagination.count_total).toBeGreaterThan(0);
         });
       });
     });

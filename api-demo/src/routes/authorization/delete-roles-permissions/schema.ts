@@ -3,7 +3,7 @@ import {
 } from '#utils/functions';
 
 const route = {
-  tags: ['authorization'],
+  tags: ['Authorization'],
   summary: 'Remove all of a role\'s permissions',
   description: 'Removes every permission assigned to the role.',
   security: [{ cookieAuth: [] }],

@@ -2,7 +2,7 @@ import fp from 'fastify-plugin';
 
 import { createAuthenticationRepository } from '#repositories/authentication/authentication.repository';
 import { createHealthRepository } from '#repositories/health/health.repository';
-import { createUsersRepository } from '#repositories/users/users.repository';
+import { createInternalUsersRepository } from '#repositories/internal-users/internal-users.repository';
 import { createPermissionsRepository } from '#repositories/permissions/permissions.repository';
 import { createRolesRepository } from '#repositories/roles/roles.repository';
 import { createRolePermissionsRepository } from '#repositories/roles-permissions/roles-permissions.repository';
@@ -20,7 +20,7 @@ function repositoriesPlugin(fastify: FastifyInstance, _options: FastifyPluginOpt
   fastify.decorate('repositories', {
     authentication: createAuthenticationRepository(fastify.db),
     health: createHealthRepository(fastify.db),
-    users: createUsersRepository(fastify.db),
+    internalUsers: createInternalUsersRepository(fastify.db),
     permissions: createPermissionsRepository(fastify.db),
     roles: createRolesRepository(fastify.db),
     rolePermissions: createRolePermissionsRepository(fastify.db),

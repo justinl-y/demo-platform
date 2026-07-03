@@ -3,7 +3,7 @@ import {
 } from '#utils/functions';
 
 const route = {
-  tags: ['authorization'],
+  tags: ['Authorization'],
   summary: 'Replace a role\'s permissions',
   description: 'Replaces the role\'s entire permission set with the supplied permissions.',
   security: [{ cookieAuth: [] }],

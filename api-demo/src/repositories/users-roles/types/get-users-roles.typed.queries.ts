@@ -24,7 +24,7 @@ export interface IUsersRolesGetUsersRolesQuery {
   result: IUsersRolesGetUsersRolesResult;
 }
 
-const usersRolesGetUsersRolesIR: any = {"usedParamSet":{"userId":true,"limit":true,"offset":true},"params":[{"name":"userId","required":false,"transform":{"type":"scalar"},"locs":[{"a":255,"b":261}]},{"name":"limit","required":true,"transform":{"type":"scalar"},"locs":[{"a":342,"b":348}]},{"name":"offset","required":true,"transform":{"type":"scalar"},"locs":[{"a":360,"b":367}]}],"statement":"                                                             \nWITH t_users AS (\n\tSELECT\n\t  u.id AS user_id\n\t  , u.email AS user_email\n\t  , u.full_name AS user_full_name\n\t\t, COUNT(*) OVER () AS total\n\tFROM\n\t  internal.users AS u\n\tWHERE\n\t  COALESCE((u.id = :userId), TRUE)\n\tORDER BY\n\t\tsplit_part(u.full_name, ' ', -1) ASC\n\t\t, u.id ASC\n\tLIMIT\n\t\t:limit!\n\tOFFSET\n\t\t:offset!\n)\nSELECT\n\tjson_object_agg(\n\t\ttu.user_id\n\t\t, json_build_object(\n\t\t\t'user_id', tu.user_id\n\t\t\t, 'user_email', tu.user_email\n\t\t\t, 'user_full_name', tu.user_full_name\n\t\t\t, 'roles', COALESCE(ur.roles, '{}'::json)\n\t\t)\n\t) AS users\n\t, COALESCE(MAX(tu.total), 0)::int AS total\nFROM\n\tt_users AS tu\n\tLEFT JOIN LATERAL (\n\t\tSELECT\n\t\t\tjson_object_agg(\n\t\t\t\tr.id\n\t\t\t\t, json_build_object(\n\t\t\t\t\t'role_id', r.id\n\t\t\t\t\t, 'role_name', r.name\n\t\t\t\t)\n\t\t\t\tORDER BY\n\t\t\t\t\tr.name ASC\n\t\t\t) AS roles\n\t\tFROM\n\t\t\tinternal.users_roles AS ur\n\t\t\tINNER JOIN internal.roles AS r ON r.id = ur.role_id\n\t\tWHERE\n\t\t\tur.user_id = tu.user_id\n\t) AS ur ON TRUE"};
+const usersRolesGetUsersRolesIR: any = {"usedParamSet":{"userId":true,"limit":true,"offset":true},"params":[{"name":"userId","required":false,"transform":{"type":"scalar"},"locs":[{"a":220,"b":226}]},{"name":"limit","required":true,"transform":{"type":"scalar"},"locs":[{"a":702,"b":708}]},{"name":"offset","required":true,"transform":{"type":"scalar"},"locs":[{"a":720,"b":727}]}],"statement":"                                                             \nWITH t_users AS (\n\tSELECT\n\t\tu.id AS user_id\n\t\t, u.email AS user_email\n\t\t, u.full_name AS user_full_name\n\tFROM\n\t\tinternal.users AS u\n\tWHERE\n\t\tCOALESCE((u.id = :userId), TRUE)\n),\nt_ranked AS (\n\t-- Rank the filtered set once by the requested sort. The page (t_page) and the JSON\n\t-- array below both order by this rank, so the result order is deterministic —\n\t-- ROW_NUMBER's ORDER BY and json_agg's ORDER BY are both guaranteed by SQL.\n\tSELECT\n\t\t*\n\t\t, ROW_NUMBER() OVER (\n\t\t\tORDER BY\n\t\t\t\tsplit_part(user_full_name, ' ', -1) ASC\n\t\t\t\t, user_id ASC\n\t\t) AS ord\n\tFROM\n\t\tt_users\n),\nt_page AS (\n\tSELECT\n\t\t*\n\tFROM\n\t\tt_ranked\n\tORDER BY\n\t\tord\n\tLIMIT\n\t\t:limit!\n\tOFFSET\n\t\t:offset!\n)\nSELECT\n\tCOALESCE(\n\t\tjson_agg(\n\t\t\tjson_build_object(\n\t\t\t\t'user_id', tp.user_id\n\t\t\t\t, 'user_email', tp.user_email\n\t\t\t\t, 'user_full_name', tp.user_full_name\n\t\t\t\t, 'roles', COALESCE(ur.roles, '{}'::json)\n\t\t\t)\n\t\t\tORDER BY tp.ord\n\t\t)\n\t, '[]'::json) AS users\n\t, COALESCE((SELECT COUNT(*) FROM t_users), 0)::int AS total\nFROM\n\tt_page AS tp\n\tLEFT JOIN LATERAL (\n\t\tSELECT\n\t\t\tjson_object_agg(\n\t\t\t\tr.id\n\t\t\t\t, json_build_object(\n\t\t\t\t\t'role_id', r.id\n\t\t\t\t\t, 'role_name', r.name\n\t\t\t\t)\n\t\t\t\tORDER BY\n\t\t\t\t\tr.name ASC\n\t\t\t) AS roles\n\t\tFROM\n\t\t\tinternal.users_roles AS ur\n\t\t\tINNER JOIN internal.roles AS r ON r.id = ur.role_id\n\t\tWHERE\n\t\t\tur.user_id = tp.user_id\n\t) AS ur ON TRUE"};
 
 /**
  * Query generated from SQL:
@@ -32,35 +32,55 @@ const usersRolesGetUsersRolesIR: any = {"usedParamSet":{"userId":true,"limit":tr
  *                                                              
  * WITH t_users AS (
  * 	SELECT
- * 	  u.id AS user_id
- * 	  , u.email AS user_email
- * 	  , u.full_name AS user_full_name
- * 		, COUNT(*) OVER () AS total
+ * 		u.id AS user_id
+ * 		, u.email AS user_email
+ * 		, u.full_name AS user_full_name
  * 	FROM
- * 	  internal.users AS u
+ * 		internal.users AS u
  * 	WHERE
- * 	  COALESCE((u.id = :userId), TRUE)
+ * 		COALESCE((u.id = :userId), TRUE)
+ * ),
+ * t_ranked AS (
+ * 	-- Rank the filtered set once by the requested sort. The page (t_page) and the JSON
+ * 	-- array below both order by this rank, so the result order is deterministic —
+ * 	-- ROW_NUMBER's ORDER BY and json_agg's ORDER BY are both guaranteed by SQL.
+ * 	SELECT
+ * 		*
+ * 		, ROW_NUMBER() OVER (
+ * 			ORDER BY
+ * 				split_part(user_full_name, ' ', -1) ASC
+ * 				, user_id ASC
+ * 		) AS ord
+ * 	FROM
+ * 		t_users
+ * ),
+ * t_page AS (
+ * 	SELECT
+ * 		*
+ * 	FROM
+ * 		t_ranked
  * 	ORDER BY
- * 		split_part(u.full_name, ' ', -1) ASC
- * 		, u.id ASC
+ * 		ord
  * 	LIMIT
  * 		:limit!
  * 	OFFSET
  * 		:offset!
  * )
  * SELECT
- * 	json_object_agg(
- * 		tu.user_id
- * 		, json_build_object(
- * 			'user_id', tu.user_id
- * 			, 'user_email', tu.user_email
- * 			, 'user_full_name', tu.user_full_name
- * 			, 'roles', COALESCE(ur.roles, '{}'::json)
+ * 	COALESCE(
+ * 		json_agg(
+ * 			json_build_object(
+ * 				'user_id', tp.user_id
+ * 				, 'user_email', tp.user_email
+ * 				, 'user_full_name', tp.user_full_name
+ * 				, 'roles', COALESCE(ur.roles, '{}'::json)
+ * 			)
+ * 			ORDER BY tp.ord
  * 		)
- * 	) AS users
- * 	, COALESCE(MAX(tu.total), 0)::int AS total
+ * 	, '[]'::json) AS users
+ * 	, COALESCE((SELECT COUNT(*) FROM t_users), 0)::int AS total
  * FROM
- * 	t_users AS tu
+ * 	t_page AS tp
  * 	LEFT JOIN LATERAL (
  * 		SELECT
  * 			json_object_agg(
@@ -76,7 +96,7 @@ const usersRolesGetUsersRolesIR: any = {"usedParamSet":{"userId":true,"limit":tr
  * 			internal.users_roles AS ur
  * 			INNER JOIN internal.roles AS r ON r.id = ur.role_id
  * 		WHERE
- * 			ur.user_id = tu.user_id
+ * 			ur.user_id = tp.user_id
  * 	) AS ur ON TRUE
  * ```
  */

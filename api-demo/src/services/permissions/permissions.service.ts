@@ -16,6 +16,7 @@ interface FetchPermissionsParams {
 }
 
 interface PermissionItem {
+  permission_id: string;
   name: string;
   description: string;
 }

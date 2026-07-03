@@ -102,10 +102,6 @@ function paginationOffset(page: number, perPage: number) {
   return (page - 1) * perPage;
 }
 
-function paginationCount(record: Record<string, unknown>) {
-  return Object.keys(record).length;
-}
-
 function paginationPages(total: number | null | undefined, perPage: number) {
   return Math.ceil((total ?? 0) / perPage);
 }
@@ -117,8 +113,8 @@ interface PaginationOptions {
 }
 
 // Maps a list query result onto the paginated response envelope. The list queries build
-// their rows as a single id-keyed JSON object under `key` and expose the pre-pagination
-// row count as `total`; this turns that into { data, count, pagination }.
+// their rows as a single JSON array under `key` (ordered by the requested sort) and expose
+// the pre-pagination row count as `total`; this turns that into { data, pagination }.
 // NOTE: Result can be any query shape; we extract the `key` property and `total` field.
 function buildPaginatedResult<T>(
   result: unknown,
@@ -126,16 +122,19 @@ function buildPaginatedResult<T>(
     page, perPage, key,
   }: PaginationOptions,
 ): PaginatedResult<T> {
-  const data = (((result as Record<PropertyKey, unknown>)?.[key]) ?? {}) as { [id: string]: T };
-  const count = paginationCount(data);
-  const pages = paginationPages(((result as { total?: number | null })?.total), perPage);
+  const data = (((result as Record<PropertyKey, unknown>)?.[key]) ?? []) as T[];
+  const pageCount = data.length;
+  const total = ((result as { total?: number | null })?.total) ?? 0;
+  const pages = paginationPages(total, perPage);
 
   return {
     data,
-    count,
     pagination: {
       page,
+      per_page: perPage,
       pages,
+      count_page: pageCount,
+      count_total: total,
     },
   };
 }
@@ -176,7 +175,6 @@ export {
   getServerDetails,
   cwd,
   paginationOffset,
-  paginationCount,
   paginationPages,
   buildPaginatedResult,
   randomAlphaNumeric,

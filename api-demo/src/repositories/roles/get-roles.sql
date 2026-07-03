@@ -1,43 +1,64 @@
 WITH t_roles AS (
 	SELECT
-	  r.id AS role_id
-	  , r.name
-	  , r.description
-		, COUNT(*) OVER () AS total
+		r.id AS role_id
+		, r.name
+		, r.description
 	FROM
-	  internal.roles AS r
+		internal.roles AS r
 	WHERE
 		COALESCE(
 			r.name ILIKE $search
 			OR r.id::text ILIKE $search
 		, TRUE)
+),
+t_ranked AS (
+	-- Rank the filtered set once by the requested sort. The page (t_page) and the JSON
+	-- array below both order by this rank, so the result order is deterministic —
+	-- ROW_NUMBER's ORDER BY and json_agg's ORDER BY are both guaranteed by SQL.
+	SELECT
+		*
+		, ROW_NUMBER() OVER (
+			-- Direction can't be parameterized, so each direction is a separate gated term.
+			ORDER BY
+				CASE WHEN $order! = 'DESC' THEN
+					CASE $sort!
+						WHEN 'name' THEN name
+					END
+				END DESC
+				, CASE WHEN $order = 'ASC' THEN
+					CASE $sort
+						WHEN 'name' THEN name
+					END
+				END ASC
+				, role_id ASC
+		) AS ord
+	FROM
+		t_roles
+),
+t_page AS (
+	SELECT
+		*
+	FROM
+		t_ranked
 	ORDER BY
-		-- Direction can't be parameterized, so each direction is a separate gated term.
-		CASE WHEN $order! = 'DESC' THEN
-			CASE $sort!
-				WHEN 'name' THEN r.name
-			END
-		END DESC
-		, CASE WHEN $order = 'ASC' THEN
-			CASE $sort
-				WHEN 'name' THEN r.name
-			END
-		END ASC
-		, r.id ASC
+		ord
 	LIMIT
 		$limit!
 	OFFSET
 		$offset!
 )
 SELECT
-	json_object_agg(
-		tr.role_id
-		,json_build_object(
-			'name', tr.name
-			, 'description', tr.description
+	COALESCE(
+		json_agg(
+			json_build_object(
+				'role_id', tp.role_id
+				, 'name', tp.name
+				, 'description', tp.description
+			)
+			ORDER BY tp.ord
 		)
-	) AS roles
-	, COALESCE(MAX(tr.total), 0)::int AS total
+	, '[]'::json) AS roles
+	, COALESCE((SELECT COUNT(*) FROM t_roles), 0)::int AS total
 FROM
-	t_roles AS tr
+	t_page AS tp
 ;

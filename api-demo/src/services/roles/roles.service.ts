@@ -16,6 +16,7 @@ interface FetchRolesParams {
 }
 
 interface RoleItem {
+  role_id: string;
   name: string;
   description: string;
 }

@@ -15,8 +15,8 @@ import {
   Config,
 } from '#config/index';
 import {
-  baseInformation,
-} from './api-docs/base-information.ts';
+  base,
+} from './api-docs/base.ts';
 
 import type { FastifyPluginCallback } from 'fastify';
 
@@ -56,7 +56,7 @@ async function buildInstance() {
 
   // Register Swagger and Swagger UI only in non-prod environments
   if (!Config.liveEnvironments.includes(Config.apiEnv)) {
-    instance.register(swagger, baseInformation);
+    instance.register(swagger, base);
     instance.register(swaggerUi, Config.swaggerConfig);
   }
 
