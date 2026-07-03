@@ -10,27 +10,31 @@ WITH t_users AS (
 	WHERE
 		COALESCE((u.id = :userId), TRUE)
 ),
+t_ranked AS (
+	-- Rank the filtered set once by the requested sort. The page (t_page) and the JSON
+	-- array below both order by this rank, so the result order is deterministic —
+	-- ROW_NUMBER's ORDER BY and json_agg's ORDER BY are both guaranteed by SQL.
+	SELECT
+		*
+		, ROW_NUMBER() OVER (
+			ORDER BY
+				split_part(user_full_name, ' ', -1) ASC
+				, user_id ASC
+		) AS ord
+	FROM
+		t_users
+),
 t_page AS (
 	SELECT
-		p.*
-		-- `ord` preserves the requested sort into the JSON array below: the inner
-		-- subquery is ORDER BY-ed then LIMIT/OFFSET-ed, and ROW_NUMBER() OVER () numbers
-		-- rows in that produced order (Postgres carries a subquery's ORDER BY into the
-		-- window step), so json_agg(... ORDER BY tp.ord) re-emits rows in sort order.
-		, ROW_NUMBER() OVER () AS ord
-	FROM (
-		SELECT
-			*
-		FROM
-			t_users
-		ORDER BY
-			split_part(user_full_name, ' ', -1) ASC
-			, user_id ASC
-		LIMIT
-			:limit!
-		OFFSET
-			:offset!
-	) AS p
+		*
+	FROM
+		t_ranked
+	ORDER BY
+		ord
+	LIMIT
+		:limit!
+	OFFSET
+		:offset!
 )
 SELECT
 	COALESCE(

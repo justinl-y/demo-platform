@@ -26,7 +26,7 @@ export interface IRolesGetRolesQuery {
   result: IRolesGetRolesResult;
 }
 
-const rolesGetRolesIR: any = {"usedParamSet":{"search":true,"order":true,"sort":true,"limit":true,"offset":true},"params":[{"name":"search","required":false,"transform":{"type":"scalar"},"locs":[{"a":198,"b":204},{"a":229,"b":235}]},{"name":"order","required":true,"transform":{"type":"scalar"},"locs":[{"a":781,"b":787},{"a":881,"b":886}]},{"name":"sort","required":true,"transform":{"type":"scalar"},"locs":[{"a":812,"b":817},{"a":910,"b":914}]},{"name":"limit","required":true,"transform":{"type":"scalar"},"locs":[{"a":990,"b":996}]},{"name":"offset","required":true,"transform":{"type":"scalar"},"locs":[{"a":1010,"b":1017}]}],"statement":"                                                             \nWITH t_roles AS (\n\tSELECT\n\t\tr.id AS role_id\n\t\t, r.name\n\t\t, r.description\n\tFROM\n\t\tinternal.roles AS r\n\tWHERE\n\t\tCOALESCE(\n\t\t\tr.name ILIKE :search\n\t\t\tOR r.id::text ILIKE :search\n\t\t, TRUE)\n),\nt_page AS (\n\tSELECT\n\t\trg.*\n\t\t-- `ord` preserves the requested sort into the JSON array below: the inner\n\t\t-- subquery is ORDER BY-ed then LIMIT/OFFSET-ed, and ROW_NUMBER() OVER () numbers\n\t\t-- rows in that produced order (Postgres carries a subquery's ORDER BY into the\n\t\t-- window step), so json_agg(... ORDER BY tp.ord) re-emits rows in sort order.\n\t\t, ROW_NUMBER() OVER () AS ord\n\tFROM (\n\t\tSELECT\n\t\t\t*\n\t\tFROM\n\t\t\tt_roles\n\t\tORDER BY\n\t\t\t-- Direction can't be parameterized, so each direction is a separate gated term.\n\t\t\tCASE WHEN :order! = 'DESC' THEN\n\t\t\t\tCASE :sort!\n\t\t\t\t\tWHEN 'name' THEN name\n\t\t\t\tEND\n\t\t\tEND DESC\n\t\t\t, CASE WHEN :order = 'ASC' THEN\n\t\t\t\tCASE :sort\n\t\t\t\t\tWHEN 'name' THEN name\n\t\t\t\tEND\n\t\t\tEND ASC\n\t\t\t, role_id ASC\n\t\tLIMIT\n\t\t\t:limit!\n\t\tOFFSET\n\t\t\t:offset!\n\t) AS rg\n)\nSELECT\n\tCOALESCE(\n\t\tjson_agg(\n\t\t\tjson_build_object(\n\t\t\t\t'role_id', tp.role_id\n\t\t\t\t, 'name', tp.name\n\t\t\t\t, 'description', tp.description\n\t\t\t)\n\t\t\tORDER BY tp.ord\n\t\t)\n\t, '[]'::json) AS roles\n\t, COALESCE((SELECT COUNT(*) FROM t_roles), 0)::int AS total\nFROM\n\tt_page AS tp"};
+const rolesGetRolesIR: any = {"usedParamSet":{"search":true,"order":true,"sort":true,"limit":true,"offset":true},"params":[{"name":"search","required":false,"transform":{"type":"scalar"},"locs":[{"a":198,"b":204},{"a":229,"b":235}]},{"name":"order","required":true,"transform":{"type":"scalar"},"locs":[{"a":653,"b":659},{"a":758,"b":763}]},{"name":"sort","required":true,"transform":{"type":"scalar"},"locs":[{"a":685,"b":690},{"a":788,"b":792}]},{"name":"limit","required":true,"transform":{"type":"scalar"},"locs":[{"a":957,"b":963}]},{"name":"offset","required":true,"transform":{"type":"scalar"},"locs":[{"a":975,"b":982}]}],"statement":"                                                             \nWITH t_roles AS (\n\tSELECT\n\t\tr.id AS role_id\n\t\t, r.name\n\t\t, r.description\n\tFROM\n\t\tinternal.roles AS r\n\tWHERE\n\t\tCOALESCE(\n\t\t\tr.name ILIKE :search\n\t\t\tOR r.id::text ILIKE :search\n\t\t, TRUE)\n),\nt_ranked AS (\n\t-- Rank the filtered set once by the requested sort. The page (t_page) and the JSON\n\t-- array below both order by this rank, so the result order is deterministic —\n\t-- ROW_NUMBER's ORDER BY and json_agg's ORDER BY are both guaranteed by SQL.\n\tSELECT\n\t\t*\n\t\t, ROW_NUMBER() OVER (\n\t\t\t-- Direction can't be parameterized, so each direction is a separate gated term.\n\t\t\tORDER BY\n\t\t\t\tCASE WHEN :order! = 'DESC' THEN\n\t\t\t\t\tCASE :sort!\n\t\t\t\t\t\tWHEN 'name' THEN name\n\t\t\t\t\tEND\n\t\t\t\tEND DESC\n\t\t\t\t, CASE WHEN :order = 'ASC' THEN\n\t\t\t\t\tCASE :sort\n\t\t\t\t\t\tWHEN 'name' THEN name\n\t\t\t\t\tEND\n\t\t\t\tEND ASC\n\t\t\t\t, role_id ASC\n\t\t) AS ord\n\tFROM\n\t\tt_roles\n),\nt_page AS (\n\tSELECT\n\t\t*\n\tFROM\n\t\tt_ranked\n\tORDER BY\n\t\tord\n\tLIMIT\n\t\t:limit!\n\tOFFSET\n\t\t:offset!\n)\nSELECT\n\tCOALESCE(\n\t\tjson_agg(\n\t\t\tjson_build_object(\n\t\t\t\t'role_id', tp.role_id\n\t\t\t\t, 'name', tp.name\n\t\t\t\t, 'description', tp.description\n\t\t\t)\n\t\t\tORDER BY tp.ord\n\t\t)\n\t, '[]'::json) AS roles\n\t, COALESCE((SELECT COUNT(*) FROM t_roles), 0)::int AS total\nFROM\n\tt_page AS tp"};
 
 /**
  * Query generated from SQL:
@@ -45,37 +45,41 @@ const rolesGetRolesIR: any = {"usedParamSet":{"search":true,"order":true,"sort":
  * 			OR r.id::text ILIKE :search
  * 		, TRUE)
  * ),
+ * t_ranked AS (
+ * 	-- Rank the filtered set once by the requested sort. The page (t_page) and the JSON
+ * 	-- array below both order by this rank, so the result order is deterministic —
+ * 	-- ROW_NUMBER's ORDER BY and json_agg's ORDER BY are both guaranteed by SQL.
+ * 	SELECT
+ * 		*
+ * 		, ROW_NUMBER() OVER (
+ * 			-- Direction can't be parameterized, so each direction is a separate gated term.
+ * 			ORDER BY
+ * 				CASE WHEN :order! = 'DESC' THEN
+ * 					CASE :sort!
+ * 						WHEN 'name' THEN name
+ * 					END
+ * 				END DESC
+ * 				, CASE WHEN :order = 'ASC' THEN
+ * 					CASE :sort
+ * 						WHEN 'name' THEN name
+ * 					END
+ * 				END ASC
+ * 				, role_id ASC
+ * 		) AS ord
+ * 	FROM
+ * 		t_roles
+ * ),
  * t_page AS (
  * 	SELECT
- * 		rg.*
- * 		-- `ord` preserves the requested sort into the JSON array below: the inner
- * 		-- subquery is ORDER BY-ed then LIMIT/OFFSET-ed, and ROW_NUMBER() OVER () numbers
- * 		-- rows in that produced order (Postgres carries a subquery's ORDER BY into the
- * 		-- window step), so json_agg(... ORDER BY tp.ord) re-emits rows in sort order.
- * 		, ROW_NUMBER() OVER () AS ord
- * 	FROM (
- * 		SELECT
- * 			*
- * 		FROM
- * 			t_roles
- * 		ORDER BY
- * 			-- Direction can't be parameterized, so each direction is a separate gated term.
- * 			CASE WHEN :order! = 'DESC' THEN
- * 				CASE :sort!
- * 					WHEN 'name' THEN name
- * 				END
- * 			END DESC
- * 			, CASE WHEN :order = 'ASC' THEN
- * 				CASE :sort
- * 					WHEN 'name' THEN name
- * 				END
- * 			END ASC
- * 			, role_id ASC
- * 		LIMIT
- * 			:limit!
- * 		OFFSET
- * 			:offset!
- * 	) AS rg
+ * 		*
+ * 	FROM
+ * 		t_ranked
+ * 	ORDER BY
+ * 		ord
+ * 	LIMIT
+ * 		:limit!
+ * 	OFFSET
+ * 		:offset!
  * )
  * SELECT
  * 	COALESCE(

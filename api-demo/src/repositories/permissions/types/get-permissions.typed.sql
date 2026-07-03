@@ -13,37 +13,41 @@ WITH t_permissions AS (
 			OR p.id::text ILIKE :search
 		, TRUE)
 ),
+t_ranked AS (
+	-- Rank the filtered set once by the requested sort. The page (t_page) and the JSON
+	-- array below both order by this rank, so the result order is deterministic —
+	-- ROW_NUMBER's ORDER BY and json_agg's ORDER BY are both guaranteed by SQL.
+	SELECT
+		*
+		, ROW_NUMBER() OVER (
+			-- Direction can't be parameterized, so each direction is a separate gated term.
+			ORDER BY
+				CASE WHEN :order! = 'DESC' THEN
+					CASE :sort!
+						WHEN 'name' THEN name
+					END
+				END DESC
+				, CASE WHEN :order = 'ASC' THEN
+					CASE :sort
+						WHEN 'name' THEN name
+					END
+				END ASC
+				, permission_id ASC
+		) AS ord
+	FROM
+		t_permissions
+),
 t_page AS (
 	SELECT
-		pg.*
-		-- `ord` preserves the requested sort into the JSON array below: the inner
-		-- subquery is ORDER BY-ed then LIMIT/OFFSET-ed, and ROW_NUMBER() OVER () numbers
-		-- rows in that produced order (Postgres carries a subquery's ORDER BY into the
-		-- window step), so json_agg(... ORDER BY tp.ord) re-emits rows in sort order.
-		, ROW_NUMBER() OVER () AS ord
-	FROM (
-		SELECT
-			*
-		FROM
-			t_permissions
-		ORDER BY
-			-- Direction can't be parameterized, so each direction is a separate gated term.
-			CASE WHEN :order! = 'DESC' THEN
-				CASE :sort!
-					WHEN 'name' THEN name
-				END
-			END DESC
-			, CASE WHEN :order = 'ASC' THEN
-				CASE :sort
-					WHEN 'name' THEN name
-				END
-			END ASC
-			, permission_id ASC
-		LIMIT
-			:limit!
-		OFFSET
-			:offset!
-	) AS pg
+		*
+	FROM
+		t_ranked
+	ORDER BY
+		ord
+	LIMIT
+		:limit!
+	OFFSET
+		:offset!
 )
 SELECT
 	COALESCE(

@@ -26,7 +26,7 @@ export interface IPermissionsGetPermissionsQuery {
   result: IPermissionsGetPermissionsResult;
 }
 
-const permissionsGetPermissionsIR: any = {"usedParamSet":{"search":true,"order":true,"sort":true,"limit":true,"offset":true},"params":[{"name":"search","required":false,"transform":{"type":"scalar"},"locs":[{"a":216,"b":222},{"a":247,"b":253}]},{"name":"order","required":true,"transform":{"type":"scalar"},"locs":[{"a":805,"b":811},{"a":905,"b":910}]},{"name":"sort","required":true,"transform":{"type":"scalar"},"locs":[{"a":836,"b":841},{"a":934,"b":938}]},{"name":"limit","required":true,"transform":{"type":"scalar"},"locs":[{"a":1020,"b":1026}]},{"name":"offset","required":true,"transform":{"type":"scalar"},"locs":[{"a":1040,"b":1047}]}],"statement":"                                                             \nWITH t_permissions AS (\n\tSELECT\n\t\tp.id AS permission_id\n\t\t, p.name\n\t\t, p.description\n\tFROM\n\t\tinternal.permissions AS p\n\tWHERE\n\t\tCOALESCE(\n\t\t\tp.name ILIKE :search\n\t\t\tOR p.id::text ILIKE :search\n\t\t, TRUE)\n),\nt_page AS (\n\tSELECT\n\t\tpg.*\n\t\t-- `ord` preserves the requested sort into the JSON array below: the inner\n\t\t-- subquery is ORDER BY-ed then LIMIT/OFFSET-ed, and ROW_NUMBER() OVER () numbers\n\t\t-- rows in that produced order (Postgres carries a subquery's ORDER BY into the\n\t\t-- window step), so json_agg(... ORDER BY tp.ord) re-emits rows in sort order.\n\t\t, ROW_NUMBER() OVER () AS ord\n\tFROM (\n\t\tSELECT\n\t\t\t*\n\t\tFROM\n\t\t\tt_permissions\n\t\tORDER BY\n\t\t\t-- Direction can't be parameterized, so each direction is a separate gated term.\n\t\t\tCASE WHEN :order! = 'DESC' THEN\n\t\t\t\tCASE :sort!\n\t\t\t\t\tWHEN 'name' THEN name\n\t\t\t\tEND\n\t\t\tEND DESC\n\t\t\t, CASE WHEN :order = 'ASC' THEN\n\t\t\t\tCASE :sort\n\t\t\t\t\tWHEN 'name' THEN name\n\t\t\t\tEND\n\t\t\tEND ASC\n\t\t\t, permission_id ASC\n\t\tLIMIT\n\t\t\t:limit!\n\t\tOFFSET\n\t\t\t:offset!\n\t) AS pg\n)\nSELECT\n\tCOALESCE(\n\t\tjson_agg(\n\t\t\tjson_build_object(\n\t\t\t\t'permission_id', tp.permission_id\n\t\t\t\t, 'name', tp.name\n\t\t\t\t, 'description', tp.description\n\t\t\t)\n\t\t\tORDER BY tp.ord\n\t\t)\n\t, '[]'::json) AS permissions\n\t, COALESCE((SELECT COUNT(*) FROM t_permissions), 0)::int AS total\nFROM\n\tt_page AS tp"};
+const permissionsGetPermissionsIR: any = {"usedParamSet":{"search":true,"order":true,"sort":true,"limit":true,"offset":true},"params":[{"name":"search","required":false,"transform":{"type":"scalar"},"locs":[{"a":216,"b":222},{"a":247,"b":253}]},{"name":"order","required":true,"transform":{"type":"scalar"},"locs":[{"a":671,"b":677},{"a":776,"b":781}]},{"name":"sort","required":true,"transform":{"type":"scalar"},"locs":[{"a":703,"b":708},{"a":806,"b":810}]},{"name":"limit","required":true,"transform":{"type":"scalar"},"locs":[{"a":987,"b":993}]},{"name":"offset","required":true,"transform":{"type":"scalar"},"locs":[{"a":1005,"b":1012}]}],"statement":"                                                             \nWITH t_permissions AS (\n\tSELECT\n\t\tp.id AS permission_id\n\t\t, p.name\n\t\t, p.description\n\tFROM\n\t\tinternal.permissions AS p\n\tWHERE\n\t\tCOALESCE(\n\t\t\tp.name ILIKE :search\n\t\t\tOR p.id::text ILIKE :search\n\t\t, TRUE)\n),\nt_ranked AS (\n\t-- Rank the filtered set once by the requested sort. The page (t_page) and the JSON\n\t-- array below both order by this rank, so the result order is deterministic —\n\t-- ROW_NUMBER's ORDER BY and json_agg's ORDER BY are both guaranteed by SQL.\n\tSELECT\n\t\t*\n\t\t, ROW_NUMBER() OVER (\n\t\t\t-- Direction can't be parameterized, so each direction is a separate gated term.\n\t\t\tORDER BY\n\t\t\t\tCASE WHEN :order! = 'DESC' THEN\n\t\t\t\t\tCASE :sort!\n\t\t\t\t\t\tWHEN 'name' THEN name\n\t\t\t\t\tEND\n\t\t\t\tEND DESC\n\t\t\t\t, CASE WHEN :order = 'ASC' THEN\n\t\t\t\t\tCASE :sort\n\t\t\t\t\t\tWHEN 'name' THEN name\n\t\t\t\t\tEND\n\t\t\t\tEND ASC\n\t\t\t\t, permission_id ASC\n\t\t) AS ord\n\tFROM\n\t\tt_permissions\n),\nt_page AS (\n\tSELECT\n\t\t*\n\tFROM\n\t\tt_ranked\n\tORDER BY\n\t\tord\n\tLIMIT\n\t\t:limit!\n\tOFFSET\n\t\t:offset!\n)\nSELECT\n\tCOALESCE(\n\t\tjson_agg(\n\t\t\tjson_build_object(\n\t\t\t\t'permission_id', tp.permission_id\n\t\t\t\t, 'name', tp.name\n\t\t\t\t, 'description', tp.description\n\t\t\t)\n\t\t\tORDER BY tp.ord\n\t\t)\n\t, '[]'::json) AS permissions\n\t, COALESCE((SELECT COUNT(*) FROM t_permissions), 0)::int AS total\nFROM\n\tt_page AS tp"};
 
 /**
  * Query generated from SQL:
@@ -45,37 +45,41 @@ const permissionsGetPermissionsIR: any = {"usedParamSet":{"search":true,"order":
  * 			OR p.id::text ILIKE :search
  * 		, TRUE)
  * ),
+ * t_ranked AS (
+ * 	-- Rank the filtered set once by the requested sort. The page (t_page) and the JSON
+ * 	-- array below both order by this rank, so the result order is deterministic —
+ * 	-- ROW_NUMBER's ORDER BY and json_agg's ORDER BY are both guaranteed by SQL.
+ * 	SELECT
+ * 		*
+ * 		, ROW_NUMBER() OVER (
+ * 			-- Direction can't be parameterized, so each direction is a separate gated term.
+ * 			ORDER BY
+ * 				CASE WHEN :order! = 'DESC' THEN
+ * 					CASE :sort!
+ * 						WHEN 'name' THEN name
+ * 					END
+ * 				END DESC
+ * 				, CASE WHEN :order = 'ASC' THEN
+ * 					CASE :sort
+ * 						WHEN 'name' THEN name
+ * 					END
+ * 				END ASC
+ * 				, permission_id ASC
+ * 		) AS ord
+ * 	FROM
+ * 		t_permissions
+ * ),
  * t_page AS (
  * 	SELECT
- * 		pg.*
- * 		-- `ord` preserves the requested sort into the JSON array below: the inner
- * 		-- subquery is ORDER BY-ed then LIMIT/OFFSET-ed, and ROW_NUMBER() OVER () numbers
- * 		-- rows in that produced order (Postgres carries a subquery's ORDER BY into the
- * 		-- window step), so json_agg(... ORDER BY tp.ord) re-emits rows in sort order.
- * 		, ROW_NUMBER() OVER () AS ord
- * 	FROM (
- * 		SELECT
- * 			*
- * 		FROM
- * 			t_permissions
- * 		ORDER BY
- * 			-- Direction can't be parameterized, so each direction is a separate gated term.
- * 			CASE WHEN :order! = 'DESC' THEN
- * 				CASE :sort!
- * 					WHEN 'name' THEN name
- * 				END
- * 			END DESC
- * 			, CASE WHEN :order = 'ASC' THEN
- * 				CASE :sort
- * 					WHEN 'name' THEN name
- * 				END
- * 			END ASC
- * 			, permission_id ASC
- * 		LIMIT
- * 			:limit!
- * 		OFFSET
- * 			:offset!
- * 	) AS pg
+ * 		*
+ * 	FROM
+ * 		t_ranked
+ * 	ORDER BY
+ * 		ord
+ * 	LIMIT
+ * 		:limit!
+ * 	OFFSET
+ * 		:offset!
  * )
  * SELECT
  * 	COALESCE(

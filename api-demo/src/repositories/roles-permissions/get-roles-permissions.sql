@@ -7,27 +7,31 @@ WITH t_roles AS (
 	WHERE
 		COALESCE((r.id = $roleId), TRUE)
 ),
+t_ranked AS (
+	-- Rank the filtered set once by the requested sort. The page (t_page) and the JSON
+	-- array below both order by this rank, so the result order is deterministic —
+	-- ROW_NUMBER's ORDER BY and json_agg's ORDER BY are both guaranteed by SQL.
+	SELECT
+		*
+		, ROW_NUMBER() OVER (
+			ORDER BY
+				role_name ASC
+				, role_id ASC
+		) AS ord
+	FROM
+		t_roles
+),
 t_page AS (
 	SELECT
-		rg.*
-		-- `ord` preserves the requested sort into the JSON array below: the inner
-		-- subquery is ORDER BY-ed then LIMIT/OFFSET-ed, and ROW_NUMBER() OVER () numbers
-		-- rows in that produced order (Postgres carries a subquery's ORDER BY into the
-		-- window step), so json_agg(... ORDER BY tp.ord) re-emits rows in sort order.
-		, ROW_NUMBER() OVER () AS ord
-	FROM (
-		SELECT
-			*
-		FROM
-			t_roles
-		ORDER BY
-			role_name ASC
-			, role_id ASC
-		LIMIT
-			$limit!
-		OFFSET
-			$offset!
-	) AS rg
+		*
+	FROM
+		t_ranked
+	ORDER BY
+		ord
+	LIMIT
+		$limit!
+	OFFSET
+		$offset!
 )
 SELECT
 	COALESCE(
