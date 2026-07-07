@@ -1,0 +1,57 @@
+name: PR Lockfile Check
+
+# package-lock.json must stay in sync with the workspace package.json files AND
+# retain Linux-only optional deps (e.g. @emnapi/*, required by rolldown's wasm
+# binding when api-demo's Docker CI runs `npm ci` on node:24-alpine). An
+# incremental `npm install` on macOS prunes those optional entries, which passes
+# locally but breaks the api-demo Docker build with an EUSAGE "Missing ... from
+# lock file" error. This guard regenerates the lockfile in the same Linux image
+# and fails if the committed lock differs. Fix locally with `npm run lock:refresh`
+# and commit the result.
+
+on:
+  pull_request:
+    paths:
+      - 'package.json'
+      - '**/package.json'
+      - 'package-lock.json'
+      - '.github/workflows/pr-lockfile-check.yml'
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-lockfile-check-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  lockfile-in-sync:
+    name: Lockfile in sync (Linux)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # Checkout the code
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      # Regenerate package-lock.json in the same image api-demo CI builds with
+      # (node:24-alpine), so Linux-only optional deps are retained. This mirrors
+      # the `lock:refresh` npm script exactly. --package-lock-only writes only the
+      # lock (no node_modules); --legacy-peer-deps matches Dockerfile.ci's npm ci.
+      - name: Regenerate lockfile in Linux
+        run: |
+          docker run --rm -v "$PWD":/app -w /app node:24-alpine \
+            sh -c "npm install --package-lock-only --legacy-peer-deps"
+
+      # Fail if the committed lockfile differs from the Linux-regenerated one.
+      - name: Verify lockfile is in sync
+        run: |
+          if git diff --quiet -- package-lock.json; then
+            echo "package-lock.json is in sync."
+            exit 0
+          fi
+          echo "::error::package-lock.json is out of sync (or missing Linux-only optional deps). Run 'npm run lock:refresh' locally and commit the updated package-lock.json."
+          echo "----- drift -----"
+          git --no-pager diff -- package-lock.json
+          exit 1
