@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 
+import { clearSentryUser } from '../../lib/sentry.ts';
 import { logout } from './api.ts';
 import { clearAuthHint } from './session.ts';
 
@@ -15,6 +16,7 @@ export const useLogout = () => {
     mutationFn: logout,
     onSettled: () => {
       clearAuthHint();
+      clearSentryUser();
       queryClient.clear();
       void navigate({ to: '/login' });
     },

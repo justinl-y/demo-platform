@@ -32,7 +32,7 @@ export default function LoginPage() {
           <Alert
             type='error'
             showIcon
-            message='Login failed'
+            title='Login failed'
             description='Check your email and password and try again.'
             style={{ marginBottom: 16 }}
           />

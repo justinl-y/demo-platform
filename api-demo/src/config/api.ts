@@ -19,6 +19,9 @@ const corsConfig = {
   allowedHeaders: [
     'Content-Type',
     'X-Demo-Application',
+    // Sentry distributed tracing: the front-end SPA sends these to link its trace to the API's.
+    'sentry-trace',
+    'baggage',
   ],
   credentials: true,
   exposedHeaders: [

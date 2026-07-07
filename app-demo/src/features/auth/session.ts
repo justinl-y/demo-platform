@@ -1,3 +1,4 @@
+import { clearSentryUser, setSentryUser } from '../../lib/sentry.ts';
 import { meQueryOptions } from './queries.ts';
 
 import type { QueryClient } from '@tanstack/react-query';
@@ -21,10 +22,14 @@ export const resolveSession = async (queryClient: QueryClient): Promise<Internal
   if (!hasAuthHint()) return null;
 
   try {
-    return await queryClient.ensureQueryData(meQueryOptions);
+    const user = await queryClient.ensureQueryData(meQueryOptions);
+    setSentryUser(user);
+
+    return user;
   }
   catch {
     clearAuthHint();
+    clearSentryUser();
 
     return null;
   }

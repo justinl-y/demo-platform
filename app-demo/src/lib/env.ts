@@ -1,13 +1,14 @@
 // Base URL of the api-demo REST API, from VITE_API_URL:
 //   - dev (env:local / env:test): from the matching .env file, defaulting to the local API on :6662
-//   - production build: required (set in .env.production) — a deployed bundle must never fall back
-//     to a localhost origin, so we fail rather than ship one. `import.meta.env.PROD` is a build-time
-//     constant, so the dev branch (and its localhost string) is dropped from production output.
+//   - deploy build (`vite build --mode stage`): required (set in .env.stage) — a deployed bundle must
+//     never fall back to a localhost origin, so we fail rather than ship one. `import.meta.env.PROD`
+//     is a build-time constant (true for the deploy build), so the dev branch (and its localhost
+//     string) is dropped from the output.
 function resolveApiBaseUrl(): string {
   const url = import.meta.env.VITE_API_URL;
 
   if (import.meta.env.PROD) {
-    if (!url) throw new Error('VITE_API_URL must be set for production builds (see app-demo/.env.production).');
+    if (!url) throw new Error('VITE_API_URL must be set for the deploy build (see app-demo/.env.stage).');
 
     return url;
   }
