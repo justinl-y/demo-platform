@@ -50,6 +50,9 @@ COPY tsconfig.base.json ${WORKSPACE_ROOT}/tsconfig.base.json
 COPY api-demo/tsconfig.json ${API_HOME}/tsconfig.json
 COPY api-demo/src ${API_HOME}/src
 COPY api-demo/pm2 ${API_HOME}/pm2
+# Shared type declarations (#shared/* -> ../shared/*.d.ts). Type-only imports, so
+# nothing is emitted, but the in-container typecheck needs the .d.ts present.
+COPY shared ${WORKSPACE_ROOT}/shared
 
 # Install the api-demo workspace (dev deps included) from the unified lockfile.
 RUN --mount=type=secret,id=npm_token --mount=type=cache,target=/root/.npm \

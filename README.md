@@ -124,3 +124,26 @@ Managed as an [npm workspaces](https://docs.npmjs.com/cli/using-npm/workspaces) 
 /api-demo # Backend API service
 /db-demo  # Database schema & init scripts
 /shared   # Shared TypeScript resources
+```
+
+### 🔁 Keeping the lockfile in sync
+
+The single root `package-lock.json` is shared by every workspace, including app-demo's **Vite 8 / Rolldown** toolchain — whose wasm fallback binding pulls **Linux-only optional dependencies** (`@emnapi/*`). An incremental `npm install` on **macOS** prunes those entries from the lockfile: it still resolves locally, but a clean `npm ci` in CI (Linux) then fails with:
+
+> `npm error code EUSAGE` … `Missing: @emnapi/core@… from lock file`
+
+This only surfaced once the repo moved to a single shared lockfile — previously each package had its own lockfile, so app-demo's toolchain never touched the API's Docker build.
+
+**Fix** — regenerate the lockfile in a Linux context (the same `node:24-alpine` image the API's Docker CI uses) so the platform-specific optional deps are retained. The `lock:refresh` script does this (**requires Docker**):
+
+```bash
+npm run lock:refresh   # runs `npm install --package-lock-only` inside node:24-alpine — lockfile only, no node_modules
+```
+
+**Process** — after any dependency change (add / remove / update / version bump):
+
+1. `npm i <pkg>` / `npm rm <pkg>` / edit a `package.json` — updates your local `node_modules`.
+2. `npm run lock:refresh` — Linux-completes the lockfile (run once, as the final lockfile step).
+3. Commit both `package.json` and `package-lock.json`.
+
+The **PR Lockfile Check** workflow regenerates the lockfile on Linux and fails the PR if the committed one drifts — so a pruned lockfile can't reach the Docker build.

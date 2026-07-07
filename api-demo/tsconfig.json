@@ -19,7 +19,8 @@
       "#lib/*": ["./src/lib/*.ts"],
       "#decorators/*": ["./src/decorators/*.ts"],
       "#repositories/*": ["./src/repositories/*.ts"],
-      "#services/*": ["./src/services/*.ts"]
+      "#services/*": ["./src/services/*.ts"],
+      "#shared/*": ["../shared/*.d.ts"]
     },
   },
   "include": [

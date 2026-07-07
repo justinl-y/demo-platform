@@ -18,21 +18,14 @@ import { Config } from '#config/index';
 import type { JWT } from '@fastify/jwt';
 import type { AuthenticationRepository } from '#repositories/authentication/authentication.repository';
 import type { JwtUser } from '../../types/jwt.ts';
+import type { Login, InternalUser } from '#shared/types';
 
-interface LoginParams {
-  email: string;
-  password: string;
-}
+interface LoginParams extends Login {}
 
 interface LoginResult {
   accessToken: string;
   refreshToken: string;
-  user: {
-    id: string;
-    email: string;
-    full_name: string;
-    known_as: string | null;
-  };
+  user: InternalUser;
 }
 async function login(repository: AuthenticationRepository, jwt: JWT, params: LoginParams): Promise<LoginResult> {
   const {
@@ -73,10 +66,11 @@ async function login(repository: AuthenticationRepository, jwt: JWT, params: Log
     accessToken,
     refreshToken,
     user: {
-      id: userId,
+      user_id: userId,
       email,
       full_name: fullName,
       known_as: knownAs,
+      permissions,
     },
   };
 }
@@ -323,10 +317,46 @@ async function passwordReset(repository: AuthenticationRepository, params: Passw
   if (!user) throw new BadRequestError('Invalid or expired password reset token');
 }
 
+interface CurrentUserParams {
+  email: string;
+  permissions: string[];
+}
+
+interface CurrentUser extends InternalUser {}
+
+// Resolves the current user for a valid access token. The token carries the id/email;
+// this re-reads the profile from the DB so the caller always gets fresh name fields and
+// an implicit ACTIVE-status check (getUserByEmail filters on status), meaning a token held
+// by a since-deactivated user resolves to no user and is rejected. Permissions are passed
+// through from the access-token claim (not re-read from the DB) so the value the UI renders
+// against matches exactly what the API's authorize hook enforces on for this token.
+async function fetchCurrentUser(repository: AuthenticationRepository, params: CurrentUserParams): Promise<CurrentUser> {
+  const {
+    email,
+    permissions,
+  } = params;
+
+  const user = await repository.getUserByEmail({ email });
+  if (!user) throw new UnauthorizedError('Authentication failed');
+
+  const {
+    user_id: userId, email: userEmail, full_name: fullName, known_as: knownAs,
+  } = user;
+
+  return {
+    user_id: userId,
+    email: userEmail,
+    full_name: fullName,
+    known_as: knownAs,
+    permissions,
+  };
+}
+
 export {
   login,
   refresh,
   logout,
   passwordForgot,
   passwordReset,
+  fetchCurrentUser,
 };

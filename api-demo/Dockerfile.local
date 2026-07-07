@@ -49,6 +49,9 @@ RUN --mount=type=secret,id=npm_token --mount=type=cache,target=/root/.npm \
 
 COPY api-demo/src ${API_HOME}/src
 COPY api-demo/pm2 ${API_HOME}/pm2
+# Shared type declarations (#shared/* -> ../shared/*.d.ts). Type-only imports, so
+# nothing is emitted, but the in-container typecheck needs the .d.ts present.
+COPY shared ${WORKSPACE_ROOT}/shared
 
 # Run the app from the workspace directory so pm2 / tsx resolve src and config.
 WORKDIR ${API_HOME}
