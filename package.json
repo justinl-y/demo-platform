@@ -28,6 +28,7 @@
     "build": "npm run build --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
+    "openapi:sync": "npm run openapi:generate -w api-demo && npm run openapi:types -w app-demo",
     "lock:refresh": "docker run --rm -v \"$PWD\":/app -w /app node:24-alpine sh -c 'npm install --package-lock-only --legacy-peer-deps'",
     "prepare": "command -v git >/dev/null 2>&1 && git config core.hooksPath .githooks || true"
   },
