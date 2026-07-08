@@ -19,7 +19,8 @@ interface FetchInternalUsersParams {
   order: SortOrder;
 }
 
-interface UserItem extends InternalUser {
+// The list rows carry a status but not permissions, so omit permissions from the base user shape.
+interface UserItem extends Omit<InternalUser, 'permissions'> {
   status: UserStatus;
 }
 

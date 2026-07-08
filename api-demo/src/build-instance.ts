@@ -18,9 +18,11 @@ import {
   base,
 } from './api-docs/base.ts';
 
-import type { FastifyPluginCallback } from 'fastify';
+import type { FastifyPluginCallback, onRouteHookHandler } from 'fastify';
 
-async function buildInstance() {
+// `onRoute` is an optional hook used by tooling (e.g. the OpenAPI generator) to inspect each route's
+// config — notably `config.permission` — as it registers. Unused by the running server.
+async function buildInstance(options?: { onRoute?: onRouteHookHandler }) {
   await batchGetSecretValue();
   await initSentry();
 
@@ -70,6 +72,9 @@ async function buildInstance() {
 
   // add global error handler
   instance.setErrorHandler(globalErrorHandler);
+
+  // Added before routes register so it fires for each of them (used by tooling to read config).
+  if (options?.onRoute) instance.addHook('onRoute', options.onRoute);
 
   // register other plugins and routes
   plugins.forEach((plugin) => instance.register(plugin));

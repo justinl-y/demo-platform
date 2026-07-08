@@ -8,13 +8,17 @@ The goal of this project is to demonstrate modern **full-stack web development p
 
 ## 🖥️ Frontend Application
 
-A **single-page application** that the browser loads and runs — delivered as fingerprinted static assets over a CDN, ready to integrate with the backend API. It currently presents a staging landing page on the stack below.
+A **single-page application** the browser loads and runs — delivered as fingerprinted static assets over a CDN. It's the UI for the API: a cookie-authenticated app with a `/login` screen and a guarded `/home`, built on the stack below.
 
 ### 🏛️ Frontend Features
 
-- ⚛️ React + TypeScript (strict)
-- ⚡ Vite build tooling (Oxc)
-- 🎨 CSS Modules with type-checked class names
+- ⚛️ React 19 + TypeScript (strict)
+- ⚡ Vite build tooling (Rolldown/Oxc)
+- 🧭 TanStack Router (guarded routes) + TanStack Query (server state)
+- 🎨 Ant Design UI + CSS Modules with type-checked class names
+- 🔐 HttpOnly-cookie auth with transparent token refresh
+- 🧪 Vitest + React Testing Library, with a mock API generated from the API's OpenAPI schema
+- 👁️ Sentry — errors, Web Vitals, cross-tier tracing
 - 🔗 Shared types with the API via the `#shared` alias
 - 🤖 GitHub Actions CI/CD
 
@@ -23,7 +27,7 @@ A **single-page application** that the browser loads and runs — delivered as f
 - 🪣 S3 static hosting (origin)
 - ⚙️ CloudFront (CDN + SSL)
 
-> Follow-up: adding client-side routing will need a CloudFront SPA fallback (deep links → `index.html`) — see [app-demo follow-ups](./app-demo/README.md#follow-ups).
+> Follow-up: client-side routing is now live, so deep links need a CloudFront SPA fallback (403/404 → `index.html`) before the app ships publicly — see the [app-demo README](./app-demo/README.md).
 
 [Read more here ...](./app-demo/README.md)
 

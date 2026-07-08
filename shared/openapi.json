@@ -1,0 +1,2687 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "API Demo",
+    "description": "API docs generated from Fastify route schemas",
+    "version": "1.0.0"
+  },
+  "components": {
+    "securitySchemes": {
+      "cookieAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "access_token",
+        "description": "JWT supplied as an HttpOnly cookie"
+      }
+    },
+    "schemas": {}
+  },
+  "paths": {
+    "/login": {
+      "post": {
+        "summary": "User login",
+        "tags": [
+          "Authentication"
+        ],
+        "description": "Authenticates a user with email and password",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "password"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "transform": [
+                      "trim",
+                      "toLowerCase"
+                    ],
+                    "description": "User email address"
+                  },
+                  "password": {
+                    "type": "string",
+                    "description": "User password",
+                    "transform": [
+                      "trim"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "headers": {
+              "set-cookie": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "description": "Sets access_token and refresh_token as HttpOnly cookies"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "example": "7acd58cc-4ae5-4046-9037-383a057e4970",
+                      "description": "User ID"
+                    },
+                    "email": {
+                      "type": "string",
+                      "format": "email",
+                      "description": "User email address",
+                      "example": "user@example.com"
+                    },
+                    "full_name": {
+                      "type": "string",
+                      "nullable": false,
+                      "description": "User full name",
+                      "example": "John Doe"
+                    },
+                    "known_as": {
+                      "type": "string",
+                      "nullable": true,
+                      "description": "User known as name (usually first name)",
+                      "example": "John"
+                    },
+                    "permissions": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Permission keys granted to the user (from the access token claim)",
+                      "example": [
+                        "INTERNAL_USERS_READ",
+                        "INTERNAL_USERS_WRITE"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "user_id",
+                    "email",
+                    "full_name",
+                    "known_as",
+                    "permissions"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/refresh": {
+      "post": {
+        "summary": "User refresh tokens",
+        "tags": [
+          "Authentication"
+        ],
+        "description": "Refreshes the access token and refresh tokens and issues new cookies using the existing refresh token cookie",
+        "responses": {
+          "204": {
+            "description": "Access token cookie refreshed",
+            "headers": {
+              "set-cookie": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "description": "Sets new access_token and refresh_token as HttpOnly cookies"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/logout": {
+      "post": {
+        "summary": "User logout",
+        "tags": [
+          "Authentication"
+        ],
+        "description": "Logs out user",
+        "responses": {
+          "204": {
+            "description": "User refresh token deleted from DB and both refresh and access cookies cleared",
+            "headers": {
+              "set-cookie": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "description": "Clears access_token and refresh_token HttpOnly cookies"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/password/forgot": {
+      "post": {
+        "summary": "User password forgot",
+        "tags": [
+          "Authentication"
+        ],
+        "description": "Triggers a password reset flow",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "transform": [
+                      "trim",
+                      "toLowerCase"
+                    ],
+                    "description": "User email address"
+                  }
+                },
+                "required": [
+                  "email"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/password/reset": {
+      "post": {
+        "summary": "User password reset",
+        "tags": [
+          "Authentication"
+        ],
+        "description": "Resets a user's password using the token from the reset email",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "password_reset_token": {
+                    "type": "string",
+                    "minLength": 30,
+                    "maxLength": 30,
+                    "description": "Reset token from the password reset email link"
+                  },
+                  "new_password": {
+                    "type": "string",
+                    "minLength": 10,
+                    "maxLength": 40,
+                    "description": "New password to set for the account",
+                    "transform": [
+                      "trim"
+                    ]
+                  }
+                },
+                "required": [
+                  "password_reset_token",
+                  "new_password"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/me": {
+      "get": {
+        "summary": "Current user",
+        "tags": [
+          "Authentication"
+        ],
+        "description": "Returns the currently authenticated user, identified by the access_token cookie",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "example": "7acd58cc-4ae5-4046-9037-383a057e4970",
+                      "description": "User ID"
+                    },
+                    "email": {
+                      "type": "string",
+                      "format": "email",
+                      "description": "User email address",
+                      "example": "user@example.com"
+                    },
+                    "full_name": {
+                      "type": "string",
+                      "nullable": false,
+                      "description": "User full name",
+                      "example": "John Doe"
+                    },
+                    "known_as": {
+                      "type": "string",
+                      "nullable": true,
+                      "description": "User known as name (usually first name)",
+                      "example": "John"
+                    },
+                    "permissions": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Permission keys granted to the user (from the access token claim)",
+                      "example": [
+                        "INTERNAL_USERS_READ",
+                        "INTERNAL_USERS_WRITE"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "user_id",
+                    "email",
+                    "full_name",
+                    "known_as",
+                    "permissions"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/permissions": {
+      "get": {
+        "summary": "Get one or more permissions",
+        "tags": [
+          "Authorization"
+        ],
+        "description": "Returns one or more permissions",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ASC",
+                "DESC"
+              ],
+              "default": "ASC"
+            },
+            "in": "query",
+            "name": "order",
+            "required": false,
+            "description": "Sort order"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "integer",
+              "pattern": "^[1-9][0-9]*$",
+              "default": "1"
+            },
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "description": "Page number (default 1)"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "integer",
+              "pattern": "^([1-9][0-9]?|100)$",
+              "default": "50"
+            },
+            "in": "query",
+            "name": "per_page",
+            "required": false,
+            "description": "Number of items per page (max 100, default 50)"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "description": "Search term to filter permissions by name or permission_id"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "name"
+              ],
+              "default": "name"
+            },
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "description": "Field to sort by"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "permission_id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "permission_id",
+                          "name",
+                          "description"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "per_page": {
+                          "type": "integer"
+                        },
+                        "pages": {
+                          "type": "integer"
+                        },
+                        "count_page": {
+                          "type": "integer"
+                        },
+                        "count_total": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "page",
+                        "per_page",
+                        "pages",
+                        "count_page",
+                        "count_total"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ],
+                  "additionalProperties": false,
+                  "example": {
+                    "data": [
+                      {
+                        "permission_id": "a3bb189e-8bf9-3888-9912-ace4e6543002",
+                        "name": "INTERNAL_USERS_READ",
+                        "description": "Read users"
+                      },
+                      {
+                        "permission_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+                        "name": "INTERNAL_USERS_WRITE",
+                        "description": "Create/update/delete users"
+                      }
+                    ],
+                    "pagination": {
+                      "page": 1,
+                      "per_page": 50,
+                      "pages": 1,
+                      "count_page": 2,
+                      "count_total": 2
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a permission",
+        "tags": [
+          "Authorization"
+        ],
+        "description": "Create a permission",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "transform": [
+                      "trim"
+                    ],
+                    "description": "Permission name, must be unique"
+                  },
+                  "description": {
+                    "type": "string",
+                    "minLength": 1,
+                    "transform": [
+                      "trim"
+                    ],
+                    "description": "Human readable description of the permission"
+                  }
+                },
+                "required": [
+                  "name",
+                  "description"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "permission_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "Permission ID",
+                      "example": "7acd58cc-4ae5-4046-9037-383a057e4970"
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "Permission name",
+                      "example": "INTERNAL_USERS_READ"
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "Human readable description of the permission",
+                      "example": "Read users"
+                    }
+                  },
+                  "required": [
+                    "permission_id",
+                    "name",
+                    "description"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/permissions/{permission_id}": {
+      "put": {
+        "summary": "Update a permission",
+        "tags": [
+          "Authorization"
+        ],
+        "description": "Update a permission",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "transform": [
+                      "trim"
+                    ],
+                    "description": "Permission name, must be unique"
+                  },
+                  "description": {
+                    "type": "string",
+                    "minLength": 1,
+                    "transform": [
+                      "trim"
+                    ],
+                    "description": "Human readable description of the permission"
+                  }
+                },
+                "required": [
+                  "name",
+                  "description"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "permission_id",
+            "required": true,
+            "description": "Permission's id"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "permission_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "Permission ID",
+                      "example": "7acd58cc-4ae5-4046-9037-383a057e4970"
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "Permission name",
+                      "example": "INTERNAL_USERS_READ"
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "Human readable description of the permission",
+                      "example": "Read users"
+                    }
+                  },
+                  "required": [
+                    "permission_id",
+                    "name",
+                    "description"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a permission",
+        "tags": [
+          "Authorization"
+        ],
+        "description": "Hard delete a permission",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "permission_id",
+            "required": true,
+            "description": "Permission's id"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/roles": {
+      "get": {
+        "summary": "Get one or more roles",
+        "tags": [
+          "Authorization"
+        ],
+        "description": "Returns one or more roles",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ASC",
+                "DESC"
+              ],
+              "default": "ASC"
+            },
+            "in": "query",
+            "name": "order",
+            "required": false,
+            "description": "Sort order"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "integer",
+              "pattern": "^[1-9][0-9]*$",
+              "default": "1"
+            },
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "description": "Page number (default 1)"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "integer",
+              "pattern": "^([1-9][0-9]?|100)$",
+              "default": "50"
+            },
+            "in": "query",
+            "name": "per_page",
+            "required": false,
+            "description": "Number of items per page (max 100, default 50)"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "description": "Search term to filter roles by name or role_id"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "name"
+              ],
+              "default": "name"
+            },
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "description": "Field to sort by"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "role_id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "role_id",
+                          "name",
+                          "description"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "per_page": {
+                          "type": "integer"
+                        },
+                        "pages": {
+                          "type": "integer"
+                        },
+                        "count_page": {
+                          "type": "integer"
+                        },
+                        "count_total": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "page",
+                        "per_page",
+                        "pages",
+                        "count_page",
+                        "count_total"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ],
+                  "additionalProperties": false,
+                  "example": {
+                    "data": [
+                      {
+                        "role_id": "a3bb189e-8bf9-3888-9912-ace4e6543002",
+                        "name": "ADMIN",
+                        "description": "Full access to all resources"
+                      },
+                      {
+                        "role_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+                        "name": "INTERNAL_USER_READ",
+                        "description": "Read access to base resources"
+                      }
+                    ],
+                    "pagination": {
+                      "page": 1,
+                      "per_page": 50,
+                      "pages": 1,
+                      "count_page": 2,
+                      "count_total": 2
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a role",
+        "tags": [
+          "Authorization"
+        ],
+        "description": "Create a role",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "transform": [
+                      "trim"
+                    ],
+                    "description": "Role name, must be unique"
+                  },
+                  "description": {
+                    "type": "string",
+                    "minLength": 1,
+                    "transform": [
+                      "trim"
+                    ],
+                    "description": "Human readable description of the role"
+                  }
+                },
+                "required": [
+                  "name",
+                  "description"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "role_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "Role ID",
+                      "example": "7acd58cc-4ae5-4046-9037-383a057e4970"
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "Role name",
+                      "example": "ADMIN"
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "Human readable description of the role",
+                      "example": "Full access to all resources"
+                    }
+                  },
+                  "required": [
+                    "role_id",
+                    "name",
+                    "description"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/roles/{role_id}": {
+      "put": {
+        "summary": "Update a role",
+        "tags": [
+          "Authorization"
+        ],
+        "description": "Update a role",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "transform": [
+                      "trim"
+                    ],
+                    "description": "Role name, must be unique"
+                  },
+                  "description": {
+                    "type": "string",
+                    "minLength": 1,
+                    "transform": [
+                      "trim"
+                    ],
+                    "description": "Human readable description of the role"
+                  }
+                },
+                "required": [
+                  "name",
+                  "description"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "role_id",
+            "required": true,
+            "description": "Role's id"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "role_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "Role ID",
+                      "example": "7acd58cc-4ae5-4046-9037-383a057e4970"
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "Role name",
+                      "example": "ADMIN"
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "Human readable description of the role",
+                      "example": "Full access to all resources"
+                    }
+                  },
+                  "required": [
+                    "role_id",
+                    "name",
+                    "description"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a role",
+        "tags": [
+          "Authorization"
+        ],
+        "description": "Hard delete a role",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "role_id",
+            "required": true,
+            "description": "Role's id"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/roles/permissions": {
+      "get": {
+        "summary": "Get roles with their assigned permissions",
+        "tags": [
+          "Authorization"
+        ],
+        "description": "Returns roles with their assigned permissions. Pass an optional \"role_id\" query parameter to return a single role.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "query",
+            "name": "role_id",
+            "required": false,
+            "description": "Optional role id to return a single role"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "integer",
+              "pattern": "^[1-9][0-9]*$",
+              "default": "1"
+            },
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "description": "Page number (default 1)"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "integer",
+              "pattern": "^([1-9][0-9]?|100)$",
+              "default": "50"
+            },
+            "in": "query",
+            "name": "per_page",
+            "required": false,
+            "description": "Number of items per page (max 100, default 50)"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "role_id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "role_name": {
+                            "type": "string"
+                          },
+                          "permissions": {
+                            "type": "object",
+                            "propertyNames": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "additionalProperties": {
+                              "type": "object",
+                              "properties": {
+                                "permission_id": {
+                                  "type": "string",
+                                  "format": "uuid"
+                                },
+                                "permission_name": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "permission_id",
+                                "permission_name"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "role_id",
+                          "role_name",
+                          "permissions"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "per_page": {
+                          "type": "integer"
+                        },
+                        "pages": {
+                          "type": "integer"
+                        },
+                        "count_page": {
+                          "type": "integer"
+                        },
+                        "count_total": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "page",
+                        "per_page",
+                        "pages",
+                        "count_page",
+                        "count_total"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ],
+                  "additionalProperties": false,
+                  "example": {
+                    "data": [
+                      {
+                        "role_id": "a3bb189e-8bf9-3888-9912-ace4e6543002",
+                        "role_name": "ADMIN",
+                        "permissions": {
+                          "f47ac10b-58cc-4372-a567-0e02b2c3d479": {
+                            "permission_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+                            "permission_name": "INTERNAL_USERS_READ"
+                          }
+                        }
+                      }
+                    ],
+                    "pagination": {
+                      "page": 1,
+                      "per_page": 50,
+                      "pages": 1,
+                      "count_page": 1,
+                      "count_total": 1
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/roles/{role_id}/permissions": {
+      "post": {
+        "summary": "Assign a role's initial permissions",
+        "tags": [
+          "Authorization"
+        ],
+        "description": "Assigns one or more permissions to a role that currently has none, returning the created role-permission resource. Fails if the role already has any permissions — use PUT to replace an existing permission set, or DELETE followed by POST to reset it.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "permissions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "minItems": 1,
+                    "uniqueItems": true,
+                    "description": "Permission ids to assign to the role"
+                  }
+                },
+                "required": [
+                  "permissions"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "role_id",
+            "required": true,
+            "description": "Role's id"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "The created role-permission resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "The created role-permission resource",
+                  "properties": {
+                    "role_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "Role ID",
+                      "example": "7acd58cc-4ae5-4046-9037-383a057e4970"
+                    },
+                    "permissions": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "description": "Permission ids assigned to the role",
+                      "example": [
+                        "a3bb189e-8bf9-3888-9912-ace4e6543002",
+                        "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "role_id",
+                    "permissions"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Replace a role's permissions",
+        "tags": [
+          "Authorization"
+        ],
+        "description": "Replaces the role's entire permission set with the supplied permissions.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "permissions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "minItems": 1,
+                    "uniqueItems": true,
+                    "description": "The complete set of permission ids the role should have"
+                  }
+                },
+                "required": [
+                  "permissions"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "role_id",
+            "required": true,
+            "description": "Role's id"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The modified role-permission resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "The modified role-permission resource",
+                  "properties": {
+                    "role_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "Role ID",
+                      "example": "7acd58cc-4ae5-4046-9037-383a057e4970"
+                    },
+                    "permissions": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "description": "Permission ids now assigned to the role",
+                      "example": [
+                        "a3bb189e-8bf9-3888-9912-ace4e6543002",
+                        "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "role_id",
+                    "permissions"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Remove all of a role's permissions",
+        "tags": [
+          "Authorization"
+        ],
+        "description": "Removes every permission assigned to the role.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "role_id",
+            "required": true,
+            "description": "Role's id"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/health_db": {
+      "get": {
+        "summary": "Database health check endpoint",
+        "tags": [
+          "Health Check"
+        ],
+        "description": "Returns the current health status of the database server",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "OK"
+                      ],
+                      "description": "Health status indicator"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "ISO timestamp of the health check"
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "timestamp"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health_eb": {
+      "get": {
+        "summary": "Elastic Beanstalk health check endpoint",
+        "tags": [
+          "Health Check"
+        ],
+        "description": "Returns the current health status of the API service for Elastic Beanstalk",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "OK"
+                      ],
+                      "description": "Health status indicator"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "ISO timestamp of the health check"
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "timestamp"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal-users": {
+      "get": {
+        "summary": "Get one or more users",
+        "tags": [
+          "Internal Users"
+        ],
+        "description": "Returns one or more users",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ASC",
+                "DESC"
+              ],
+              "default": "ASC"
+            },
+            "in": "query",
+            "name": "order",
+            "required": false,
+            "description": "Sort order"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "integer",
+              "pattern": "^[1-9][0-9]*$",
+              "default": "1"
+            },
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "description": "Page number (default 1)"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "integer",
+              "pattern": "^([1-9][0-9]?|100)$",
+              "default": "50"
+            },
+            "in": "query",
+            "name": "per_page",
+            "required": false,
+            "description": "Number of items per page (max 100, default 50)"
+          },
+          {
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "CREATED",
+                    "INVITED",
+                    "ACTIVE",
+                    "DEACTIVATED"
+                  ]
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "CREATED",
+                      "INVITED",
+                      "ACTIVE",
+                      "DEACTIVATED"
+                    ]
+                  },
+                  "uniqueItems": true
+                }
+              ]
+            },
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "description": "Filter by status"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "description": "Search term to filter users by name (any part of full name), email or user_id"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "name",
+                "email",
+                "created_at"
+              ],
+              "default": "created_at"
+            },
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "description": "Field to sort by"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "user_id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "email": {
+                            "type": "string",
+                            "format": "email"
+                          },
+                          "full_name": {
+                            "type": "string"
+                          },
+                          "known_as": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "status": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "user_id",
+                          "email",
+                          "full_name",
+                          "known_as",
+                          "status"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "per_page": {
+                          "type": "integer"
+                        },
+                        "pages": {
+                          "type": "integer"
+                        },
+                        "count_page": {
+                          "type": "integer"
+                        },
+                        "count_total": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "page",
+                        "per_page",
+                        "pages",
+                        "count_page",
+                        "count_total"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ],
+                  "additionalProperties": false,
+                  "example": {
+                    "data": [
+                      {
+                        "user_id": "a3bb189e-8bf9-3888-9912-ace4e6543002",
+                        "email": "user1@example.com",
+                        "full_name": "string",
+                        "known_as": "string",
+                        "status": "ACTIVE"
+                      },
+                      {
+                        "user_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+                        "email": "user2@example.com",
+                        "full_name": "string",
+                        "known_as": "string",
+                        "status": "ACTIVE"
+                      },
+                      {
+                        "user_id": "e7b2f4d1-9c3a-4f6e-b8d2-1a5e7c9f3b8d",
+                        "email": "user3@example.com",
+                        "full_name": "string",
+                        "known_as": "string",
+                        "status": "DEACTIVATED"
+                      }
+                    ],
+                    "pagination": {
+                      "page": 1,
+                      "per_page": 50,
+                      "pages": 1,
+                      "count_page": 3,
+                      "count_total": 3
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a user",
+        "tags": [
+          "Internal Users"
+        ],
+        "description": "Create a user",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "transform": [
+                      "trim",
+                      "toLowerCase"
+                    ],
+                    "description": "User's email address, must be unique"
+                  },
+                  "full_name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "transform": [
+                      "trim"
+                    ],
+                    "description": "User's full name"
+                  },
+                  "known_as": {
+                    "type": "string",
+                    "nullable": true,
+                    "minLength": 1,
+                    "transform": [
+                      "trim"
+                    ],
+                    "description": "User's known by name"
+                  }
+                },
+                "required": [
+                  "email",
+                  "full_name"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "User ID",
+                      "example": "7acd58cc-4ae5-4046-9037-383a057e4970"
+                    },
+                    "email": {
+                      "type": "string",
+                      "format": "email",
+                      "description": "User email address",
+                      "example": "john.doe@example.com"
+                    },
+                    "full_name": {
+                      "type": "string",
+                      "nullable": false,
+                      "description": "User full name",
+                      "example": "John Doe"
+                    },
+                    "known_as": {
+                      "type": "string",
+                      "nullable": true,
+                      "description": "User known as name (usually first name)",
+                      "example": "John"
+                    },
+                    "status": {
+                      "type": "string",
+                      "description": "The status of the user, this will be CREATED for new users",
+                      "example": "CREATED"
+                    }
+                  },
+                  "required": [
+                    "user_id",
+                    "email",
+                    "full_name",
+                    "known_as",
+                    "status"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal-users/{user_id}": {
+      "put": {
+        "summary": "Update a user",
+        "tags": [
+          "Internal Users"
+        ],
+        "description": "Update a user",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "full_name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "transform": [
+                      "trim"
+                    ],
+                    "description": "User's full name"
+                  },
+                  "known_as": {
+                    "type": "string",
+                    "nullable": true,
+                    "minLength": 1,
+                    "transform": [
+                      "trim"
+                    ],
+                    "description": "User's known by name"
+                  }
+                },
+                "required": [
+                  "full_name"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "description": "User's id"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "User ID",
+                      "example": "7acd58cc-4ae5-4046-9037-383a057e4970"
+                    },
+                    "full_name": {
+                      "type": "string",
+                      "nullable": false,
+                      "description": "User full name",
+                      "example": "John Doe"
+                    },
+                    "known_as": {
+                      "type": "string",
+                      "nullable": true,
+                      "description": "User known as name (usually first name)",
+                      "example": "John"
+                    }
+                  },
+                  "required": [
+                    "user_id",
+                    "full_name",
+                    "known_as"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a user",
+        "tags": [
+          "Internal Users"
+        ],
+        "description": "Hard delete a user; only with a status of CREATED",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "description": "User's id"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/internal-users/{user_id}/email": {
+      "patch": {
+        "summary": "Change a user's email",
+        "tags": [
+          "Internal Users"
+        ],
+        "description": "Change a user's email",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "new_email": {
+                    "type": "string",
+                    "format": "email",
+                    "transform": [
+                      "trim",
+                      "toLowerCase"
+                    ],
+                    "description": "New user's email address, must be unique"
+                  }
+                },
+                "required": [
+                  "new_email"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "description": "User's id"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "User ID",
+                      "example": "7acd58cc-4ae5-4046-9037-383a057e4970"
+                    },
+                    "email": {
+                      "type": "string",
+                      "format": "email",
+                      "description": "User new email",
+                      "example": "john.doe@email.com"
+                    }
+                  },
+                  "required": [
+                    "user_id",
+                    "email"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal-users/{user_id}/invite": {
+      "patch": {
+        "summary": "Invite a user",
+        "tags": [
+          "Internal Users"
+        ],
+        "description": "Invites a user; only with a status of CREATED, INVITED (for re-invite) or DEACTIVATED (for re-activation)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "description": "User's id"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "User's id",
+                      "example": "7acd58cc-4ae5-4046-9037-383a057e4970"
+                    },
+                    "status": {
+                      "type": "string",
+                      "description": "User's changed status: 'INVITED'",
+                      "example": "INVITED"
+                    },
+                    "invite_email_sent": {
+                      "type": "boolean",
+                      "description": "The sent status of the invite email",
+                      "example": true
+                    }
+                  },
+                  "required": [
+                    "user_id",
+                    "status",
+                    "invite_email_sent"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Cancel a user invitation",
+        "tags": [
+          "Internal Users"
+        ],
+        "description": "Cancels a pending invitation; only with a status of INVITED. Reverts the user to CREATED and clears the invitation token, expiry and email-sent stamp.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "description": "User's id"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "User's id",
+                      "example": "7acd58cc-4ae5-4046-9037-383a057e4970"
+                    },
+                    "status": {
+                      "type": "string",
+                      "description": "User's changed status: 'CREATED'",
+                      "example": "CREATED"
+                    }
+                  },
+                  "required": [
+                    "user_id",
+                    "status"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal-users/activate": {
+      "post": {
+        "summary": "Activate an invited user",
+        "tags": [
+          "Internal Users"
+        ],
+        "description": "Activates an invited user using the token from the activation email and sets the account password",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "minLength": 30,
+                    "maxLength": 30,
+                    "description": "Invitation token from the activation email link"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 10,
+                    "maxLength": 40,
+                    "description": "Password to set for the account",
+                    "transform": [
+                      "trim"
+                    ]
+                  }
+                },
+                "required": [
+                  "token",
+                  "password"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/internal-users/{user_id}/deactivate": {
+      "patch": {
+        "summary": "Deactivate a user",
+        "tags": [
+          "Internal Users"
+        ],
+        "description": "Deactivates a user; only with a status of ACTIVE",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "description": "User's id"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "User's id",
+                      "example": "7acd58cc-4ae5-4046-9037-383a057e4970"
+                    },
+                    "status": {
+                      "type": "string",
+                      "description": "User's changed status: 'DEACTIVATED'",
+                      "example": "DEACTIVATED"
+                    }
+                  },
+                  "required": [
+                    "user_id",
+                    "status"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal-users/roles": {
+      "get": {
+        "summary": "Get users with their assigned roles",
+        "tags": [
+          "Internal Users"
+        ],
+        "description": "Returns users with their assigned roles. Pass an optional \"user_id\" query parameter to return a single user.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "query",
+            "name": "user_id",
+            "required": false,
+            "description": "Optional user id to return a single user"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "integer",
+              "pattern": "^[1-9][0-9]*$",
+              "default": "1"
+            },
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "description": "Page number (default 1)"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "integer",
+              "pattern": "^([1-9][0-9]?|100)$",
+              "default": "50"
+            },
+            "in": "query",
+            "name": "per_page",
+            "required": false,
+            "description": "Number of items per page (max 100, default 50)"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "user_id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "user_email": {
+                            "type": "string",
+                            "format": "email"
+                          },
+                          "user_full_name": {
+                            "type": "string"
+                          },
+                          "roles": {
+                            "type": "object",
+                            "propertyNames": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "additionalProperties": {
+                              "type": "object",
+                              "properties": {
+                                "role_id": {
+                                  "type": "string",
+                                  "format": "uuid"
+                                },
+                                "role_name": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "role_id",
+                                "role_name"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "user_id",
+                          "user_email",
+                          "user_full_name",
+                          "roles"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "per_page": {
+                          "type": "integer"
+                        },
+                        "pages": {
+                          "type": "integer"
+                        },
+                        "count_page": {
+                          "type": "integer"
+                        },
+                        "count_total": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "page",
+                        "per_page",
+                        "pages",
+                        "count_page",
+                        "count_total"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ],
+                  "additionalProperties": false,
+                  "example": {
+                    "data": [
+                      {
+                        "user_id": "a3bb189e-8bf9-3888-9912-ace4e6543002",
+                        "user_email": "alice.smith@example.com",
+                        "user_full_name": "Alice Smith",
+                        "roles": {
+                          "f47ac10b-58cc-4372-a567-0e02b2c3d479": {
+                            "role_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+                            "role_name": "ADMIN"
+                          }
+                        }
+                      }
+                    ],
+                    "pagination": {
+                      "page": 1,
+                      "per_page": 50,
+                      "pages": 1,
+                      "count_page": 1,
+                      "count_total": 1
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal-users/{user_id}/roles": {
+      "post": {
+        "summary": "Assign a user's initial roles",
+        "tags": [
+          "Internal Users"
+        ],
+        "description": "Assigns one or more roles to a user that currently has none, returning the created user-role resource. Fails if the user already has any roles — use PUT to replace an existing role set, or DELETE followed by POST to reset it.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "roles": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "minItems": 1,
+                    "uniqueItems": true,
+                    "description": "Role ids to assign to the user"
+                  }
+                },
+                "required": [
+                  "roles"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "description": "User's id"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "The created user-role resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "The created user-role resource",
+                  "properties": {
+                    "user_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "User ID",
+                      "example": "7acd58cc-4ae5-4046-9037-383a057e4970"
+                    },
+                    "roles": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "description": "Role ids assigned to the user",
+                      "example": [
+                        "a3bb189e-8bf9-3888-9912-ace4e6543002",
+                        "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "user_id",
+                    "roles"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Replace a user's roles",
+        "tags": [
+          "Internal Users"
+        ],
+        "description": "Replaces the user's entire role set with the supplied roles. An empty array clears all of the user's roles.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "roles": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "uniqueItems": true,
+                    "description": "The complete set of role ids the user should have. Pass an empty array to remove all roles."
+                  }
+                },
+                "required": [
+                  "roles"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "description": "User's id"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The modified user-role resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "The modified user-role resource",
+                  "properties": {
+                    "user_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "User ID",
+                      "example": "7acd58cc-4ae5-4046-9037-383a057e4970"
+                    },
+                    "roles": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "description": "Role ids now assigned to the user",
+                      "example": [
+                        "a3bb189e-8bf9-3888-9912-ace4e6543002",
+                        "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "user_id",
+                    "roles"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Remove all of a user's roles",
+        "tags": [
+          "Internal Users"
+        ],
+        "description": "Removes every role assigned to the user.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "description": "User's id"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Authentication",
+      "description": "Login, logout, token refresh and password reset"
+    },
+    {
+      "name": "Authorization",
+      "description": "Roles, permissions management and assignments"
+    },
+    {
+      "name": "Internal Users",
+      "description": "Internal user management"
+    },
+    {
+      "name": "Health Check",
+      "description": "Service and dependency health-check endpoints"
+    }
+  ],
+  "x-permissions": [
+    "INTERNAL_PERMISSIONS_READ",
+    "INTERNAL_PERMISSIONS_WRITE",
+    "INTERNAL_ROLES_READ",
+    "INTERNAL_ROLES_WRITE",
+    "INTERNAL_USERS_AUTHORIZE_READ",
+    "INTERNAL_USERS_AUTHORIZE_WRITE",
+    "INTERNAL_USERS_READ",
+    "INTERNAL_USERS_WRITE"
+  ]
+}

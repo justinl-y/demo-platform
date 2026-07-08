@@ -21,7 +21,8 @@ const indexRoute = createRoute({
   },
 });
 
-const routeTree = rootRoute.addChildren([indexRoute, loginRoute, homeRoute]);
+// Exported so tests can build an isolated router (fresh memory history) over the same route tree.
+export const routeTree = rootRoute.addChildren([indexRoute, loginRoute, homeRoute]);
 
 export const router = createRouter({
   routeTree,

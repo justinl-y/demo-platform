@@ -25,7 +25,7 @@ export default function LoginPage() {
           style={{ textAlign: 'center',
             marginBottom: 24 }}
         >
-          Sign in
+          Demo Platform
         </Title>
 
         {login.isError && (

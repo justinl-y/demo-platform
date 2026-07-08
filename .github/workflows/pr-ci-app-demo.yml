@@ -49,6 +49,11 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # Automated tests: Vitest + React Testing Library, with the API mocked by MSW handlers
+      # typed against the OpenAPI schema (see the PR OpenAPI Contract workflow for drift protection).
+      - name: Test
+        run: npm run test
+
       # Build — also type-checks via `tsc -b`
       - name: Build
         run: npm run build

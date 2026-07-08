@@ -8,10 +8,14 @@
     "module": "esnext",
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
+    /* Import shared/openapi.json (the mock baseline is generated from it in tests). */
+    "resolveJsonModule": true,
     "types": ["vite/client"],
     "paths": {
       "#shared/*": ["../shared/*"]
     }
   },
-  "include": ["src", "../shared"]
+  /* `test` is typechecked here (never bundled — Vite builds only from the src entry) so the mock's
+     openapi-msw typed overrides still fail `tsc` on any API contract drift. */
+  "include": ["src", "test", "../shared"]
 }

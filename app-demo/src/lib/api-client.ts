@@ -20,9 +20,17 @@ export const api = axios.create({
 
 // Auth endpoints are never themselves retried through the refresh flow: a 401 from /login is a
 // bad-credentials result, and a 401 from /refresh means the session is truly over — retrying
-// either would loop.
-const isAuthEndpoint = (url: string | undefined): boolean =>
-  !!url && (url.includes('/login') || url.includes('/refresh') || url.includes('/logout'));
+// either would loop. Matched on the exact request path (not a substring) so a future route like
+// `/logout-audit` isn't misclassified.
+const AUTH_ENDPOINTS = new Set(['/login', '/refresh', '/logout']);
+
+const isAuthEndpoint = (url: string | undefined): boolean => {
+  if (!url) return false;
+
+  const path = url.replace(/[?#].*$/, '');
+
+  return AUTH_ENDPOINTS.has(path);
+};
 
 type RetriableConfig = InternalAxiosRequestConfig & { _retry?: boolean };
 

@@ -5,3 +5,8 @@ interface ImportMetaEnv {
   readonly VITE_SENTRY_DSN?: string;
   readonly VITE_SENTRY_ENVIRONMENT?: string;
 }
+
+// Build-time constant injected by Vite `define` (see vite.config.ts). Declared at the top level
+// (not inside `declare global`) to keep this file a script, so the ImportMetaEnv augmentation above
+// stays a global merge rather than becoming a module-local interface.
+declare const __BUILD_ID__: string;
