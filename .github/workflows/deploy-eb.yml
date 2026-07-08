@@ -7,6 +7,10 @@ on:
     paths:
       - 'api-demo/**'
       - 'shared/**'
+  # Manual trigger (Actions tab "Run workflow", or `gh workflow run deploy-eb.yml --ref master`).
+  # Needed because a change to this workflow file alone never matches the push paths above, so a
+  # deploy-only fix can't redeploy itself — and for on-demand redeploys without an app-code change.
+  workflow_dispatch:
 
 permissions:
   contents: read
