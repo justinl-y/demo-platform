@@ -8,7 +8,7 @@ export interface InternalUser {
   permissions: string[];
 }
 
-export type Login = {
+export interface Login {
   email: string;
   password: string;
 }
