@@ -39,8 +39,10 @@ type RetriableConfig = InternalAxiosRequestConfig & { _retry?: boolean };
 let refreshPromise: Promise<void> | null = null;
 
 // The access token is short-lived (~5 min). On a 401 we transparently POST /refresh once (which
-// rotates the cookies) and replay the original request. If the refresh itself fails, the session
-// is over and the original 401 propagates so callers/guards can send the user to /login.
+// rotates the cookies) and replay the original request. If /refresh itself returns 401 the session
+// is truly over and the original 401 propagates so callers/guards can send the user to /login. Any
+// other refresh failure (5xx / network) is transient and propagates as-is (not as a 401), so
+// callers can tell a real logout apart from an outage and avoid dropping a still-valid session.
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
@@ -63,8 +65,13 @@ api.interceptors.response.use(
 
       await refreshPromise;
     }
-    catch {
-      return Promise.reject(error);
+    catch (refreshError) {
+      // A 401 from /refresh means the session is truly over — propagate the original 401 so guards
+      // clear auth state. Any other failure (5xx / network) is transient: propagate it as-is so the
+      // status reflects the outage, not a false 401, and a still-valid session isn't logged out.
+      const refreshStatus = axios.isAxiosError(refreshError) ? refreshError.response?.status : undefined;
+
+      return Promise.reject(refreshStatus === 401 ? error : refreshError);
     }
 
     return api(original);

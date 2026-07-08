@@ -58,5 +58,26 @@ describe('Resolve Session', () => {
       expect(user).toEqual(mockUser);
       expect(localStorage.getItem(HINT_KEY)).toBe('1'); // hint preserved → guard stays on /home
     });
+
+    test('a transient /refresh failure after a 401 keeps the cached session instead of logging out', async () => {
+      // The access token expired (/me 401), triggering the api-client's transparent /refresh — but
+      // /refresh hits a transient 5xx, not a real 401. The refresh token may still be valid, so the
+      // session must survive: the interceptor propagates the 5xx (not the original 401), and
+      // resolveSession falls back to the cached user rather than clearing auth state.
+      server.use(
+        http.get(`${API_BASE_URL}/me`, () => HttpResponse.json({ message: 'no' }, { status: 401 })),
+        http.post(`${API_BASE_URL}/refresh`, () => HttpResponse.json({ message: 'boom' }, { status: 500 })),
+      );
+
+      const queryClient = new QueryClient();
+      setAuthHint();
+      queryClient.setQueryData(meQueryOptions.queryKey, mockUser);
+      await queryClient.invalidateQueries({ queryKey: meQueryOptions.queryKey });
+
+      const user = await resolveSession(queryClient);
+
+      expect(user).toEqual(mockUser);
+      expect(localStorage.getItem(HINT_KEY)).toBe('1'); // hint preserved → guard stays on /home
+    });
   });
 });
