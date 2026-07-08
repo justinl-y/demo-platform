@@ -110,15 +110,6 @@ flowchart TD
 
 ---
 
-## 📌 Future Improvements
-
-- 🔌 Wire the front end to the API
-- 🎨 UI/UX polish and sample data
-- 🏗️ Infrastructure as Code (Terraform/CDK)  
-- 🚢 Migrate to ECS/EKS
-
----
-
 ## 🏗️ Monorepo Structure
 
 Managed as an [npm workspaces](https://docs.npmjs.com/cli/using-npm/workspaces) monorepo — run `npm install` once at the repository root to install every package against a single root lockfile (there is no per-package install). Run a package's scripts from its directory or from the root with `-w <package>`.
