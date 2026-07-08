@@ -89,7 +89,7 @@ All endpoints are served from the API base URL. Auth endpoints use JWT cookies; 
 
 ### 📄 OpenAPI spec
 
-Swagger UI is served at `/api-docs` in non-production environments. The full spec is also generated **offline** from the route schemas — no DB or secrets, since `buildInstance()` skips both in `TEST` — via `npm run openapi:generate`, which writes [`shared/openapi.json`](../shared/openapi.json). That committed spec is the source `app-demo`'s tests derive their mock API and request/response types from; the **PR OpenAPI Contract** workflow fails if it drifts from the route schemas.
+Swagger UI is served at `/api-docs` in non-production environments. The full spec is also generated **offline** from the route schemas — no DB or secrets, since `buildInstance()` skips both in `TEST` — via `npm run openapi:generate`, which writes [`shared/openapi.json`](../shared/openapi.json). That committed spec is the source `app-demo`'s tests derive their mock API and request/response types from; CI fails if it drifts from the route schemas (see the [CI/CD workflows](../README.md#-cicd-workflows)).
 
 ----
 

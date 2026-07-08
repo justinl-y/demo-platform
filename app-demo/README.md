@@ -152,7 +152,7 @@ api-demo route schemas ──openapi:generate──▶ shared/openapi.json ─�
 
 - **`src/mocks/handlers.ts`** is a hybrid: an auto-generated **baseline** for every endpoint (`@mswjs/source` `fromOpenApi`, responses from the schema `example`s) plus a few **type-safe overrides** (`openapi-msw`) for the endpoints tests assert on. A contract change (e.g. `id → user_id`) breaks the mock at `tsc`.
 - The default `mockUser` is an **admin** whose permissions come from the spec's `x-permissions` (collected from the route configs), so it stays current as routes grow.
-- Regenerate after an API schema change: `npm run openapi:generate -w api-demo && npm run openapi:types -w app-demo`. The **PR OpenAPI Contract** workflow fails the build if the committed spec/types are stale.
+- Regenerate after an API schema change: `npm run openapi:generate -w api-demo && npm run openapi:types -w app-demo`. CI fails the build if the committed spec/types are stale (see the [CI/CD workflows](../README.md#-cicd-workflows)).
 
 The real API contract (status codes, cookie/CORS behaviour) is owned by api-demo's own integration tests — there is deliberately no browser E2E here, which would just re-test the API.
 
@@ -189,7 +189,7 @@ import type { InternalUser, Login } from '#shared/types';
 
 A shared pre-commit hook (`.githooks/pre-commit`, wired via `core.hooksPath`) runs App-Demo's checks when `app-demo/` or `shared/` files are staged and **aborts the commit on failure** (`css:types:ci` when CSS changed, `typecheck`, and `lint-staged`).
 
-On every pull request, CI runs **lint → test → build** (`pr-ci-app-demo`), and the **PR OpenAPI Contract** workflow verifies the mock's spec/types are in sync with the API.
+On every pull request, CI runs the front-end checks and verifies the mock's spec/types stay in sync with the API — see the [CI/CD workflows](../README.md#-cicd-workflows).
 
 ----
 

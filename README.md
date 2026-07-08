@@ -150,4 +150,19 @@ npm run lock:refresh   # runs `npm install --package-lock-only` inside node:24-a
 2. `npm run lock:refresh` — Linux-completes the lockfile (run once, as the final lockfile step).
 3. Commit both `package.json` and `package-lock.json`.
 
-The **PR Lockfile Check** workflow regenerates the lockfile on Linux and fails the PR if the committed one drifts — so a pruned lockfile can't reach the Docker build.
+CI enforces this on every PR (see [CI/CD Workflows](#-cicd-workflows)) — so a pruned lockfile can't reach the Docker build.
+
+---
+
+## 🤖 CI/CD Workflows
+
+All automation runs on **GitHub Actions** ([`.github/workflows`](.github/workflows)). Pull-request workflows gate merges; the two deploys run on push to `master`.
+
+| Workflow | Trigger | Purpose |
+| --- | --- | --- |
+| [PR CI API-DEMO](.github/workflows/pr-ci-api-demo.yml) | PR (always runs; test steps gated on changes to `api-demo/**`, `db-demo/**`, `shared/**`) | Docker Compose integration tests for the API. The `Docker CI Integration Tests` check is required, so the job always reports — running the suite only when those paths change. |
+| [PR CI APP-DEMO](.github/workflows/pr-ci-app-demo.yml) | PR touching `app-demo/**`, `shared/**` | Front-end quality gate: CSS-module type check → lint → test (Vitest + MSW) → build. |
+| [PR OpenAPI Contract](.github/workflows/pr-openapi-contract.yml) | PR touching `api-demo/src/**`, `shared/openapi.json`, `app-demo/test/mocks/openapi.ts` | Regenerates the OpenAPI spec + front-end mock types and fails if the committed artifacts have drifted from the API route schemas. |
+| [PR Lockfile Check](.github/workflows/pr-lockfile-check.yml) | PR touching any `package.json` or `package-lock.json` | Regenerates the lockfile on Linux (`node:24-alpine`) and fails if it drifts — guarding the Linux-only optional deps a macOS `npm install` prunes (see [Keeping the lockfile in sync](#-keeping-the-lockfile-in-sync)). |
+| [Deploy to Elastic Beanstalk](.github/workflows/deploy-eb.yml) | Push to `master` touching `api-demo/**`, `shared/**` | Assembles the API source bundle (rooted at the repo for the workspace build context) and deploys it to Elastic Beanstalk. |
+| [Deploy to S3 + CloudFront](.github/workflows/deploy-s3.yml) | Push to `master` touching `app-demo/**`, `shared/**` (or manual dispatch) | Builds the front-end bundle and publishes it to S3, then invalidates the CloudFront cache. |

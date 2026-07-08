@@ -6,6 +6,7 @@ const route = {
   tags: ['Authentication'],
   summary: 'Current user',
   description: 'Returns the currently authenticated user, identified by the access_token cookie',
+  security: [{ cookieAuth: [] }],
 };
 
 const response = {
