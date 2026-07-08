@@ -8,11 +8,10 @@ import type {
   FastifyInstance,
 } from 'fastify';
 
+import type { Login } from '#shared/types';
+
 type Request = {
-  Body: {
-    email: string;
-    password: string;
-  };
+  Body: Login;
 };
 
 async function postLogin(this: FastifyInstance, request: FastifyRequest<Request>, reply: FastifyReply) {

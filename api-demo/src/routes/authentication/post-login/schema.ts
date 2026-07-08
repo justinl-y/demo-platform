@@ -38,7 +38,7 @@ const response = {
       },
     },
     properties: {
-      id: {
+      user_id: {
         type: 'string',
         format: 'uuid',
         example: '7acd58cc-4ae5-4046-9037-383a057e4970',
@@ -62,12 +62,19 @@ const response = {
         description: 'User known as name (usually first name)',
         example: 'John',
       },
+      permissions: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Permission keys granted to the user (from the access token claim)',
+        example: ['INTERNAL_USERS_READ', 'INTERNAL_USERS_WRITE'],
+      },
     },
     required: [
-      'id',
+      'user_id',
       'email',
       'full_name',
       'known_as',
+      'permissions',
     ],
     additionalProperties: false,
   },

@@ -32,3 +32,13 @@ if echo "$changed" | grep -qE '^app-demo/|^shared/'; then
     npx lint-staged
   )
 fi
+
+# OpenAPI contract: when a route schema (or the committed spec / front-end mock types)
+# is staged, regenerate shared/openapi.json + app-demo's mock types and stage them, so
+# every commit carries an up-to-date contract without a manual step. The PR OpenAPI
+# Contract workflow remains the backstop for --no-verify commits. Runs from the repo
+# root (spans both workspaces).
+if echo "$changed" | grep -qE '^api-demo/src/|^shared/openapi\.json$|^app-demo/test/mocks/openapi\.ts$'; then
+  npm run openapi:sync
+  git add shared/openapi.json app-demo/test/mocks/openapi.ts
+fi

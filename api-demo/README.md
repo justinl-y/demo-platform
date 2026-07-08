@@ -56,6 +56,9 @@ All endpoints are served from the API base URL. Auth endpoints use JWT cookies; 
 | `POST` | `/login` | — | Authenticate with email + password. Sets `access_token` and `refresh_token` HttpOnly cookies. |
 | `POST` | `/refresh` | cookie | Refresh the access token using the `refresh_token` cookie. Issues new cookies. |
 | `POST` | `/logout` | cookie | Invalidate the session and clear both cookies. |
+| `GET` | `/me` | cookie | Return the currently authenticated user (id, email, name, permissions). |
+| `POST` | `/password/forgot` | — | Request a password-reset email for an account. |
+| `POST` | `/password/reset` | — | Set a new password using a reset token. |
 | `GET` | `/internal-users` | cookie | Get one or more internal users |
 | `POST` | `/internal-users` | cookie | Create a new user. |
 | `DELETE` | `/internal-users/:user_id` | cookie | Delete a user. |
@@ -83,6 +86,10 @@ All endpoints are served from the API base URL. Auth endpoints use JWT cookies; 
 | `DELETE` | `/roles/:role_id/permissions` | cookie | Remove all of a role's permissions. |
 | `GET` | `/health_db` | — | Database health check. |
 | `GET` | `/health_eb` | — | Elastic Beanstalk health check. |
+
+### 📄 OpenAPI spec
+
+Swagger UI is served at `/api-docs` in non-production environments. The full spec is also generated **offline** from the route schemas — no DB or secrets, since `buildInstance()` skips both in `TEST` — via `npm run openapi:generate`, which writes [`shared/openapi.json`](../shared/openapi.json). That committed spec is the source `app-demo`'s tests derive their mock API and request/response types from; CI fails if it drifts from the route schemas (see the [CI/CD workflows](../README.md#-cicd-workflows)).
 
 ----
 

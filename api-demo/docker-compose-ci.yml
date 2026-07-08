@@ -47,6 +47,9 @@ services:
       - ./pm2:/srv/api-demo/pm2
       - ./package.json:/srv/api-demo/package.json
       - ./tsconfig.json:/srv/api-demo/tsconfig.json
+      # Shared type declarations (#shared/* -> ../shared/*.d.ts) — mounted so the
+      # typecheck-watch picks up edits without an image rebuild.
+      - ../shared:/srv/shared:ro
       - coverage:/coverage
     healthcheck:
       test: ["CMD-SHELL", "node -e \"require('net').createConnection({host:'127.0.0.1', port:8000}).on('connect',()=>process.exit(0)).on('error',()=>process.exit(1));\""]

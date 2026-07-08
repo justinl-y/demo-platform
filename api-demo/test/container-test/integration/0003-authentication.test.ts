@@ -34,6 +34,105 @@ describe(`${fileNumber} - Authentication`, () => {
     } = await createRandomUser());
   });
 
+  describe('GET /me', () => {
+    interface DbUserProfile {
+      user_id: string;
+      email: string;
+      full_name: string;
+      known_as: string | null;
+    }
+
+    const getUserProfileSql = `SELECT
+        u.id AS user_id
+        , u.email
+        , u.full_name
+        , u.known_as
+      FROM
+        internal.users AS u
+      WHERE
+        u.email = $1;`;
+
+    describe('Request Failure', () => {
+      // A still-valid access token for a since-deactivated user must not resolve:
+      // fetchCurrentUser re-reads the profile via getUserByEmail, which filters on
+      // ACTIVE status, so the token is rejected even though it is cryptographically valid.
+      let rep: Supertest.Response;
+
+      beforeAll(async () => {
+        const {
+          userId: deactivatedId, email: deactivatedEmail,
+        } = await createRandomUser({ status: 'DEACTIVATED' });
+
+        const accessTokenCookie = generateTestCookie('access', deactivatedId, deactivatedEmail);
+
+        rep = await noAuthAPI.get('/me', {}, { Cookie: accessTokenCookie });
+      });
+
+      test('Valid token for a deactivated user returns 401', () => {
+        expect(rep.statusCode).toBe(401);
+        expect(rep.body.message).toBe('Authentication failed');
+      });
+    });
+
+    describe('Request Success', () => {
+      let rep: Supertest.Response;
+      let dbUser: DbUserProfile;
+
+      beforeAll(async () => {
+        const {
+          userId: meUserId, email: meUserEmail,
+        } = await createRandomUser();
+
+        const accessTokenCookie = generateTestCookie('access', meUserId, meUserEmail);
+        rep = await noAuthAPI.get('/me', {}, { Cookie: accessTokenCookie });
+
+        const [result] = await query<DbUserProfile>(getUserProfileSql, [meUserEmail]);
+        dbUser = result;
+      });
+
+      test('Success response returns 200', () => {
+        expect(rep.statusCode).toBe(200);
+      });
+
+      test('Response body returns the authenticated user profile', () => {
+        expect(rep.body).toEqual({
+          user_id: dbUser.user_id,
+          email: dbUser.email,
+          full_name: dbUser.full_name,
+          known_as: dbUser.known_as,
+          permissions: [],
+        });
+      });
+
+      test('Response body omits sensitive fields', () => {
+        expect(rep.body).not.toHaveProperty('password_hash');
+      });
+    });
+
+    describe('Permissions from the access-token claim', () => {
+      // The API authorizes off the access-token permissions claim, so GET /me
+      // returns those (not a fresh DB read) to keep the UI in lockstep with what
+      // the API actually enforces. Proven by minting a token carrying permissions
+      // the user does not hold in the DB and asserting /me echoes the token.
+      let rep: Supertest.Response;
+      const tokenPermissions = ['INTERNAL_USERS_READ', 'INTERNAL_USERS_WRITE'];
+
+      beforeAll(async () => {
+        const {
+          userId: permUserId, email: permUserEmail,
+        } = await createRandomUser();
+
+        const accessTokenCookie = generateTestCookie('access', permUserId, permUserEmail, tokenPermissions);
+        rep = await noAuthAPI.get('/me', {}, { Cookie: accessTokenCookie });
+      });
+
+      test('Returns the permissions carried in the access token', () => {
+        expect(rep.statusCode).toBe(200);
+        expect([...rep.body.permissions].sort()).toEqual([...tokenPermissions].sort());
+      });
+    });
+  });
+
   describe('POST /login', () => {
     const getResponse = (reqBody: any) => noAuthAPI.post('/login', reqBody);
 
@@ -145,6 +244,10 @@ describe(`${fileNumber} - Authentication`, () => {
         expect(rep.statusCode).toBe(200);
       });
 
+      test('Response body includes an empty permissions array for a user with no roles', () => {
+        expect(rep.body.permissions).toEqual([]);
+      });
+
       test('Response sets "access_token" cookie', () => {
         const cookie = cookies.find((c) => c.startsWith('access_token='));
 
@@ -252,6 +355,9 @@ describe(`${fileNumber} - Authentication`, () => {
         // guard against a vacuous pass if the user has no permissions seeded
         expect(expectedPermissions.length).toBeGreaterThan(0);
         expect([...(payload.permissions ?? [])].sort()).toEqual(expectedPermissions);
+
+        // the login response body mirrors the same permissions embedded in the token
+        expect([...(res.body.permissions ?? [])].sort()).toEqual(expectedPermissions);
       });
     });
   });

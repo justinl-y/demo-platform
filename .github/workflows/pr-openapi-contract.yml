@@ -1,0 +1,59 @@
+name: PR OpenAPI Contract
+
+# The API's OpenAPI spec (shared/openapi.json) and the front-end mock types (app-demo/test/mocks/
+# openapi.ts) are generated artifacts, committed to the repo. app-demo's tests mock the API with
+# handlers typed against those types, so if the spec is stale the mock silently lags the real API.
+# This guard regenerates both from the current api-demo route schemas and fails if they drift from
+# what's committed — keeping the mock honest to the API contract.
+
+on:
+  pull_request:
+    paths:
+      - 'api-demo/src/**'
+      - 'shared/openapi.json'
+      - 'app-demo/test/mocks/openapi.ts'
+      - '.github/workflows/pr-openapi-contract.yml'
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-openapi-contract-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  contract-in-sync:
+    name: OpenAPI spec + mock types in sync
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Regenerate the spec (offline, from api-demo's route schemas) and the mock types (from the spec).
+      - name: Regenerate OpenAPI spec + types
+        run: |
+          npm run openapi:generate --workspace=api-demo
+          npm run openapi:types --workspace=app-demo
+
+      # Fail if either committed artifact drifted from the regenerated output.
+      - name: Verify contract artifacts are in sync
+        run: |
+          if git diff --quiet -- shared/openapi.json app-demo/test/mocks/openapi.ts; then
+            echo "OpenAPI spec + mock types are in sync."
+            exit 0
+          fi
+          echo "::error::OpenAPI spec / mock types are stale. Run 'npm run openapi:generate -w api-demo && npm run openapi:types -w app-demo' and commit the result."
+          git --no-pager diff -- shared/openapi.json app-demo/test/mocks/openapi.ts
+          exit 1

@@ -72,6 +72,9 @@ COPY tsconfig.base.json ${WORKSPACE_ROOT}/tsconfig.base.json
 COPY api-demo/tsconfig.json ${API_HOME}/tsconfig.json
 COPY api-demo/tsconfig.build.json ${API_HOME}/tsconfig.build.json
 COPY api-demo/src ${API_HOME}/src
+# Shared type declarations (#shared/* -> ../shared/*.d.ts). Type-only imports, so
+# nothing is emitted to dist/, but the build's typecheck needs the .d.ts present.
+COPY shared ${WORKSPACE_ROOT}/shared
 
 # Compile TypeScript to dist/ and copy SQL files. Subpath imports (#utils, …)
 # are resolved at runtime via the package.json "imports" map. Fails on type errors.

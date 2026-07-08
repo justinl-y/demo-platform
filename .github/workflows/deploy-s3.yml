@@ -36,6 +36,12 @@ jobs:
       # Build the production bundle into app-demo/dist. Install at the workspaces
       # root (single lockfile); build the app-demo workspace only.
       - name: Install and build
+        # Sentry source-map upload runs only when SENTRY_AUTH_TOKEN is set (see vite.config.ts);
+        # until these are configured the build still succeeds, just without uploaded source maps.
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.APP_DEMO_SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ vars.APP_DEMO_SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ vars.APP_DEMO_SENTRY_PROJECT }}
         run: |
           npm ci
           npm run build --workspace=app-demo

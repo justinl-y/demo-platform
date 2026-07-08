@@ -8,6 +8,7 @@ import { Config } from '#config/index';
 
 import type { InternalUsersRepository } from '#repositories/internal-users/internal-users.repository';
 import type { PaginatedResult, UserStatus, SortOrder } from '../../types/general.ts';
+import type { InternalUser } from '#shared/types';
 
 interface FetchInternalUsersParams {
   page: number;
@@ -18,11 +19,8 @@ interface FetchInternalUsersParams {
   order: SortOrder;
 }
 
-interface UserItem {
-  user_id: string;
-  email: string;
-  full_name: string;
-  known_as: string | null;
+// The list rows carry a status but not permissions, so omit permissions from the base user shape.
+interface UserItem extends Omit<InternalUser, 'permissions'> {
   status: UserStatus;
 }
 
@@ -62,13 +60,7 @@ interface CreateUserParams {
   knownAs?: string | null;
 }
 
-interface CreateUserResult {
-  user_id: string;
-  email: string;
-  full_name: string;
-  known_as: string | null;
-  status: UserStatus;
-}
+interface CreateUserResult extends UserItem {}
 
 async function createUser(repository: InternalUsersRepository, params: CreateUserParams): Promise<CreateUserResult> {
   const {
