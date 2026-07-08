@@ -48,6 +48,10 @@ jobs:
           cp package.json package-lock.json deploy/
           # Root tsconfig.base.json — api-demo/tsconfig.json extends ../tsconfig.base.json.
           cp tsconfig.base.json deploy/
+          # Shared package — the Dockerfile COPYs shared/ (type declarations consumed via
+          # #shared/*) so the build's typecheck can resolve them. Whole dir, mirroring the
+          # repo-root build context used locally and in CI.
+          cp -r shared deploy/shared
           # api-demo build inputs (Dockerfile, manifests, sources, proxy, pm2)
           cp api-demo/package.json api-demo/tsconfig.json api-demo/tsconfig.build.json deploy/api-demo/
           cp api-demo/Dockerfile deploy/api-demo/
