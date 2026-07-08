@@ -13,13 +13,25 @@ async function generateOpenApi(): Promise<void> {
   // Collect the permission each route enforces (routePropertiesCore's `config.permission`) as the
   // instance registers its routes — the source of truth, so the list stays current as routes grow.
   const permissions = new Set<string>();
-  const app = await buildInstance({
-    onRoute: (routeOptions) => {
-      const permission = routeOptions.config?.permission;
-      if (permission) permissions.add(permission);
-    },
-  });
-  await app.ready();
+
+  // buildInstance() emits informational breadcrumbs (e.g. "Secrets fetch skipped", "Sentry
+  // disabled") that are useful in the test suite but are just noise here — this is an offline
+  // spec dump. Silence console.info only while the instance boots, then restore it.
+  const originalInfo = console.info;
+  console.info = () => {};
+  let app;
+  try {
+    app = await buildInstance({
+      onRoute: (routeOptions) => {
+        const permission = routeOptions.config?.permission;
+        if (permission) permissions.add(permission);
+      },
+    });
+    await app.ready();
+  }
+  finally {
+    console.info = originalInfo;
+  }
 
   // `swagger()` is added by @fastify/swagger (registered in non-live envs); typed loosely here to
   // avoid depending on the plugin's module augmentation in this standalone script.
