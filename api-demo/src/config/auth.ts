@@ -17,6 +17,9 @@ function buildAuthConfig() {
       expirationDays: 7,
       passwordLengthMin: 10,
       passwordLengthMax: 40,
+      // Minimum zxcvbn guessability score (0–4) required once the composition rules pass.
+      // 3 = "safely strong"; rejects rule-satisfying-but-guessable passwords like "Password1!".
+      passwordMinScore: 3,
       tokenLength: 30,
     },
     audience: secretValues.AUTH_AUDIENCE,

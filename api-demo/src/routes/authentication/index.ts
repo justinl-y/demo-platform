@@ -11,6 +11,7 @@ import postRefresh from './post-refresh/index.ts';
 import postLogout from './post-logout/index.ts';
 import postPasswordForgot from './post-password-forgot/index.ts';
 import postPasswordReset from './post-password-reset/index.ts';
+import postPasswordResetValidate from './post-password-reset-validate/index.ts';
 import getMe from './get-me/index.ts';
 
 import type {
@@ -29,6 +30,7 @@ const routes = {
   postLogout: routePropertiesCore(POST, '/logout', postLogout),
   postPasswordForgot: routePropertiesCore(POST, '/password/forgot', postPasswordForgot as RouteHandlerMethod),
   postPasswordReset: routePropertiesCore(POST, '/password/reset', postPasswordReset as RouteHandlerMethod),
+  postPasswordResetValidate: routePropertiesCore(POST, '/password/reset/validate', postPasswordResetValidate as RouteHandlerMethod),
   getMe: routePropertiesCore(GET, '/me', getMe as RouteHandlerMethod),
 };
 

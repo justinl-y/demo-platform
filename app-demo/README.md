@@ -4,7 +4,7 @@
 
 It demonstrates modern **front-end development practices**: a type-safe component architecture, cookie-based authentication against the API, client-side routing with guarded routes, automated component tests backed by a mock API generated from the API's own OpenAPI schema, front-end error/performance monitoring and static-site delivery over a CDN.
 
-> The app currently implements the **authentication flow** — a `/login` screen and a guarded `/home` — and is structured to grow into the full application UI.
+> The app currently implements the **authentication flow** — a `/login` screen, self-service password reset (`/password-forgot`, `/password-reset`), and a guarded `/home` — and is structured to grow into the full application UI.
 
 ## 🛠️ Tech Stack
 
@@ -56,6 +56,7 @@ The API sets **HttpOnly** `access_token` / `refresh_token` cookies that JavaScri
 - **`src/lib/api-client.ts`** — one axios instance with `withCredentials: true` (the browser attaches the cookies automatically) and a single-flight **401 → `POST /refresh` → retry** interceptor, so an expired access token is transparently renewed.
 - **Session hydration** — because the cookies are unreadable, the app learns who is logged in by calling **`GET /me`**. A readable `localStorage` "logged-in hint" (`src/features/auth/session.ts`) lets a cold, logged-out load skip the `/me` probe entirely and go straight to `/login`.
 - **Guarded routes** — each route's `beforeLoad` resolves the session; `/home` redirects to `/login` when unauthenticated, `/login` redirects to `/home` when authenticated.
+- **Password reset** — `/password-forgot` requests the email; `/password-reset` reads the `?token=` from the emailed link, and its `beforeLoad` validates the token against the API (`POST /password/reset/validate`) so a used or expired link redirects to `/login` instead of showing a dead form. A live strength meter (`PasswordStrengthMeter`) mirrors the API's policy — composition rules plus a minimum [zxcvbn](https://github.com/zxcvbn-ts/zxcvbn) score, with zxcvbn lazily loaded into its own chunk — and the API re-enforces it on submit.
 - **Permissions** come from the access-token claim (returned on `/login` and `/me`) and drive UI — never security. The API is always the enforcement boundary.
 
 ### 📁 Project Structure
@@ -71,18 +72,20 @@ app-demo/
   .env.test                 # env:test   → test API :6663 (Sentry off)
   .env.stage                # deploy build → stage API (Sentry STAGE)
   src/
-    main.tsx               # providers + Sentry init + error boundary
-    env.d.ts               # ImportMetaEnv (VITE_API_URL, VITE_SENTRY_*)
+    main.tsx               # providers + Sentry init + error boundary + document title
+    env.d.ts               # ImportMetaEnv (VITE_API_URL, VITE_SENTRY_*) + __BUILD_ID__
+    index.css              # minimal global reset (box-sizing, body margin)
     app/
       router.ts            # code-based route tree + createRouter (exports routeTree for tests)
       query-client.ts      # shared QueryClient
-    routes/                # root / login / home route defs + beforeLoad guards
-    pages/                 # LoginPage, HomePage
-    components/            # shared presentational components (e.g. PermissionsList)
-    features/auth/         # api calls, me query, session hint, use-login / use-logout / use-auth
+    routes/                # root / login / home / password-forgot / password-reset defs + beforeLoad guards
+    pages/                 # LoginPage, HomePage, PasswordForgotPage, PasswordResetPage
+    components/            # shared presentational components (PermissionsList, PasswordStrengthMeter)
+    features/auth/         # api calls, me query, session hint, use-login / use-logout / use-auth / use-password-*
     lib/
       api-client.ts        # axios instance + 401→refresh interceptor
-      env.ts               # API_BASE_URL + headers (VITE_API_URL, required in prod)
+      env.ts               # API_BASE_URL + headers, env label + build id (VITE_API_URL required in prod)
+      password-policy.ts   # shared password rules + lazily-loaded zxcvbn scorer
       sentry.ts            # Sentry init + setSentryUser
     mocks/                 # test mock API: openapi.ts (generated), handlers, server
     test/                  # Vitest setup + renderApp harness
@@ -178,7 +181,7 @@ App-Demo consumes the top-level [`shared`](../shared) package via the `#shared` 
 - **TypeScript** — `paths` in `tsconfig.app.json`, which also lists `../shared` in `include`
 
 ```ts
-import type { InternalUser, Login } from '#shared/types';
+import type { InternalUser, Login, PasswordForgot, PasswordReset } from '#shared/types';
 ```
 
 `shared/types.d.ts` is a declaration file (types only), imported by both app-demo and api-demo so a contract change breaks both at `tsc`. The generated OpenAPI spec lives alongside it at `shared/openapi.json`.
@@ -203,10 +206,10 @@ On push to `master` touching `app-demo/**`, GitHub Actions builds the bundle **o
 
 Publishing is ordered to avoid a cutover gap: new assets and root files upload **additively** (no `--delete`) so the live `index.html` keeps resolving everything it references; `index.html` is then swapped in and CloudFront invalidated; only **after** that are superseded files pruned (`--delete`). A run cancelled mid-deploy leaves, at worst, stale files lingering — never a missing-asset state.
 
-### ⚠️ Follow-up: SPA deep-link routing
+### SPA deep-link routing
 
-The app now has **client-side routing** (`/login`, `/home`), so a deep link or refresh on a route hits CloudFront → S3, finds no object, and errors. **Before this ships publicly, CloudFront must serve `index.html` for those misses:**
+The app has **client-side routing** (`/login`, `/home`, `/password-forgot`, `/password-reset`), so a deep link or refresh on a route hits CloudFront → S3, finds no object, and errors. CloudFront is configured to serve `index.html` for those misses so the router can take over.
 
-- Map **both 403 and 404** → `/index.html` (a REST-origin + OAC bucket typically returns **403 AccessDenied**, not 404, for a missing key).
-- Prefer a **CloudFront Function** (viewer-request) that rewrites only extension-less / navigation paths, rather than a blanket error-response rewrite — a catch-all `404 → 200 /index.html` masks genuinely missing **assets** (e.g. a pruned hashed chunk), returning HTML for a `.js` request and causing a confusing MIME/parse error. Keep the error-response caching TTL low.
-- This is **infrastructure**, not app code: the CloudFront distribution lives outside this repo (referenced only via the `APP_DEMO_CLOUDFRONT_DISTRIBUTION_ID` CI variable).
+- **Configured:** CloudFront **custom error responses** map **both 403 and 404** → `/index.html` with response code **200**. A REST-origin + OAC bucket returns **403 AccessDenied** (not 404) for a missing key — because the bucket policy grants `s3:GetObject` but not `s3:ListBucket` — so mapping **403** is the one that actually fixes the refresh error.
+- **Trade-off:** this blanket rewrite also masks genuinely missing **assets** (e.g. a pruned hashed chunk), returning HTML with a 200 for a `.js` request and causing a confusing MIME/parse error. The cleaner long-term alternative is a **CloudFront Function** (viewer-request) that rewrites only extension-less / navigation paths, leaving real asset 403/404s intact.
+- This is **infrastructure**, not app code: the CloudFront distribution lives outside this repo (referenced only via the `APP_DEMO_CLOUDFRONT_DISTRIBUTION_ID` CI variable), so this setting is **not version-controlled** and won't be recreated automatically if the distribution is rebuilt.

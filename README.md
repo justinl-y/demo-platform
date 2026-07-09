@@ -8,7 +8,7 @@ The goal of this project is to demonstrate modern **full-stack web development p
 
 ## 🖥️ Frontend Application
 
-A **single-page application** the browser loads and runs — delivered as fingerprinted static assets over a CDN. It's the UI for the API: a cookie-authenticated app with a `/login` screen and a guarded `/home`, built on the stack below.
+A **single-page application** the browser loads and runs — delivered as fingerprinted static assets over a CDN. It's the UI for the API: a cookie-authenticated app with a `/login` screen, self-service password reset, and a guarded `/home`, built on the stack below.
 
 ### 🏛️ Frontend Features
 

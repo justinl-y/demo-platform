@@ -10,6 +10,7 @@ function onRequest(this: FastifyInstance, key: RouteKey) {
     postLogout: routePropertiesOnRequest([]),
     postPasswordForgot: routePropertiesOnRequest([]),
     postPasswordReset: routePropertiesOnRequest([]),
+    postPasswordResetValidate: routePropertiesOnRequest([]),
     getMe: routePropertiesOnRequest([this.authenticate]),
   };
 

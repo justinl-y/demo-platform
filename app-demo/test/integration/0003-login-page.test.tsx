@@ -78,6 +78,26 @@ describe('LoginPage', () => {
     });
   });
 
+  describe('Branding', () => {
+    test('the title shows the product name over the environment label', async () => {
+      renderApp('/login');
+
+      // Vitest runs in `test` mode, so the env label resolves to "(Test)" on its own line under the
+      // product name (production would show just "Demo Platform" with no second line).
+      const heading = await screen.findByRole('heading', { name: /Demo Platform/ });
+      expect(heading).toHaveTextContent('Demo Platform');
+      expect(heading).toHaveTextContent('(Test)');
+    });
+
+    test('the build footer shows the environment name in the dev servers', async () => {
+      renderApp('/login');
+
+      // Vitest runs in the (non-deployed) `test` env, so the footer shows the env name rather than a
+      // commit id. Deployed builds (stage/prod) show the commit id instead.
+      expect(await screen.findByText('Build: Test')).toBeInTheDocument();
+    });
+  });
+
   describe('Success', () => {
     test('successful login navigates to /home and shows the user + permissions', async () => {
       const user = userEvent.setup();

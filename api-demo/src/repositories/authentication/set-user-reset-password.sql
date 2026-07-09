@@ -4,6 +4,7 @@ SET
   password_hash = $hashedNewPassword!
   , password_reset_token_hash = NULL
   , password_reset_token_expiry_at = NULL
+  , password_reset_email_sent_at = NULL
   , refresh_token_hash = NULL
 FROM
   internal.users AS u

@@ -1,0 +1,12 @@
+/* Minimal global reset. Without it the browser defaults (body margin + content-box sizing) make the
+   full-height `min-height: 100vh` page containers overflow the viewport, producing a few px of
+   unnecessary vertical scroll. border-box also matches what antd assumes for its own components. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}

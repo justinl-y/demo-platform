@@ -2,6 +2,7 @@ import { BadRequestError } from 'http-errors-enhanced';
 
 import { paginationOffset, buildPaginatedResult, randomAlphaNumeric, sha256Hex } from '#utils/functions';
 import { bcryptHash } from '#lib/authentication';
+import { assertPasswordMeetsPolicy } from '#lib/password-policy';
 import { sendEmail } from '#lib/mailer';
 import { captureSentryException } from '#lib/sentry-instrument';
 import { Config } from '#config/index';
@@ -298,6 +299,9 @@ async function activateUser(repository: InternalUsersRepository, params: Activat
   // on this unauthenticated endpoint.
   const pendingInvitation = await repository.getPendingInvitation({ inviteTokenHash });
   if (!pendingInvitation) throw new BadRequestError('Invalid or expired invitation');
+
+  // Server-side strength gate (composition rules + a minimum zxcvbn score), before the bcrypt hash.
+  assertPasswordMeetsPolicy(password);
 
   const passwordHash = await bcryptHash(password);
 
