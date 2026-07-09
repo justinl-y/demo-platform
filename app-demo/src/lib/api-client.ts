@@ -18,6 +18,12 @@ export const api = axios.create({
   },
 });
 
+// Status code of a failed request, or undefined for a non-HTTP failure (network / timeout / aborted).
+// Lets callers branch on the response status without each importing axios and repeating the
+// `isAxiosError` guard.
+export const httpErrorStatus = (error: unknown): number | undefined =>
+  (axios.isAxiosError(error) ? error.response?.status : undefined);
+
 // Auth endpoints are never themselves retried through the refresh flow: a 401 from /login is a
 // bad-credentials result, and a 401 from /refresh means the session is truly over — retrying
 // either would loop. Matched on the exact request path (not a substring) so a future route like
@@ -69,7 +75,7 @@ api.interceptors.response.use(
       // A 401 from /refresh means the session is truly over — propagate the original 401 so guards
       // clear auth state. Any other failure (5xx / network) is transient: propagate it as-is so the
       // status reflects the outage, not a false 401, and a still-valid session isn't logged out.
-      const refreshStatus = axios.isAxiosError(refreshError) ? refreshError.response?.status : undefined;
+      const refreshStatus = httpErrorStatus(refreshError);
 
       return Promise.reject(refreshStatus === 401 ? error : refreshError);
     }

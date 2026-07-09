@@ -1,6 +1,4 @@
-import axios from 'axios';
-
-import { api } from '../../lib/api-client.ts';
+import { api, httpErrorStatus } from '../../lib/api-client.ts';
 
 import type { Login, InternalUser, PasswordForgot, PasswordReset } from '#shared/types';
 
@@ -52,7 +50,7 @@ export const isResetTokenValid = async (token: string): Promise<boolean> => {
     return true;
   }
   catch (error) {
-    if (axios.isAxiosError(error) && error.response?.status === 400) return false;
+    if (httpErrorStatus(error) === 400) return false;
 
     return true;
   }
