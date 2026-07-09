@@ -20,8 +20,83 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Fast, Docker-free lint + type-check. The integration-tests job compiles the source
+  # (Dockerfile.ci runs `npm run typecheck`) but never lints, and the integration tests
+  # themselves run under vitest (transpiled, not type-checked) — this job covers both.
+  # Mirrors the integration-tests change-detection: it always runs to report a real status,
+  # gating the real steps on whether api-demo/db-demo/shared were touched.
+  checks:
+    name: API Checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./api-demo
+    timeout-minutes: 10
+    steps:
+      # Checkout the code
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      # Detect whether api-demo, db-demo or shared changed in this PR
+      - name: Detect relevant changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            relevant:
+              - 'api-demo/**'
+              - 'db-demo/**'
+              - 'shared/**'
+              - '.github/workflows/pr-ci-api-demo.yml'
+
+      # Report success when there is nothing to check
+      - name: Skip lint & type check
+        if: steps.changes.outputs.relevant == 'false'
+        run: echo "No api-demo, db-demo or shared changes - checks not required."
+
+      # Set up Node.js with npm caching for both the root and the (separate) integration-test lockfiles
+      - name: Set up Node.js
+        if: steps.changes.outputs.relevant == 'true'
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            api-demo/test/container-test/package-lock.json
+
+      # Install workspace dependencies from the root lockfile
+      - name: Install dependencies
+        if: steps.changes.outputs.relevant == 'true'
+        working-directory: .
+        run: npm ci
+
+      # Lint (neostandard + api rules)
+      - name: Lint
+        if: steps.changes.outputs.relevant == 'true'
+        run: npm run lint
+
+      # Type-check the application source (fast feedback; also enforced in the Docker build)
+      - name: Type-check source
+        if: steps.changes.outputs.relevant == 'true'
+        run: npm run typecheck
+
+      # Install the integration-test project's own dependencies (its own package.json, not a workspace)
+      - name: Install integration-test dependencies
+        if: steps.changes.outputs.relevant == 'true'
+        working-directory: ./api-demo/test/container-test
+        run: npm ci
+
+      # Type-check the integration tests — vitest runs them transpiled, so tsc is the only type gate
+      - name: Type-check integration tests
+        if: steps.changes.outputs.relevant == 'true'
+        run: npx tsc --noEmit -p test/container-test/tsconfig.json
+
   integration-tests:
-    name: Docker CI Integration Tests
+    name: API Integration Tests
+    # Gate the expensive Docker build + integration run on the fast lint + type-check passing first,
+    # so a lint/type error fails in ~1 min instead of after a ~15 min Docker cycle.
+    needs: checks
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -48,6 +123,7 @@ jobs:
               - 'api-demo/**'
               - 'db-demo/**'
               - 'shared/**'
+              - '.github/workflows/pr-ci-api-demo.yml'
 
       # Report success when there is nothing to test
       - name: Skip integration tests
