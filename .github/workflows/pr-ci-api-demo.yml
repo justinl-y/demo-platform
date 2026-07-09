@@ -71,26 +71,24 @@ jobs:
         working-directory: .
         run: npm ci
 
-      # Lint (neostandard + api rules)
-      - name: Lint
-        if: steps.changes.outputs.relevant == 'true'
-        run: npm run lint
-
-      # Type-check the application source (fast feedback; also enforced in the Docker build)
-      - name: Type-check source
-        if: steps.changes.outputs.relevant == 'true'
-        run: npm run typecheck
-
-      # Install the integration-test project's own dependencies (its own package.json, not a workspace)
+      # The integration tests are a separate project with their own package.json (not a workspace);
+      # install their deps BEFORE typecheck, because api-demo's tsconfig includes test/container-test/**
+      # and those files import supertest/aws-sdk-client-mock from that project's own node_modules.
       - name: Install integration-test dependencies
         if: steps.changes.outputs.relevant == 'true'
         working-directory: ./api-demo/test/container-test
         run: npm ci
 
-      # Type-check the integration tests — vitest runs them transpiled, so tsc is the only type gate
-      - name: Type-check integration tests
+      # Lint (neostandard + api rules)
+      - name: Lint
         if: steps.changes.outputs.relevant == 'true'
-        run: npx tsc --noEmit -p test/container-test/tsconfig.json
+        run: npm run lint
+
+      # Type-check src, scripts, and the integration tests (all three are in api-demo's tsconfig).
+      # vitest runs the tests transpiled, so tsc is their only type gate; src is also built in Docker.
+      - name: Type-check
+        if: steps.changes.outputs.relevant == 'true'
+        run: npm run typecheck
 
   integration-tests:
     name: API Integration Tests
