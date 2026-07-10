@@ -13,6 +13,13 @@ export default mergeConfig(viteConfig, {
     environment: 'jsdom',
     setupFiles: ['./test/lib/setup.ts'],
     include: ['test/**/*.test.{ts,tsx}'],
+    // Perf: run files in worker threads (cheaper spin-up than forks) and skip per-file isolation, so
+    // the heavy imports (antd) and the jsdom environment load once per worker instead of once per
+    // file, and zxcvbn's memoised factory is reused. Safe because setup.ts resets all cross-test
+    // state each test (MSW handlers, localStorage, RTL cleanup) and renderApp builds a fresh
+    // QueryClient + router per call. If ordering-dependent flakiness ever appears, drop `isolate`.
+    pool: 'threads',
+    isolate: false,
     // Match api-demo's output style: a full tree of describe/test names, no trailing summary block.
     reporters: [
       ['tree', { summary: false }],

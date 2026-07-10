@@ -10,7 +10,7 @@ import { renderApp } from '../lib/render.tsx';
 describe('PasswordForgotPage', () => {
   describe('Failure', () => {
     test('shows a validation error when submitting empty', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       renderApp('/password-forgot');
 
       await user.click(await screen.findByRole('button', { name: /send reset link/i }));
@@ -19,7 +19,7 @@ describe('PasswordForgotPage', () => {
     });
 
     test('rejects a malformed email and does not submit', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       renderApp('/password-forgot');
 
       await user.type(await screen.findByPlaceholderText('you@example.com'), 'not-an-email');
@@ -36,7 +36,7 @@ describe('PasswordForgotPage', () => {
           HttpResponse.json({ message: 'Internal Server Error' }, { status: 500 })),
       );
 
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       renderApp('/password-forgot');
 
       await user.type(await screen.findByPlaceholderText('you@example.com'), 'user@example.com');
@@ -50,7 +50,7 @@ describe('PasswordForgotPage', () => {
 
   describe('Success', () => {
     test('shows the generic confirmation and hides the form', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       renderApp('/password-forgot');
 
       await user.type(await screen.findByPlaceholderText('you@example.com'), 'user@example.com');
@@ -63,7 +63,7 @@ describe('PasswordForgotPage', () => {
 
     test('an unknown address gets the same confirmation (no account-existence signal)', async () => {
       // The API returns 204 whether or not the address maps to an account; the UI must not differ.
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       renderApp('/password-forgot');
 
       await user.type(await screen.findByPlaceholderText('you@example.com'), 'nobody@example.com');

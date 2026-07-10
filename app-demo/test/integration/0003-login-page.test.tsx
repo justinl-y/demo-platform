@@ -10,7 +10,7 @@ import { renderApp } from '../lib/render.tsx';
 describe('LoginPage', () => {
   describe('Failure', () => {
     test('shows validation errors when submitting empty', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       renderApp('/login');
 
       await user.click(await screen.findByRole('button', { name: /sign in/i }));
@@ -20,7 +20,7 @@ describe('LoginPage', () => {
     });
 
     test('rejects a malformed email and does not submit', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       renderApp('/login');
 
       await user.type(await screen.findByPlaceholderText('you@example.com'), 'not-an-email');
@@ -40,7 +40,7 @@ describe('LoginPage', () => {
           HttpResponse.json({ message: 'Authentication failed' }, { status: 401 })),
       );
 
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       renderApp('/login');
 
       await user.type(await screen.findByPlaceholderText('you@example.com'), 'user@example.com');
@@ -59,7 +59,7 @@ describe('LoginPage', () => {
           HttpResponse.json({ message: 'Internal Server Error' }, { status: 500 })),
       );
 
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       renderApp('/login');
 
       await user.type(await screen.findByPlaceholderText('you@example.com'), 'user@example.com');
@@ -100,7 +100,7 @@ describe('LoginPage', () => {
 
   describe('Success', () => {
     test('successful login navigates to /home and shows the user + permissions', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       renderApp('/login');
 
       await user.type(await screen.findByPlaceholderText('you@example.com'), 'user@example.com');
@@ -119,7 +119,7 @@ describe('LoginPage', () => {
           HttpResponse.json({ message: 'Authentication failed' }, { status: 401 })),
       );
 
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       renderApp('/login');
 
       await user.type(await screen.findByPlaceholderText('you@example.com'), 'user@example.com');

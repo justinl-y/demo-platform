@@ -46,7 +46,7 @@ describe('PasswordResetPage', () => {
 
   describe('Composition checklist', () => {
     test('shows all four rules and ticks the ones the input satisfies', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       const {
         container,
       } = renderApp(RESET_PATH);
@@ -67,7 +67,7 @@ describe('PasswordResetPage', () => {
     });
 
     test('shows the strength meter once every rule passes', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       renderApp(RESET_PATH);
 
       await user.type(await screen.findByPlaceholderText('New password'), STRONG_PASSWORD);
@@ -78,7 +78,7 @@ describe('PasswordResetPage', () => {
 
   describe('Submit blocked', () => {
     test('empty submit shows required errors', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       renderApp(RESET_PATH);
 
       await user.click(await screen.findByRole('button', { name: /reset password/i }));
@@ -88,7 +88,7 @@ describe('PasswordResetPage', () => {
     });
 
     test('a password failing the composition rules is blocked', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       renderApp(RESET_PATH);
 
       // meets length but no uppercase/special → rules unmet.
@@ -101,7 +101,7 @@ describe('PasswordResetPage', () => {
     });
 
     test('a rule-satisfying but guessable password is blocked by the score gate', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       renderApp(RESET_PATH);
 
       await user.type(await screen.findByPlaceholderText('New password'), GUESSABLE_PASSWORD);
@@ -113,7 +113,7 @@ describe('PasswordResetPage', () => {
     });
 
     test('rejects when confirmation does not match', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       renderApp(RESET_PATH);
 
       await user.type(await screen.findByPlaceholderText('New password'), STRONG_PASSWORD);
@@ -131,7 +131,7 @@ describe('PasswordResetPage', () => {
           HttpResponse.json({ message: 'Invalid or expired password reset token' }, { status: 400 })),
       );
 
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       renderApp(RESET_PATH);
 
       await user.type(await screen.findByPlaceholderText('New password'), STRONG_PASSWORD);
@@ -145,7 +145,7 @@ describe('PasswordResetPage', () => {
 
   describe('Success', () => {
     test('a strong password passes both gates and navigates to /login', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       renderApp(RESET_PATH);
 
       await user.type(await screen.findByPlaceholderText('New password'), STRONG_PASSWORD);
