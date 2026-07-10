@@ -7,7 +7,7 @@ import { API_BASE_URL } from '../../src/lib/env.ts';
 import { server } from '../mocks/server.ts';
 import { renderApp } from '../lib/render.tsx';
 
-// A valid-length token; the route just needs a non-blank token.
+// The route requires a token of the API's exact length (30); a wrong-length token is dropped.
 const TOKEN = 'a'.repeat(30);
 const RESET_PATH = `/password-reset?token=${TOKEN}`;
 
@@ -27,6 +27,26 @@ describe('PasswordResetPage', () => {
       expect(await screen.findByText('Invalid reset link')).toBeInTheDocument();
       expect(screen.queryByPlaceholderText('New password')).not.toBeInTheDocument();
       expect(screen.getByRole('link', { name: /request a new link/i })).toBeInTheDocument();
+    });
+
+    test('a wrong-length token renders the invalid-link state without hitting the validate endpoint', async () => {
+      // A malformed-length token can only 400 on validate; dropping it in validateSearch renders the
+      // invalid-link state rather than bouncing to /login as if it were a used/expired link.
+      let validateCalled = false;
+
+      server.use(
+        http.post(`${API_BASE_URL}/password/reset/validate`, () => {
+          validateCalled = true;
+
+          return HttpResponse.json({ message: 'Invalid or expired password reset token' }, { status: 400 });
+        }),
+      );
+
+      renderApp('/password-reset?token=tooshort');
+
+      expect(await screen.findByText('Invalid reset link')).toBeInTheDocument();
+      expect(screen.queryByPlaceholderText('New password')).not.toBeInTheDocument();
+      expect(validateCalled).toBe(false);
     });
 
     test('a used or expired token redirects to /login instead of rendering the form', async () => {

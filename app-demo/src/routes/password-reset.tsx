@@ -9,15 +9,24 @@ export interface PasswordResetSearch {
   token?: string;
 }
 
+// Fixed length of the emailed reset token, mirroring the API's password_reset_token schema
+// (min/maxLength 30 on POST /password/reset[/validate]). The API is the source of truth; this
+// lets a wrong-length token render the invalid-link state instead of 400ing on validate and
+// getting bounced to /login as if it were a used/expired link.
+const RESET_TOKEN_LENGTH = 30;
+
 export const passwordResetRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/password-reset',
   // The reset token rides in as ?token= on the emailed link. Coerce to a trimmed string (or drop it)
-  // so the page gets a clean, typed value; a missing/blank token renders the invalid-link state.
+  // so the page gets a clean, typed value; a missing/blank or malformed-length token is dropped and
+  // renders the invalid-link state.
   validateSearch: (search: Record<string, unknown>): PasswordResetSearch => {
     const token = typeof search.token === 'string' ? search.token.trim() : '';
 
-    return token ? { token } : {};
+    // Return token: undefined (not {}) to drop it — the router merges this onto the raw URL search,
+    // so an explicit undefined is what strips a missing/blank/wrong-length token from the match.
+    return token.length === RESET_TOKEN_LENGTH ? { token } : { token: undefined };
   },
   beforeLoad: async ({
     context,
