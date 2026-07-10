@@ -24,6 +24,15 @@ export const api = axios.create({
 export const httpErrorStatus = (error: unknown): number | undefined =>
   (axios.isAxiosError(error) ? error.response?.status : undefined);
 
+// The human-readable message from the API error body (`{ statusCode, message }`), or `fallback` for a
+// non-HTTP failure or a response without one. Lets callers surface the specific server reason (e.g.
+// "Supplied role name is not unique") instead of a generic message.
+export const httpErrorMessage = (error: unknown, fallback: string): string => {
+  const message = axios.isAxiosError(error) ? error.response?.data?.message : undefined;
+
+  return typeof message === 'string' ? message : fallback;
+};
+
 // Auth endpoints are never themselves retried through the refresh flow: a 401 from /login is a
 // bad-credentials result, and a 401 from /refresh means the session is truly over — retrying
 // either would loop. Matched on the exact request path (not a substring) so a future route like

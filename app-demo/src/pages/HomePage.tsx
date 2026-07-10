@@ -1,64 +1,42 @@
-import { Button, Descriptions, Layout, Typography } from 'antd';
-import { LogoutOutlined } from '@ant-design/icons';
+import { Descriptions, Typography } from 'antd';
 
 import PermissionsList from '../components/PermissionsList.tsx';
 import { useAuth } from '../features/auth/use-auth.ts';
-import { useLogout } from '../features/auth/use-logout.ts';
-import { APP_TITLE } from '../lib/env.ts';
 
 const {
-  Header, Content,
-} = Layout;
-const {
-  Title, Text,
+  Title,
 } = Typography;
 
+// Rendered inside the authenticated layout route's AppShell (via <Outlet>), so this returns page
+// content only.
 export default function HomePage() {
   const {
     user,
   } = useAuth();
-  const logout = useLogout();
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Header style={{ display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between' }}
-      >
-        <Text style={{ color: '#fff',
-          fontSize: 18,
-          fontWeight: 600 }}
-        >
-          {APP_TITLE}
-        </Text>
-        <Button icon={<LogoutOutlined />} onClick={() => logout.mutate()} loading={logout.isPending}>
-          Sign out
-        </Button>
-      </Header>
+    <>
+      <Title level={3}>
+        Welcome
+        {user?.known_as ? `, ${user.known_as}` : ''}
+      </Title>
 
-      <Content style={{ padding: 24 }}>
-        <Title level={3}>
-          Welcome
-          {user?.known_as ? `, ${user.known_as}` : ''}
-        </Title>
-
-        <Descriptions
-          bordered
-          column={1}
-          style={{ maxWidth: 640 }}
-          items={[
-            { key: 'name',
-              label: 'Name',
-              children: user?.full_name },
-            { key: 'email',
-              label: 'Email',
-              children: user?.email },
-            { key: 'permissions',
-              label: 'Permissions',
-              children: <PermissionsList permissions={user?.permissions ?? []} /> },
-          ]}
-        />
-      </Content>
-    </Layout>
+      <Descriptions
+        bordered
+        column={1}
+        style={{ maxWidth: 640 }}
+        items={[
+          { key: 'name',
+            label: 'Name',
+            children: user?.full_name },
+          { key: 'email',
+            label: 'Email',
+            children: user?.email },
+          { key: 'permissions',
+            label: 'Permissions',
+            children: <PermissionsList permissions={user?.permissions ?? []} /> },
+        ]}
+      />
+    </>
   );
 }

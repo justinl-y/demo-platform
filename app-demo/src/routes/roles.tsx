@@ -1,11 +1,11 @@
 import { createRoute } from '@tanstack/react-router';
 
-import HomePage from '../pages/HomePage.tsx';
+import RolesPage from '../pages/RolesPage.tsx';
 import { authenticatedRoute } from './authenticated.tsx';
 
 // Child of the authenticated layout route: the session guard and AppShell chrome live on the parent.
-export const homeRoute = createRoute({
+export const rolesRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
-  path: '/home',
-  component: HomePage,
+  path: '/roles',
+  component: RolesPage,
 });
