@@ -1,5 +1,4 @@
-import axios from 'axios';
-
+import { httpErrorStatus } from '../../lib/api-client.ts';
 import { clearSentryUser, setSentryUser } from '../../lib/sentry.ts';
 import { meQueryOptions } from './queries.ts';
 
@@ -42,7 +41,7 @@ export const resolveSession = async (queryClient: QueryClient): Promise<Internal
     // Only a real 401 (the api-client already tried /refresh) means the session is over — tear it
     // down. A transient failure (network blip, 5xx) shouldn't log a still-valid session out, so fall
     // back to any cached user and let the guard proceed rather than clearing the hint.
-    const status = axios.isAxiosError(error) ? error.response?.status : undefined;
+    const status = httpErrorStatus(error);
     if (status !== 401) {
       return queryClient.getQueryData<InternalUser>(meQueryOptions.queryKey) ?? null;
     }

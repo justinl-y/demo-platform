@@ -8,6 +8,7 @@ import {
   generateJwt,
 } from '#lib/authentication';
 import { sendEmail } from '#lib/mailer';
+import { assertPasswordMeetsPolicy } from '#lib/password-policy';
 import { captureSentryException } from '#lib/sentry-instrument';
 import {
   randomAlphaNumeric,
@@ -301,6 +302,9 @@ async function passwordReset(repository: AuthenticationRepository, params: Passw
   const existingUser = await repository.getUserByPasswordResetToken({ passwordResetTokenHash });
   if (!existingUser) throw new BadRequestError('Invalid or expired password reset token');
 
+  // Server-side strength gate (composition rules + a minimum zxcvbn score), before the bcrypt hash.
+  assertPasswordMeetsPolicy(newPassword);
+
   const hashedNewPassword = await bcryptHash(newPassword);
 
   // Consume the token atomically: the UPDATE re-checks the token (active user,
@@ -315,6 +319,25 @@ async function passwordReset(repository: AuthenticationRepository, params: Passw
   });
 
   if (!user) throw new BadRequestError('Invalid or expired password reset token');
+}
+
+interface ValidatePasswordResetTokenParams {
+  passwordResetToken: string;
+}
+
+// Read-only companion to passwordReset: checks a reset token is still usable (active user, unexpired,
+// not yet consumed — password_reset_token_hash cleared on use never matches) WITHOUT consuming it, so
+// the front-end can redirect a used/expired link before rendering the form. Same lookup and 400 the
+// reset itself would produce, keeping the two in lock-step.
+async function validatePasswordResetToken(repository: AuthenticationRepository, params: ValidatePasswordResetTokenParams): Promise<void> {
+  const {
+    passwordResetToken,
+  } = params;
+
+  const passwordResetTokenHash = sha256Hex(passwordResetToken);
+
+  const existingUser = await repository.getUserByPasswordResetToken({ passwordResetTokenHash });
+  if (!existingUser) throw new BadRequestError('Invalid or expired password reset token');
 }
 
 interface CurrentUserParams {
@@ -358,5 +381,6 @@ export {
   logout,
   passwordForgot,
   passwordReset,
+  validatePasswordResetToken,
   fetchCurrentUser,
 };

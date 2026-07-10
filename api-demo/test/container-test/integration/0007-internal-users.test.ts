@@ -2162,6 +2162,36 @@ describe(`${fileNumber} - Internal Users`, () => {
         expect(second.statusCode).toBe(400);
         expect(second.body.message).toBe('Invalid or expired invitation');
       });
+
+      test('Password failing the composition rules returns 400', async () => {
+        const prefix = 'weakrule-';
+        const rawToken = `${prefix}${faker.string.alphanumeric(validTokenLength - prefix.length)}`;
+        await seedInvitedUserWithToken({ rawToken });
+
+        const res = await getResponse({
+          token: rawToken,
+          // long enough for the schema, but no uppercase and no special character
+          password: 'alllowercase123',
+        });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Password does not meet the strength requirements');
+      });
+
+      test('Rule-satisfying but guessable password returns 400', async () => {
+        const prefix = 'weakscore-';
+        const rawToken = `${prefix}${faker.string.alphanumeric(validTokenLength - prefix.length)}`;
+        await seedInvitedUserWithToken({ rawToken });
+
+        const res = await getResponse({
+          token: rawToken,
+          // passes every composition rule but scores low on zxcvbn (guessability)
+          password: 'Password1!',
+        });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Password does not meet the strength requirements');
+      });
     });
 
     describe('Request Success', () => {

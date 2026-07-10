@@ -4,6 +4,7 @@ import { LogoutOutlined } from '@ant-design/icons';
 import PermissionsList from '../components/PermissionsList.tsx';
 import { useAuth } from '../features/auth/use-auth.ts';
 import { useLogout } from '../features/auth/use-logout.ts';
+import { APP_TITLE } from '../lib/env.ts';
 
 const {
   Header, Content,
@@ -28,7 +29,7 @@ export default function HomePage() {
           fontSize: 18,
           fontWeight: 600 }}
         >
-          Demo Platform
+          {APP_TITLE}
         </Text>
         <Button icon={<LogoutOutlined />} onClick={() => logout.mutate()} loading={logout.isPending}>
           Sign out

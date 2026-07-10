@@ -951,6 +951,38 @@ describe(`${fileNumber} - Authentication`, () => {
         expect(second.statusCode).toBe(400);
         expect(second.body.message).toBe('Invalid or expired password reset token');
       });
+
+      test('Password failing the composition rules returns 400', async () => {
+        const prefix = 'weakrule-';
+        const rawToken = `${prefix}${faker.string.alphanumeric(validTokenLength - prefix.length)}`;
+
+        await seedUserWithResetToken({ rawToken });
+
+        const res = await getResponse({
+          password_reset_token: rawToken,
+          // long enough for the schema, but no uppercase and no special character
+          new_password: 'alllowercase123',
+        });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Password does not meet the strength requirements');
+      });
+
+      test('Rule-satisfying but guessable password returns 400', async () => {
+        const prefix = 'weakscore-';
+        const rawToken = `${prefix}${faker.string.alphanumeric(validTokenLength - prefix.length)}`;
+
+        await seedUserWithResetToken({ rawToken });
+
+        const res = await getResponse({
+          password_reset_token: rawToken,
+          // passes every composition rule but scores low on zxcvbn (guessability)
+          new_password: 'Password1!',
+        });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Password does not meet the strength requirements');
+      });
     });
 
     describe('Request Success', () => {
@@ -958,6 +990,7 @@ describe(`${fileNumber} - Authentication`, () => {
         password_hash: string | null;
         password_reset_token_hash: string | null;
         password_reset_token_expiry_at: Date | null;
+        password_reset_email_sent_at: Date | null;
         refresh_token_hash: string | null;
       }
 
@@ -965,6 +998,7 @@ describe(`${fileNumber} - Authentication`, () => {
         a.password_hash
         , a.password_reset_token_hash
         , a.password_reset_token_expiry_at
+        , a.password_reset_email_sent_at
         , a.refresh_token_hash
       FROM
         internal.users_authentication AS a
@@ -983,6 +1017,13 @@ describe(`${fileNumber} - Authentication`, () => {
         ({
           userId: resetUserId,
         } = await seedUserWithResetToken({ rawToken }));
+
+        // Stamp the email-sent timestamp non-null so the assertion below meaningfully proves the
+        // reset clears it (a completed reset returns the whole reset sub-state to a null baseline).
+        await query(
+          'UPDATE internal.users_authentication SET password_reset_email_sent_at = NOW() WHERE user_id = $1;',
+          [resetUserId],
+        );
 
         rep = await getResponse({
           password_reset_token: rawToken,
@@ -1014,8 +1055,82 @@ describe(`${fileNumber} - Authentication`, () => {
         expect(dbReset.password_reset_token_expiry_at).toBeNull();
       });
 
+      test('Password reset email sent-at is cleared in the database', () => {
+        expect(dbReset.password_reset_email_sent_at).toBeNull();
+      });
+
       test('Refresh token hash is cleared to invalidate existing sessions', () => {
         expect(dbReset.refresh_token_hash).toBeNull();
+      });
+    });
+  });
+
+  describe('POST /password/reset/validate', () => {
+    const getResponse = (reqBody: { password_reset_token: string }) => noAuthAPI.post('/password/reset/validate', reqBody);
+
+    const validTokenLength = 30;
+
+    describe('Request Failure', () => {
+      test('Absent required body "password_reset_token" returns 400', async () => {
+        const res = await getResponse({} as { password_reset_token: string });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe(`body must have required property 'password_reset_token'`);
+      });
+
+      test('Unknown token returns 400', async () => {
+        const res = await getResponse({ password_reset_token: faker.string.alphanumeric(validTokenLength) });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid or expired password reset token');
+      });
+
+      test('Expired token returns 400', async () => {
+        const prefix = 'validate-expired-';
+        const rawToken = `${prefix}${faker.string.alphanumeric(validTokenLength - prefix.length)}`;
+
+        await seedUserWithResetToken({
+          rawToken,
+          expiresAt: new Date(Date.now() - 1000),
+        });
+
+        const res = await getResponse({ password_reset_token: rawToken });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid or expired password reset token');
+      });
+
+      test('Consumed token returns 400 after a successful reset', async () => {
+        const prefix = 'validate-used-';
+        const rawToken = `${prefix}${faker.string.alphanumeric(validTokenLength - prefix.length)}`;
+
+        await seedUserWithResetToken({ rawToken });
+
+        const reset = await noAuthAPI.post('/password/reset', {
+          password_reset_token: rawToken,
+          new_password: 'TestPass123!@#abc',
+        });
+        const res = await getResponse({ password_reset_token: rawToken });
+
+        expect(reset.statusCode).toBe(204);
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid or expired password reset token');
+      });
+    });
+
+    describe('Request Success', () => {
+      test('A still-valid token returns 204 and is not consumed by the check', async () => {
+        const prefix = 'validate-valid-';
+        const rawToken = `${prefix}${faker.string.alphanumeric(validTokenLength - prefix.length)}`;
+
+        await seedUserWithResetToken({ rawToken });
+
+        const first = await getResponse({ password_reset_token: rawToken });
+        // A second check still passes — validation is read-only and never clears the token.
+        const second = await getResponse({ password_reset_token: rawToken });
+
+        expect(first.statusCode).toBe(204);
+        expect(second.statusCode).toBe(204);
       });
     });
   });

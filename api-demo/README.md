@@ -58,7 +58,8 @@ All endpoints are served from the API base URL. Auth endpoints use JWT cookies; 
 | `POST` | `/logout` | cookie | Invalidate the session and clear both cookies. |
 | `GET` | `/me` | cookie | Return the currently authenticated user (id, email, name, permissions). |
 | `POST` | `/password/forgot` | — | Request a password-reset email for an account. |
-| `POST` | `/password/reset` | — | Set a new password using a reset token. |
+| `POST` | `/password/reset` | — | Set a new password using a reset token (enforces the password strength policy). |
+| `POST` | `/password/reset/validate` | — | Check a reset token is still valid (active user, unused, unexpired) without consuming it. |
 | `GET` | `/internal-users` | cookie | Get one or more internal users |
 | `POST` | `/internal-users` | cookie | Create a new user. |
 | `DELETE` | `/internal-users/:user_id` | cookie | Delete a user. |
@@ -86,6 +87,8 @@ All endpoints are served from the API base URL. Auth endpoints use JWT cookies; 
 | `DELETE` | `/roles/:role_id/permissions` | cookie | Remove all of a role's permissions. |
 | `GET` | `/health_db` | — | Database health check. |
 | `GET` | `/health_eb` | — | Elastic Beanstalk health check. |
+
+> **Password strength policy** — the password-setting endpoints (`/password/reset` and `/internal-users/activate`) enforce a two-gate policy at the service layer before hashing: composition rules (min length, plus at least one number, uppercase, and special character) followed by a minimum [zxcvbn](https://github.com/zxcvbn-ts/zxcvbn) guessability score. The rules and threshold live in `src/config/auth.ts`; the shared check is `src/lib/password-policy.ts` (`assertPasswordMeetsPolicy`).
 
 ### 📄 OpenAPI spec
 

@@ -5,12 +5,10 @@ import type {
   FastifyReply,
   FastifyInstance,
 } from 'fastify';
+import type { PasswordReset } from '#shared/types';
 
 type Request = {
-  Body: {
-    password_reset_token: string;
-    new_password: string;
-  };
+  Body: PasswordReset;
 };
 
 async function passwordReset(this: FastifyInstance, request: FastifyRequest<Request>, reply: FastifyReply) {

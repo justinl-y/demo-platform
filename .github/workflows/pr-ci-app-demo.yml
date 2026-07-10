@@ -1,11 +1,13 @@
 name: PR CI APP-DEMO
 
+# app-demo's jobs are intended as required status checks, so this workflow triggers on every PR
+# (no path filter at the `on:` level — a path-filtered workflow never reports on PRs that don't
+# touch its paths, stranding them on a required check that never runs). Each job runs a
+# change-detection step and gates its real steps on whether app-demo/shared were touched, while
+# always running to completion and reporting a real success. Mirrors pr-ci-api-demo.
+
 on:
   pull_request:
-    paths:
-      - 'app-demo/**'
-      - 'shared/**'
-      - '.github/workflows/pr-ci-app-demo.yml'
     types: [opened, synchronize, reopened, ready_for_review]
 
 permissions:
@@ -16,8 +18,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-checks:
-    name: Lint & Build
+  # Fast checks: CSS-module type drift + lint.
+  checks:
+    name: App Checks
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -28,8 +31,25 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
 
+      # Detect whether app-demo or shared changed in this PR
+      - name: Detect relevant changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            relevant:
+              - 'app-demo/**'
+              - 'shared/**'
+              - '.github/workflows/pr-ci-app-demo.yml'
+
+      # Report success when there is nothing to check
+      - name: Skip checks
+        if: steps.changes.outputs.relevant == 'false'
+        run: echo "No app-demo or shared changes - checks not required."
+
       # Set up Node.js with npm dependency caching
       - name: Set up Node.js
+        if: steps.changes.outputs.relevant == 'true'
         uses: actions/setup-node@v5
         with:
           node-version: 24
@@ -38,22 +58,117 @@ jobs:
 
       # Install dependencies from the root workspaces lockfile
       - name: Install dependencies
+        if: steps.changes.outputs.relevant == 'true'
         working-directory: .
         run: npm ci
 
       # Verify committed CSS-module type declarations are in sync with the source CSS
       - name: Verify CSS module types
+        if: steps.changes.outputs.relevant == 'true'
         run: npm run css:types:ci
 
       # Lint (neostandard + React rules)
       - name: Lint
+        if: steps.changes.outputs.relevant == 'true'
         run: npm run lint
+
+  # Automated tests in their own job so they report as a distinct status check (mirroring
+  # pr-ci-api-demo). Gated behind the checks job so a lint failure short-circuits before the tests run.
+  integration-tests:
+    name: App Integration Tests
+    needs: checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./app-demo
+    timeout-minutes: 10
+    steps:
+      # Checkout the code
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      # Detect whether app-demo or shared changed in this PR
+      - name: Detect relevant changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            relevant:
+              - 'app-demo/**'
+              - 'shared/**'
+              - '.github/workflows/pr-ci-app-demo.yml'
+
+      # Report success when there is nothing to test
+      - name: Skip integration tests
+        if: steps.changes.outputs.relevant == 'false'
+        run: echo "No app-demo or shared changes - integration tests not required."
+
+      # Set up Node.js with npm dependency caching
+      - name: Set up Node.js
+        if: steps.changes.outputs.relevant == 'true'
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      # Install dependencies from the root workspaces lockfile
+      - name: Install dependencies
+        if: steps.changes.outputs.relevant == 'true'
+        working-directory: .
+        run: npm ci
 
       # Automated tests: Vitest + React Testing Library, with the API mocked by MSW handlers
       # typed against the OpenAPI schema (see the PR OpenAPI Contract workflow for drift protection).
       - name: Test
+        if: steps.changes.outputs.relevant == 'true'
         run: npm run test
+
+  # Build (also type-checks via `tsc -b`) in its own job for a distinct status check.
+  build:
+    name: App Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./app-demo
+    timeout-minutes: 10
+    steps:
+      # Checkout the code
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      # Detect whether app-demo or shared changed in this PR
+      - name: Detect relevant changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            relevant:
+              - 'app-demo/**'
+              - 'shared/**'
+              - '.github/workflows/pr-ci-app-demo.yml'
+
+      # Report success when there is nothing to build
+      - name: Skip build
+        if: steps.changes.outputs.relevant == 'false'
+        run: echo "No app-demo or shared changes - build not required."
+
+      # Set up Node.js with npm dependency caching
+      - name: Set up Node.js
+        if: steps.changes.outputs.relevant == 'true'
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      # Install dependencies from the root workspaces lockfile
+      - name: Install dependencies
+        if: steps.changes.outputs.relevant == 'true'
+        working-directory: .
+        run: npm ci
 
       # Build — also type-checks via `tsc -b`
       - name: Build
+        if: steps.changes.outputs.relevant == 'true'
         run: npm run build

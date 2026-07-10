@@ -1,12 +1,14 @@
 import { Alert, Button, Card, Flex, Form, Input, Typography } from 'antd';
 import { LockOutlined, UserOutlined } from '@ant-design/icons';
+import { Link } from '@tanstack/react-router';
 
 import { useLogin } from '../features/auth/use-login.ts';
+import { APP_DISPLAY_NAME, BUILD_LABEL, ENV_LABEL } from '../lib/env.ts';
 
 import type { Login } from '#shared/types';
 
 const {
-  Title,
+  Title, Text,
 } = Typography;
 
 export default function LoginPage() {
@@ -17,7 +19,8 @@ export default function LoginPage() {
       align='center'
       justify='center'
       style={{ minHeight: '100vh',
-        padding: 16 }}
+        padding: 16,
+        position: 'relative' }}
     >
       <Card style={{ width: 380 }}>
         <Title
@@ -25,7 +28,18 @@ export default function LoginPage() {
           style={{ textAlign: 'center',
             marginBottom: 24 }}
         >
-          Demo Platform
+          {APP_DISPLAY_NAME}
+          {ENV_LABEL && (
+            <span style={{ display: 'block',
+              fontSize: 14,
+              fontWeight: 400,
+              opacity: 0.65 }}
+            >
+              (
+              {ENV_LABEL}
+              )
+            </span>
+          )}
         </Title>
 
         {login.isError && (
@@ -72,7 +86,24 @@ export default function LoginPage() {
             </Button>
           </Form.Item>
         </Form>
+
+        <Flex justify='center' style={{ marginTop: 16 }}>
+          <Link to='/password-forgot'>Forgot password?</Link>
+        </Flex>
       </Card>
+
+      {/* Commit id on deployed builds (stage/prod); the environment name on the local/test dev servers. */}
+      {BUILD_LABEL && (
+        <Text
+          type='secondary'
+          style={{ position: 'absolute',
+            right: 16,
+            bottom: 12,
+            fontSize: 12 }}
+        >
+          {`Build: ${BUILD_LABEL}`}
+        </Text>
+      )}
     </Flex>
   );
 }

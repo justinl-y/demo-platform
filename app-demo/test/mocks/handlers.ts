@@ -33,6 +33,20 @@ const overrides = [
   http.get('/me', ({
     response,
   }) => response(200).json(mockUser)),
+  // The password flow endpoints both answer 204 on success. Pinned here (rather than left to the
+  // baseline) so success-path tests get a deterministic no-content response; failure tests override
+  // per-case via server.use().
+  http.post('/password/forgot', ({
+    response,
+  }) => response(204).empty()),
+  http.post('/password/reset', ({
+    response,
+  }) => response(204).empty()),
+  // Token still valid by default (204); the reset route's beforeLoad calls this before rendering.
+  // Tests override with 400 to exercise the used/expired-link redirect to /login.
+  http.post('/password/reset/validate', ({
+    response,
+  }) => response(204).empty()),
 ];
 
 // Auto-generated baseline covering every endpoint in the spec, with responses drawn from the route

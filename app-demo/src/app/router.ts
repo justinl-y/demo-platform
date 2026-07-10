@@ -3,6 +3,8 @@ import { createRoute, createRouter, redirect } from '@tanstack/react-router';
 import { resolveSession } from '../features/auth/session.ts';
 import { homeRoute } from '../routes/home.tsx';
 import { loginRoute } from '../routes/login.tsx';
+import { passwordForgotRoute } from '../routes/password-forgot.tsx';
+import { passwordResetRoute } from '../routes/password-reset.tsx';
 import { rootRoute } from '../routes/root.tsx';
 import { queryClient } from './query-client.ts';
 
@@ -22,7 +24,13 @@ const indexRoute = createRoute({
 });
 
 // Exported so tests can build an isolated router (fresh memory history) over the same route tree.
-export const routeTree = rootRoute.addChildren([indexRoute, loginRoute, homeRoute]);
+export const routeTree = rootRoute.addChildren([
+  indexRoute,
+  loginRoute,
+  passwordForgotRoute,
+  passwordResetRoute,
+  homeRoute,
+]);
 
 export const router = createRouter({
   routeTree,

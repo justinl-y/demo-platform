@@ -262,6 +262,42 @@
         }
       }
     },
+    "/password/reset/validate": {
+      "post": {
+        "summary": "Validate a password reset token",
+        "tags": [
+          "Authentication"
+        ],
+        "description": "Checks whether a password reset token is still valid (active user, unused and unexpired) without consuming it. Lets the front-end redirect a used or expired reset link before rendering the form.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "password_reset_token": {
+                    "type": "string",
+                    "minLength": 30,
+                    "maxLength": 30,
+                    "description": "Reset token from the password reset email link"
+                  }
+                },
+                "required": [
+                  "password_reset_token"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
     "/me": {
       "get": {
         "summary": "Current user",

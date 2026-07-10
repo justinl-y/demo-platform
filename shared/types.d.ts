@@ -12,3 +12,12 @@ export interface Login {
   email: string;
   password: string;
 }
+
+export interface PasswordForgot {
+  email: string;
+}
+
+export interface PasswordReset {
+  password_reset_token: string;
+  new_password: string;
+}

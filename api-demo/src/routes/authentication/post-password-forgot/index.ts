@@ -5,11 +5,10 @@ import type {
   FastifyReply,
   FastifyInstance,
 } from 'fastify';
+import type { PasswordForgot } from '#shared/types';
 
 type Request = {
-  Body: {
-    email: string;
-  };
+  Body: PasswordForgot;
 };
 
 async function passwordForgot(this: FastifyInstance, request: FastifyRequest<Request>, reply: FastifyReply) {

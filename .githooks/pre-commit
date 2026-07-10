@@ -39,6 +39,7 @@ fi
 # Contract workflow remains the backstop for --no-verify commits. Runs from the repo
 # root (spans both workspaces).
 if echo "$changed" | grep -qE '^api-demo/src/|^shared/openapi\.json$|^app-demo/test/mocks/openapi\.ts$'; then
-  npm run openapi:sync
+  # stdout only (npm/tool banners); stderr is kept so real failures still surface and set -e aborts.
+  npm run openapi:sync >/dev/null
   git add shared/openapi.json app-demo/test/mocks/openapi.ts
 fi
