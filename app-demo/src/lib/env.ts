@@ -23,7 +23,7 @@ export const APP_HEADER = 'X-Demo-Application';
 export const APP_NAME = 'app-demo';
 
 // Human label for the current environment, shown after the product name in the UI (e.g. "Demo
-// Platform - Stage"). Derived from the Vite `--mode` so no extra env var is needed; any unmapped
+// Platform (Stage)"). Derived from the Vite `--mode` so no extra env var is needed; any unmapped
 // mode — production included — yields no label, so prod shows just "Demo Platform" (fail-safe: an
 // unknown environment never leaks a label).
 const ENV_LABELS: Record<string, string> = {

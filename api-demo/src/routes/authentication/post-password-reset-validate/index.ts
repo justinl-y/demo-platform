@@ -5,11 +5,11 @@ import type {
   FastifyReply,
   FastifyInstance,
 } from 'fastify';
+import type { PasswordReset } from '#shared/types';
 
 type Request = {
-  Body: {
-    password_reset_token: string;
-  };
+  // Just the token from the shared reset contract — derived so the field name stays in sync.
+  Body: Pick<PasswordReset, 'password_reset_token'>;
 };
 
 async function validatePasswordResetToken(this: FastifyInstance, request: FastifyRequest<Request>, reply: FastifyReply) {
