@@ -31,9 +31,10 @@ window.scrollTo = (() => {}) as typeof window.scrollTo;
 
 // jsdom doesn't implement getComputedStyle for pseudo-elements; antd (tooltips, popovers, waves)
 // calls getComputedStyle(el, '::before'), which otherwise logs a noisy stack-traced "Not implemented"
-// warning per call. Drop the pseudo-element argument so the base style is returned.
+// warning per call. Keep the real signature but ignore `pseudoElt`, so the base style is returned.
 const nativeGetComputedStyle = window.getComputedStyle.bind(window);
-window.getComputedStyle = ((element: Element) =>
+
+window.getComputedStyle = ((element: Element, _pseudoElt?: string | null): CSSStyleDeclaration =>
   nativeGetComputedStyle(element)) as typeof window.getComputedStyle;
 
 // MSW lifecycle: fail on any request without a matching handler so a missing/renamed endpoint is

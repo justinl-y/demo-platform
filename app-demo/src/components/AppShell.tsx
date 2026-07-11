@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Button, Layout, Menu, Typography } from 'antd';
 import { HomeOutlined, LogoutOutlined, TeamOutlined } from '@ant-design/icons';
 import { useNavigate, useRouterState } from '@tanstack/react-router';
@@ -6,8 +6,10 @@ import { useNavigate, useRouterState } from '@tanstack/react-router';
 import type { MenuProps } from 'antd';
 import type { ReactNode } from 'react';
 
+import { useAuth } from '../features/auth/use-auth.ts';
 import { useLogout } from '../features/auth/use-logout.ts';
 import { APP_TITLE } from '../lib/env.ts';
+import { PERMISSION_BY_KEY } from '../lib/permissions.ts';
 
 const {
   Header, Content, Sider,
@@ -16,10 +18,17 @@ const {
   Text,
 } = Typography;
 
-// Left-nav hierarchy. Leaves that map to a route in ROUTE_BY_KEY navigate; the rest are
-// placeholders until their pages exist. Top-level items carry icons so they stay meaningful when
-// the sider is collapsed to icons.
-const navItems: MenuProps['items'] = [
+interface NavNode {
+  key: string;
+  label: string;
+  icon?: ReactNode;
+  children?: NavNode[];
+}
+
+// Left-nav hierarchy. Leaves that map to a route in ROUTE_BY_KEY navigate; the rest are placeholders
+// until their pages exist. Top-level items carry icons so they stay meaningful when the sider is
+// collapsed to icons.
+const NAV_TREE: NavNode[] = [
   {
     key: 'home',
     icon: <HomeOutlined />,
@@ -54,6 +63,21 @@ const navItems: MenuProps['items'] = [
   },
 ];
 
+// Builds antd menu items from the nav tree, disabling any item whose required permission the user
+// lacks (a disabled item is greyed out and doesn't navigate).
+const gateNavItems = (nodes: NavNode[], permissions: Set<string>): MenuProps['items'] =>
+  nodes.map((node) => {
+    const required = PERMISSION_BY_KEY[node.key];
+
+    return {
+      key: node.key,
+      label: node.label,
+      icon: node.icon,
+      disabled: required ? !permissions.has(required) : undefined,
+      children: node.children ? gateNavItems(node.children, permissions) : undefined,
+    };
+  });
+
 // Menu key -> route. Only navigable items appear here.
 const ROUTE_BY_KEY: Record<string, string> = {
   home: '/home',
@@ -77,6 +101,12 @@ export default function AppShell({
   const logout = useLogout();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [collapsed, setCollapsed] = useState(readCollapsed);
+
+  const {
+    user,
+  } = useAuth();
+  const permissions = useMemo(() => new Set(user?.permissions ?? []), [user]);
+  const navItems = useMemo(() => gateNavItems(NAV_TREE, permissions), [permissions]);
 
   const handleCollapse = (value: boolean) => {
     setCollapsed(value);

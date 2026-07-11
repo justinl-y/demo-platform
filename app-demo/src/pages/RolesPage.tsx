@@ -10,14 +10,15 @@ import type { ColumnsType, SortOrder } from 'antd/es/table/interface';
 import type { Role, RoleInput } from '#shared/types';
 
 import { httpErrorMessage } from '../lib/api-client.ts';
+import { PERMISSIONS } from '../lib/permissions.ts';
 import { useAuth } from '../features/auth/use-auth.ts';
 import { rolesQueryOptions } from '../features/roles/queries.ts';
 import { useCreateRole } from '../features/roles/use-create-role.ts';
 import { useDeleteRole } from '../features/roles/use-delete-role.ts';
 import { useUpdateRole } from '../features/roles/use-update-role.ts';
 
-// Editing a role requires this permission; without it the row's Edit button is disabled.
-const ROLES_WRITE = 'INTERNAL_ROLES_WRITE';
+// Editing a role requires this permission; without it the row's Edit/Delete/Add buttons are disabled.
+const ROLES_WRITE = PERMISSIONS.INTERNAL_ROLES_WRITE;
 
 // Shared width cap so the toolbar (search + Add New) lines up with the table's right edge.
 const TABLE_MAX_WIDTH = 1070;
