@@ -337,12 +337,19 @@ export default function RolesPage() {
     mutateAsync: deleteRole,
   } = useDeleteRole();
 
-  // Drives the create/edit drawer (null = closed).
+  // Drives the create/edit drawer (null = closed). `drawerMounted` lazy-mounts it: nothing is created
+  // until it's first opened (keeps the /roles page mount cheap), after which it stays mounted so
+  // closing still animates.
   const [drawer, setDrawer] = useState<DrawerState | null>(null);
+  const [drawerMounted, setDrawerMounted] = useState(false);
+  const openDrawer = useCallback((next: DrawerState) => {
+    setDrawerMounted(true);
+    setDrawer(next);
+  }, []);
 
   // Stable row-action handlers so the memoized columns don't rebuild every render.
-  const openEdit = useCallback((role: Role) => setDrawer({ mode: 'edit',
-    role }), []);
+  const openEdit = useCallback((role: Role) => openDrawer({ mode: 'edit',
+    role }), [openDrawer]);
 
   const confirmDelete = useCallback((role: Role) => {
     modal.confirm({
@@ -389,6 +396,20 @@ export default function RolesPage() {
     setPage(1);
   };
 
+  // The span carries the toolbar's right-alignment and lets the tooltip work over a disabled button.
+  const addButton = (
+    <span style={{ marginInlineStart: 'auto' }}>
+      <Button
+        type='primary'
+        icon={<PlusOutlined />}
+        disabled={!canEdit}
+        onClick={() => openDrawer({ mode: 'create' })}
+      >
+        Add New
+      </Button>
+    </span>
+  );
+
   return (
     <>
       <Title
@@ -413,22 +434,13 @@ export default function RolesPage() {
           onSearch={onSearch}
           style={{ flex: '0 1 400px' }}
         />
-        <Tooltip title={canEdit ? '' : `Requires ${ROLES_WRITE}`}>
-          {/* Wrap so the tooltip still shows while the button is disabled (disabled buttons swallow hover). */}
-          <span style={{ marginInlineStart: 'auto' }}>
-            <Button
-              type='primary'
-              icon={<PlusOutlined />}
-              disabled={!canEdit}
-              onClick={() => setDrawer({ mode: 'create' })}
-            >
-              Add New
-            </Button>
-          </span>
-        </Tooltip>
+        {/* Only wrap in a Tooltip when disabled — avoids mounting an inert tooltip when it's usable. */}
+        {canEdit
+          ? addButton
+          : <Tooltip title={`Requires ${ROLES_WRITE}`}>{addButton}</Tooltip>}
       </div>
 
-      {isError && <Alert type='error' showIcon message='Failed to load roles' style={{ maxWidth: 640 }} />}
+      {isError && <Alert type='error' showIcon title='Failed to load roles' style={{ maxWidth: 640 }} />}
 
       {!isError && (
         <div
@@ -454,7 +466,7 @@ export default function RolesPage() {
         </div>
       )}
 
-      <RoleDrawer state={drawer} onClose={() => setDrawer(null)} />
+      {drawerMounted && <RoleDrawer state={drawer} onClose={() => setDrawer(null)} />}
     </>
   );
 }

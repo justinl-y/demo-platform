@@ -60,9 +60,9 @@ const ROUTE_BY_KEY: Record<string, string> = {
   roles: '/roles',
 };
 
-// Each page renders its own AppShell, so navigating remounts it. Persist the sider's collapsed state
-// so selecting a menu item (which changes route) keeps the menu at its current size. Defaults to
-// collapsed until the user explicitly expands it.
+// The authenticated layout route keeps AppShell mounted across page navigation, so the sider's
+// collapsed state already survives menu clicks via component state. Persisting it here additionally
+// keeps that choice across full page reloads. Defaults to collapsed until the user expands it.
 const NAV_COLLAPSED_KEY = 'demo.navCollapsed';
 const readCollapsed = (): boolean => localStorage.getItem(NAV_COLLAPSED_KEY) !== 'false';
 
@@ -133,8 +133,9 @@ export default function AppShell({
           />
         </Sider>
 
-        {/* Fixed-height (100vh) shell that doesn't scroll; the content column fills the space so a
-            page can flex a child (e.g. a table) to the exact remaining height. */}
+        {/* The shell is fixed at 100vh so the window itself never scrolls. Instead this content column
+            scrolls internally (overflow: auto) when a page overflows the remaining height — while a
+            page that wants to fit exactly can flex a child (e.g. a table) to that height and not scroll. */}
         <Content style={{ padding: 24,
           display: 'flex',
           flexDirection: 'column',
