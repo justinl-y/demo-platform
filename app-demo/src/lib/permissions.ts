@@ -7,7 +7,9 @@ export const PERMISSIONS = {
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 
 // Menu key -> permission required to enable it. Items without an entry are always enabled; add a row
-// here as permission-gated pages come online.
-export const PERMISSION_BY_KEY: Record<string, Permission> = {
+// here as permission-gated pages come online. `Partial` models the map as having optional keys, so
+// indexing an unlisted key is typed as possibly-undefined — the absence check stays honest without
+// relying on `noUncheckedIndexedAccess`.
+export const PERMISSION_BY_KEY: Partial<Record<string, Permission>> = {
   roles: PERMISSIONS.INTERNAL_ROLES_READ,
 };
