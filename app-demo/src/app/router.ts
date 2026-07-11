@@ -1,10 +1,12 @@
 import { createRoute, createRouter, redirect } from '@tanstack/react-router';
 
 import { resolveSession } from '../features/auth/session.ts';
+import { authenticatedRoute } from '../routes/authenticated.tsx';
 import { homeRoute } from '../routes/home.tsx';
 import { loginRoute } from '../routes/login.tsx';
 import { passwordForgotRoute } from '../routes/password-forgot.tsx';
 import { passwordResetRoute } from '../routes/password-reset.tsx';
+import { rolesRoute } from '../routes/roles.tsx';
 import { rootRoute } from '../routes/root.tsx';
 import { queryClient } from './query-client.ts';
 
@@ -29,7 +31,10 @@ export const routeTree = rootRoute.addChildren([
   loginRoute,
   passwordForgotRoute,
   passwordResetRoute,
-  homeRoute,
+  authenticatedRoute.addChildren([
+    homeRoute,
+    rolesRoute,
+  ]),
 ]);
 
 export const router = createRouter({
