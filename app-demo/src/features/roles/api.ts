@@ -40,7 +40,7 @@ export const fetchRoles = async ({
 };
 
 // POST /roles — creates a role and returns the new row. Requires the INTERNAL_ROLES_WRITE permission
-// (a 403 otherwise); the name must be unique (a 409 otherwise).
+// (a 403 otherwise); a duplicate name is rejected with 400 ("Supplied role name is not unique").
 export const createRole = async (body: RoleInput): Promise<Role> => {
   const {
     data,
@@ -50,7 +50,8 @@ export const createRole = async (body: RoleInput): Promise<Role> => {
 };
 
 // PUT /roles/:role_id — updates a role's name/description and returns the updated row. Requires the
-// INTERNAL_ROLES_WRITE permission (a 403 otherwise).
+// INTERNAL_ROLES_WRITE permission (a 403 otherwise); a duplicate name or unknown id is rejected with
+// 400 ("Supplied role name is not unique" / "Invalid role id").
 export const updateRole = async (roleId: string, body: RoleInput): Promise<Role> => {
   const {
     data,
@@ -60,7 +61,8 @@ export const updateRole = async (roleId: string, body: RoleInput): Promise<Role>
 };
 
 // DELETE /roles/:role_id — removes a role. Requires the INTERNAL_ROLES_WRITE permission (a 403
-// otherwise). Resolves 204 with no body on success.
+// otherwise); a role still assigned to users, or an unknown id, is rejected with 400 ("Role is
+// assigned to one or more users" / "Invalid role id"). Resolves 204 with no body on success.
 export const deleteRole = async (roleId: string): Promise<void> => {
   await api.delete(`/roles/${roleId}`);
 };
