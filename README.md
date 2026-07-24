@@ -129,10 +129,10 @@ The single root `package-lock.json` is shared by every workspace, including app-
 
 This only surfaced once the repo moved to a single shared lockfile — previously each package had its own lockfile, so app-demo's toolchain never touched the API's Docker build.
 
-**Fix** — regenerate the lockfile in a Linux context (the same `node:24-alpine` image the API's Docker CI uses) so the platform-specific optional deps are retained. The `lock:refresh` script does this (**requires Docker**):
+**Fix** — regenerate the lockfile in a Linux context (the same `node:26-alpine` image the API's Docker CI uses) so the platform-specific optional deps are retained. The `lock:refresh` script does this (**requires Docker**):
 
 ```bash
-npm run lock:refresh   # runs `npm install --package-lock-only` inside node:24-alpine — lockfile only, no node_modules
+npm run lock:refresh   # runs `npm install --package-lock-only` inside node:26-alpine — lockfile only, no node_modules
 ```
 
 **Process** — after any dependency change (add / remove / update / version bump):
@@ -154,6 +154,6 @@ All automation runs on **GitHub Actions** ([`.github/workflows`](.github/workflo
 | [PR CI API-DEMO](.github/workflows/pr-ci-api-demo.yml) | PR (always runs; test steps gated on changes to `api-demo/**`, `db-demo/**`, `shared/**`) | Docker Compose integration tests for the API. The `Docker CI Integration Tests` check is required, so the job always reports — running the suite only when those paths change. |
 | [PR CI APP-DEMO](.github/workflows/pr-ci-app-demo.yml) | PR touching `app-demo/**`, `shared/**` | Front-end quality gate: CSS-module type check → lint → test (Vitest + MSW) → build. |
 | [PR OpenAPI Contract](.github/workflows/pr-openapi-contract.yml) | PR touching `api-demo/src/**`, `shared/openapi.json`, `app-demo/test/mocks/openapi.ts` | Regenerates the OpenAPI spec + front-end mock types and fails if the committed artifacts have drifted from the API route schemas. |
-| [PR Lockfile Check](.github/workflows/pr-lockfile-check.yml) | PR touching any `package.json` or `package-lock.json` | Regenerates the lockfile on Linux (`node:24-alpine`) and fails if it drifts — guarding the Linux-only optional deps a macOS `npm install` prunes (see [Keeping the lockfile in sync](#-keeping-the-lockfile-in-sync)). |
+| [PR Lockfile Check](.github/workflows/pr-lockfile-check.yml) | PR touching any `package.json` or `package-lock.json` | Regenerates the lockfile on Linux (`node:26-alpine`) and fails if it drifts — guarding the Linux-only optional deps a macOS `npm install` prunes (see [Keeping the lockfile in sync](#-keeping-the-lockfile-in-sync)). |
 | [Deploy to Elastic Beanstalk](.github/workflows/deploy-eb.yml) | Push to `master` touching `api-demo/**`, `shared/**` | Assembles the API source bundle (rooted at the repo for the workspace build context) and deploys it to Elastic Beanstalk. |
 | [Deploy to S3 + CloudFront](.github/workflows/deploy-s3.yml) | Push to `master` touching `app-demo/**`, `shared/**` (or manual dispatch) | Builds the front-end bundle and publishes it to S3, then invalidates the CloudFront cache. |

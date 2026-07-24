@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react';
 import axios from 'axios';
 
 import { API_BASE_URL, APP_HEADER, APP_NAME } from './env.ts';
@@ -70,25 +71,31 @@ api.interceptors.response.use(
 
     original._retry = true;
 
-    try {
-      refreshPromise ??= api
-        .post('/refresh')
-        .then(() => undefined)
-        .finally(() => {
-          refreshPromise = null;
-        });
+    // A 401 can arrive hours into a still-open tab (the access token is short-lived, but the tab
+    // isn't), long after the pageload's trace has any business covering it. Starting a new trace
+    // here stops every subsequent /refresh + retry from piling onto that original trace forever —
+    // see the Sentry trace analysis for how bad that gets without it.
+    return Sentry.startNewTrace(async () => {
+      try {
+        refreshPromise ??= api
+          .post('/refresh')
+          .then(() => undefined)
+          .finally(() => {
+            refreshPromise = null;
+          });
 
-      await refreshPromise;
-    }
-    catch (refreshError) {
-      // A 401 from /refresh means the session is truly over — propagate the original 401 so guards
-      // clear auth state. Any other failure (5xx / network) is transient: propagate it as-is so the
-      // status reflects the outage, not a false 401, and a still-valid session isn't logged out.
-      const refreshStatus = httpErrorStatus(refreshError);
+        await refreshPromise;
+      }
+      catch (refreshError) {
+        // A 401 from /refresh means the session is truly over — propagate the original 401 so guards
+        // clear auth state. Any other failure (5xx / network) is transient: propagate it as-is so the
+        // status reflects the outage, not a false 401, and a still-valid session isn't logged out.
+        const refreshStatus = httpErrorStatus(refreshError);
 
-      return Promise.reject(refreshStatus === 401 ? error : refreshError);
-    }
+        return Promise.reject(refreshStatus === 401 ? error : refreshError);
+      }
 
-    return api(original);
+      return api(original);
+    });
   },
 );

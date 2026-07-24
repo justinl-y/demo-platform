@@ -2,7 +2,7 @@ name: PR Lockfile Check
 
 # package-lock.json must stay in sync with the workspace package.json files AND
 # retain Linux-only optional deps (e.g. @emnapi/*, required by rolldown's wasm
-# binding when api-demo's Docker CI runs `npm ci` on node:24-alpine). An
+# binding when api-demo's Docker CI runs `npm ci` on node:26-alpine). An
 # incremental `npm install` on macOS prunes those optional entries, which passes
 # locally but breaks the api-demo Docker build with an EUSAGE "Missing ... from
 # lock file" error. This guard regenerates the lockfile in the same Linux image
@@ -36,12 +36,12 @@ jobs:
         uses: actions/checkout@v5
 
       # Regenerate package-lock.json in the same image api-demo CI builds with
-      # (node:24-alpine), so Linux-only optional deps are retained. This mirrors
+      # (node:26-alpine), so Linux-only optional deps are retained. This mirrors
       # the `lock:refresh` npm script exactly. --package-lock-only writes only the
       # lock (no node_modules); --legacy-peer-deps matches Dockerfile.ci's npm ci.
       - name: Regenerate lockfile in Linux
         run: |
-          docker run --rm -v "$PWD":/app -w /app node:24-alpine \
+          docker run --rm -v "$PWD":/app -w /app node:26-alpine \
             sh -c "npm install --package-lock-only --legacy-peer-deps"
 
       # Fail if the committed lockfile differs from the Linux-regenerated one.

@@ -20,6 +20,13 @@ export default mergeConfig(viteConfig, {
     // QueryClient + router per call. If ordering-dependent flakiness ever appears, drop `isolate`.
     pool: 'threads',
     isolate: false,
+    // Node >=26 defines a global `localStorage` accessor (Web Storage API, gated behind
+    // --localstorage-file) even with the feature off. jsdom's environment setup assigns
+    // `window.localStorage` onto the worker's global scope, which hits that accessor's setter
+    // instead of creating a fresh property — reads then resolve to Node's (unconfigured, empty)
+    // implementation instead of jsdom's, breaking any code that reads/writes localStorage.
+    // Disabling it here lets jsdom's own localStorage win.
+    execArgv: ['--no-experimental-webstorage'],
     // Match api-demo's output style: a full tree of describe/test names, no trailing summary block.
     reporters: [
       ['tree', { summary: false }],

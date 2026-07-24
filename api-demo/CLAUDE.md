@@ -40,7 +40,7 @@ Dependencies are installed once at the repo root (`npm install`) — api-demo is
 
 ## Tech Stack
 
-- **Runtime**: Node.js >=24.8.0, npm >=11.6.0
+- **Runtime**: Node.js >=26.0.0, npm >=11.6.0
 - **Framework**: Fastify 5 with plugins (JWT, CORS, Helmet, Swagger, compression)
 - **Database**: PostgreSQL via `pg` (node-postgres)
 - **Type-safe SQL**: pgtyped — SQL files in `repositories/**/types/*.typed.sql`, generates `.queries.ts`

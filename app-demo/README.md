@@ -95,7 +95,7 @@ app-demo/
 
 ## ⚡ Local Development
 
-**Requirements**: Node `>=24.8.0`, npm `>=11.6.0` (see `engines` in `package.json`).
+**Requirements**: Node `>=26.0.0`, npm `>=11.6.0` (see `engines` in `package.json`).
 
 This package is an [npm workspace](../README.md) — run `npm install` **once at the repo root** to install every workspace against the single root lockfile (there is no per-package install).
 

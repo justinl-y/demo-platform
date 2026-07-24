@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.7
-FROM node:25-alpine
+FROM node:26-alpine
 
 RUN apk add --no-cache \
   bash \
@@ -11,7 +11,10 @@ WORKDIR /usr
 
 COPY package*.json .
 
-RUN --mount=type=cache,target=/root/.npm npm ci --include=dev
+# --legacy-peer-deps: this project has no explicit `typescript` devDependency, so a strict `npm ci`
+# fails once the registry serves a newer TypeScript satisfying @typescript-eslint's peer range than
+# existed when the lockfile was cut (matches every other install in the repo).
+RUN --mount=type=cache,target=/root/.npm npm ci --include=dev --legacy-peer-deps
 
 # set path to local node_modules
 ENV PATH=/usr/node_modules/.bin:$PATH

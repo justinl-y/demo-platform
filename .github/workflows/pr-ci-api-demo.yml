@@ -59,7 +59,7 @@ jobs:
         if: steps.changes.outputs.relevant == 'true'
         uses: actions/setup-node@v5
         with:
-          node-version: 24
+          node-version: 26
           cache: npm
           cache-dependency-path: |
             package-lock.json
@@ -74,10 +74,14 @@ jobs:
       # The integration tests are a separate project with their own package.json (not a workspace);
       # install their deps BEFORE typecheck, because api-demo's tsconfig includes test/container-test/**
       # and those files import supertest/aws-sdk-client-mock from that project's own node_modules.
+      # --legacy-peer-deps matches every other install in the repo (Dockerfiles, lock:refresh): this
+      # project has no explicit `typescript` devDependency, so a strict `npm ci` fails once the
+      # registry serves a newer TypeScript satisfying @typescript-eslint's peer range than existed
+      # when the lockfile was cut — --legacy-peer-deps skips that peer validation.
       - name: Install integration-test dependencies
         if: steps.changes.outputs.relevant == 'true'
         working-directory: ./api-demo/test/container-test
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       # Lint (neostandard + api rules)
       - name: Lint
