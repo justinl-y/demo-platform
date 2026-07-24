@@ -10,7 +10,7 @@
 # `npm ci`, optionally injecting an npm auth token from a BuildKit secret so
 # private registry packages can be pulled without leaking the token into any
 # image layer.
-FROM node:24-alpine AS base
+FROM node:26-alpine AS base
 
 # Workspaces install root; the api-demo workspace lives at ${API_HOME}. npm
 # hoists dependencies to ${WORKSPACE_ROOT}/node_modules, which Node resolves by
@@ -94,7 +94,7 @@ RUN --mount=type=secret,id=npm_token --mount=type=cache,target=/root/.npm \
 #   - production node_modules  (from runtime-deps, hoisted at ${WORKSPACE_ROOT})
 #   - compiled JavaScript      (from builder)
 #   - pm2 process config       (from build context)
-FROM node:24-alpine AS runtime
+FROM node:26-alpine AS runtime
 
 ENV WORKSPACE_ROOT="/srv"
 ENV API_HOME="/srv/api-demo"

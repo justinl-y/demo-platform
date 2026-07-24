@@ -1,7 +1,10 @@
 {
   // Node 24 base + the workspace's shared strictness/module core
   // (root tsconfig.base.json). Array order: later wins, so the shared core
-  // layers on top of @tsconfig/node24.
+  // layers on top of @tsconfig/node24. Deliberately not on @tsconfig/node26:
+  // its es2025 target/lib needs a TypeScript major we haven't adopted yet
+  // (see the Node 26 upgrade). Node 26 runs es2024-target output fine, so the
+  // compile target and the runtime version are free to move independently.
   "extends": [
     "@tsconfig/node24/tsconfig.json",
     "../tsconfig.base.json"

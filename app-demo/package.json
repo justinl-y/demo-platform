@@ -8,7 +8,7 @@
   "author": "Justin Levett-Yeats",
   "engines": {
     "npm": ">=11.6.0 <12.0.0",
-    "node": ">=24.8.0 <26.0.0"
+    "node": ">=26.0.0 <27.0.0"
   },
   "scripts": {
     "preenv": "lsof -ti tcp:5173 -sTCP:LISTEN | xargs kill 2>/dev/null || true",

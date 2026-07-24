@@ -4,6 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <!-- Warms the DNS/TCP/TLS connection to the API origin ahead of the first request (e.g. the
+         cold-load /me check) — %VITE_API_URL% is Vite's built-in HTML env replacement, so this
+         resolves per-mode from the same VITE_API_URL as src/lib/env.ts (.env.development/.test/.stage).
+         crossorigin is required: without it the browser preconnects in a mode the later
+         CORS/credentialed XHR (withCredentials: true) can't reuse, opening a second connection. -->
+    <link rel="preconnect" href="%VITE_API_URL%" crossorigin />
     <title>Demo Platform</title>
   </head>
   <body>

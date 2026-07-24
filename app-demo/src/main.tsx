@@ -4,7 +4,7 @@ import { createRoot } from 'react-dom/client';
 import './index.css';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';
-import { App as AntApp, Button, ConfigProvider, Result } from 'antd';
+import { App as AntApp, Button, ConfigProvider, Result, theme } from 'antd';
 import * as Sentry from '@sentry/react';
 
 import { initSentry } from './lib/sentry.ts';
@@ -22,7 +22,7 @@ initSentry(router);
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <ConfigProvider>
+      <ConfigProvider theme={{ algorithm: theme.compactAlgorithm }}>
         <AntApp>
           <Sentry.ErrorBoundary
             fallback={({

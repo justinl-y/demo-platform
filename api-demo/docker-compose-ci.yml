@@ -1,6 +1,10 @@
 services:
   db:
-    image: postgis/postgis:18-3.6
+    # postgis/postgis publishes amd64-only (no arm64 manifest, ever, for any 18.x tag — GEOS/SFCGAL
+    # build constraints on their Debian pipeline). imresamu/postgis is the community multi-arch
+    # build maintained by a PostGIS contributor (github.com/ImreSamu/docker-postgis); same version
+    # tag, both amd64 and arm64, so Apple Silicon runs it natively instead of under QEMU emulation.
+    image: imresamu/postgis:18-3.6
     command: postgres
       -c logging_collector=on
       -c log_destination=stderr
